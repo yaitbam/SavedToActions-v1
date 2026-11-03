@@ -4,8 +4,8 @@ import { ExtractionError, MAX_TOKENS, buildMessages, buildSystemPrompt, extractF
 import { ModelError, createProvider } from "../src/model/provider.js";
 
 const goals = [
-  { id: 1, name: "Make money" },
-  { id: 2, name: "Level up as a dev" },
+  { id: 1, name: "Earn more" },
+  { id: 2, name: "Learn a skill" },
 ];
 
 test("parseModelJson: plain, fenced, surrounded by prose, and rejects everything else", () => {
@@ -20,8 +20,8 @@ test("parseModelJson: plain, fenced, surrounded by prose, and rejects everything
 
 test("prompt: asks for wall time + IANA tz only, null tz when not stated, no invention", () => {
   const p = buildSystemPrompt({ goals, today: "2026-11-02" });
-  assert.match(p, /1: Make money/);
-  assert.match(p, /2: Level up as a dev/);
+  assert.match(p, /1: Earn more/);
+  assert.match(p, /2: Learn a skill/);
   assert.match(p, /Do NOT add a UTC offset or Z/);
   assert.match(p, /Do NOT convert between timezones/);
   assert.match(p, /IANA timezone name/);
@@ -34,6 +34,23 @@ test("prompt: asks for wall time + IANA tz only, null tz when not stated, no inv
   assert.match(p, /copied verbatim/);
   assert.match(p, /only if the year is written/);
   assert.match(p, /Do not give advice, especially financial advice/);
+});
+
+test("prompt: lists the user's goals by id and limits goal_id to those ids or null", () => {
+  const preset = [
+    { id: 1, name: "Earn more" },
+    { id: 2, name: "Learn a skill" },
+    { id: 3, name: "Don't miss deadlines" },
+  ];
+  const p = buildSystemPrompt({ goals: preset, today: "2026-11-02" });
+  assert.match(p, /1: Earn more\n2: Learn a skill\n3: Don't miss deadlines/);
+  assert.match(p, /integer id of the one goal that fits best, copied exactly from this list/);
+  assert.match(p, /Use null if none clearly fits/);
+  assert.match(p, /never write a goal name/i);
+  // A renamed goal reaches the model under its new name, same id.
+  const renamed = buildSystemPrompt({ goals: [{ id: 2, name: "Ship side projects" }], today: "2026-11-02" });
+  assert.match(renamed, /2: Ship side projects/);
+  assert.doesNotMatch(renamed, /Learn a skill/);
 });
 
 test("messages: system prompt, then the note and the screenshot as a base64 data URL", () => {

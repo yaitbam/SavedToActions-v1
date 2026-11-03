@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createApp } from "../src/app.js";
-import { MAX_TURNS, TOOLS } from "../src/agent/agent.js";
+import { MAX_TURNS, TOOLS, stepLabel } from "../src/agent/agent.js";
 import { openDb, saveSettings } from "../src/db.js";
 import { CalendarError } from "../src/google/calendar.js";
 import { ModelError } from "../src/model/provider.js";
@@ -379,4 +379,20 @@ test("an agent bug is kept in the trace as failed, then surfaces as a server err
     assert.equal(JSON.parse(row.result_json).failure.code, "agent_bug");
     assert.ok(JSON.parse(db.prepare("SELECT steps_json FROM agent_traces").get().steps_json).some((s) => s.type === "error" && s.where === "agent"));
   });
+});
+
+test("stepLabel: every trace step type has plain words", () => {
+  const cases = [
+    [{ type: "extraction" }, "Muse Spark Open read the screenshot"],
+    [{ type: "start" }, "Planning started"],
+    [{ type: "model_request" }, "Asked the model for a plan"],
+    [{ type: "tool_call", name: "get_availability" }, "Read your calendar availability"],
+    [{ type: "tool_call", name: "find_slot" }, "Searched for a free slot"],
+    [{ type: "validation", ok: true }, "Code checked the slot: passed"],
+    [{ type: "validation", ok: false }, "Code checked the slot: rejected"],
+    [{ type: "fallback", slot: null }, "No fallback slot found"],
+    [{ type: "end", outcome: "proposed" }, "Proposed a slot"],
+    [{ type: "something_new" }, "Something new"],
+  ];
+  for (const [step, label] of cases) assert.equal(stepLabel(step), label);
 });

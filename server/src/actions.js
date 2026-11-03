@@ -2,7 +2,7 @@
 // Badges and match flags are computed when the view is built, from the stored note and transcription,
 // so they stay true after edits. Only confirmed effort is ever scheduled.
 import { blockView, checkView, getActiveBlock, getLatestCheck } from "./blockStore.js";
-import { formatForDisplay, isValidTimezone, wallToUtc, localDate } from "./tz.js";
+import { formatForDisplay, formatRelative, isValidTimezone, wallToUtc, localDate } from "./tz.js";
 import { getSettings } from "./db.js";
 import { KINDS, LABELS, VERBATIM_TYPES, badgeFor, badgeLabel, matchSources, eventDateWarning } from "./extraction/normalize.js";
 
@@ -74,10 +74,17 @@ export function getActionView(db, id, {nowMs=Date.now()}={}) {
   const row = db.prepare("SELECT * FROM actions WHERE id = ?").get(id);
   if (!row) return null;
   const block = getActiveBlock(db, id);
-  return viewOf(row, getSave(db, row.save_id), block, block ? getLatestCheck(db, id, block.id) : null, {nowMs,tz:getSettings(db).tz});
+  return viewOf(row, getSave(db, row.save_id), block, block ? getLatestCheck(db, id, block.id) : null, {nowMs,tz:getSettings(db).tz,extractionMs:extractionMsOf(db,id)});
 }
 
-export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs=Date.now(),tz=null}={}) {
+/** How long the model took to read the screenshot. It is the first step of the extraction trace. Null if unknown. */
+function extractionMsOf(db, actionId) {
+  const row = db.prepare("SELECT steps_json FROM agent_traces WHERE action_id = ? AND outcome = 'extracted' ORDER BY id LIMIT 1").get(actionId);
+  const ms = parse(row?.steps_json, [])[0]?.ms;
+  return Number.isFinite(ms) ? ms : null;
+}
+
+export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs=Date.now(),tz=null,extractionMs=null}={}) {
   const edited = parse(row.edited_fields_json, []);
   const sources = { note: save.note ?? "", transcription: row.transcription ?? "" };
 
@@ -94,6 +101,8 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
   const warnings=parse(row.warnings_json, []).filter(w=>w.code!=='event_already_happened' && !edited.includes(w.field));
   const pastEvent=eventDateWarning(eventDates,localDate(nowMs,tz??'UTC'));
   if(pastEvent)warnings.push(pastEvent);
+  // The model wrote an offset that disagrees with the zone. Code recomputed the time, the Review screen says so.
+  const hasTimezoneCorrection=warnings.some(w=>w.code==='deadline_offset_ignored' && w.proposed?.corrected===true);
 
   return {
     id: row.id,
@@ -108,11 +117,12 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
     screenshotUrl: `/api/saves/${row.save_id}/screenshot`,
     isDemo: Boolean(save.is_demo),
     // The active calendar block, with server formatted times and the read-back result. Null until approved.
-    block: blockView(activeBlock),
+    block: blockView(activeBlock,{nowMs}),
     // Latest Recheck of that block: green, amber, red, needs_input or error. Null until one has run.
-    check: checkView(latestCheck),
+    check: checkView(latestCheck,{nowMs}),
     doneAt: row.done_at,
     doneAtDisplay: row.done_at && tz ? formatForDisplay(row.done_at,tz) : null,
+    doneAtRelative: row.done_at && tz ? formatRelative(row.done_at,tz,nowMs) : null,
     deadline: row.deadline_wall
       ? {
           wall: row.deadline_wall,
@@ -122,6 +132,7 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
           utc: row.deadline_utc,
           // Formatted here. The browser must never convert times itself.
           display: row.deadline_utc && row.deadline_tz ? formatForDisplay(row.deadline_utc, row.deadline_tz) : null,
+          relative: row.deadline_utc && row.deadline_tz ? formatRelative(row.deadline_utc, row.deadline_tz, nowMs) : null,
           label: row.deadline_label,
           quote: row.deadline_quote,
           yearAssumed: Boolean(row.deadline_year_assumed),
@@ -153,6 +164,8 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
     // A warning about a field the user has since edited is no longer relevant.
     warnings,
     model: row.model_name,
+    extractionLatencyMs: extractionMs,
+    hasTimezoneCorrection,
     createdAt: row.created_at,
   };
 }

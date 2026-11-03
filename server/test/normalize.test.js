@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { badgeFor, badgeLabel, normalizeExtraction, textMatches } from "../src/extraction/normalize.js";
 
 const goals = [
-  { id: 1, name: "Make money" },
-  { id: 2, name: "Level up as a dev" },
-  { id: 3, name: "Join events and opportunities" },
+  { id: 1, name: "Earn more" },
+  { id: 2, name: "Learn a skill" },
+  { id: 3, name: "Don't miss deadlines" },
 ];
 const NOW = Date.parse("2026-11-02T12:00:00Z");
 const note = "Saw this on Instagram. I want to join the next edition. Check if registration is still open .";

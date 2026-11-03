@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SELF_TEST, addDays, dataVersion, formatForDisplay, isValidTimezone, offsetAt, runSelfTest, wallToUtc } from "../src/tz.js";
+import { SELF_TEST, addDays, dataVersion, formatForDisplay, formatRelative, formatRelativeRange, isValidTimezone, offsetAt, runSelfTest, wallToUtc, withRelativeSlot } from "../src/tz.js";
 
 test("self test: Africa/Casablanca is +00:00 on 2026-11-05 (moment-timezone data, not Node Intl)", () => {
   assert.equal(offsetAt(SELF_TEST.instantUtc, SELF_TEST.tz), "+00:00");
@@ -55,4 +55,63 @@ test("addDays does calendar arithmetic across month and year ends", () => {
   assert.equal(addDays("2026-11-30", 1), "2026-12-01");
   assert.equal(addDays("2026-12-31", 1), "2027-01-01");
   assert.equal(addDays("2026-03-01", -1), "2026-02-28");
+});
+
+// Now is Wed 4 Nov 2026 22:30 in Africa/Casablanca (+00:00).
+const NOW = Date.parse("2026-11-04T22:30:00Z");
+const CASA = "Africa/Casablanca";
+
+test("formatRelative: today, tomorrow, yesterday, weekday within a week, then dates", () => {
+  assert.equal(formatRelative("2026-11-04T18:30:00Z", CASA, NOW), "Today 18:30");
+  assert.equal(formatRelative("2026-11-05T09:00:00Z", CASA, NOW), "Tomorrow 09:00");
+  assert.equal(formatRelative("2026-11-03T22:00:00Z", CASA, NOW), "Yesterday 22:00");
+  assert.equal(formatRelative("2026-11-06T14:00:00Z", CASA, NOW), "Fri 14:00");
+  assert.equal(formatRelative("2026-11-10T14:00:00Z", CASA, NOW), "Tue 14:00");
+  // 7 days ahead is the same weekday as today, so it gets a date.
+  assert.equal(formatRelative("2026-11-11T14:00:00Z", CASA, NOW), "Wed 11 Nov 14:00");
+  assert.equal(formatRelative("2026-11-01T10:00:00Z", CASA, NOW), "Sun 1 Nov 10:00");
+});
+
+test("formatRelative: midnight is judged in the target zone, not in UTC", () => {
+  // 23:59 and 00:00 local on either side of midnight.
+  assert.equal(formatRelative("2026-11-04T23:59:00Z", CASA, NOW), "Today 23:59");
+  assert.equal(formatRelative("2026-11-05T00:00:00Z", CASA, NOW), "Tomorrow 00:00");
+  // Auckland is +13:00 in November. 2026-11-04T22:30Z is Thu 5 Nov 11:30 there.
+  const auckland = "Pacific/Auckland";
+  assert.equal(formatRelative("2026-11-04T22:30:00Z", auckland, NOW), "Today 11:30");
+  assert.equal(formatRelative("2026-11-04T10:59:00Z", auckland, NOW), "Yesterday 23:59");
+  assert.equal(formatRelative("2026-11-04T11:00:00Z", auckland, NOW), "Today 00:00");
+});
+
+test("formatRelative: week edges, year change and DST", () => {
+  // Sunday now, next Saturday is 6 days ahead.
+  const sunday = Date.parse("2026-11-08T12:00:00Z");
+  assert.equal(formatRelative("2026-11-14T09:00:00Z", CASA, sunday), "Sat 09:00");
+  assert.equal(formatRelative("2026-11-15T09:00:00Z", CASA, sunday), "Sun 15 Nov 09:00");
+  // Year differs, so the year is shown.
+  const newYearEve = Date.parse("2026-12-31T20:00:00Z");
+  assert.equal(formatRelative("2027-01-01T09:00:00Z", CASA, newYearEve), "Tomorrow 09:00");
+  assert.equal(formatRelative("2027-01-20T09:00:00Z", CASA, newYearEve), "Wed 20 Jan 2027 09:00");
+  // Paris leaves DST on Sun 25 Oct 2026. The calendar day count is not 24 hour based.
+  const paris = "Europe/Paris";
+  const beforeShift = Date.parse("2026-10-24T20:00:00Z");
+  assert.equal(formatRelative("2026-10-25T08:00:00Z", paris, beforeShift), "Tomorrow 09:00");
+  assert.equal(formatRelative("2026-10-26T08:00:00Z", paris, beforeShift), "Mon 09:00");
+});
+
+test("formatRelative: Casablanca stays +00:00 and a bad zone throws", () => {
+  assert.equal(formatRelative("2026-11-05T10:00:00Z", CASA, NOW), "Tomorrow 10:00");
+  assert.throws(() => formatRelative("2026-11-05T10:00:00Z", "Mars/Olympus", NOW), /invalid timezone/);
+});
+
+test("formatRelativeRange: end drops its day when it is the same local day", () => {
+  assert.equal(formatRelativeRange("2026-11-05T14:00:00Z", "2026-11-05T15:00:00Z", CASA, NOW), "Tomorrow 14:00 to 15:00");
+  assert.equal(formatRelativeRange("2026-11-04T23:00:00Z", "2026-11-05T01:00:00Z", CASA, NOW), "Today 23:00 to Tomorrow 01:00");
+});
+
+test("withRelativeSlot: unchanged without a clock or a zone", () => {
+  const slot = { startUtc: "2026-11-05T14:00:00Z", endUtc: "2026-11-05T15:00:00Z" };
+  assert.equal(withRelativeSlot(slot, CASA, undefined), slot);
+  assert.equal(withRelativeSlot(null, CASA, NOW), null);
+  assert.equal(withRelativeSlot(slot, CASA, NOW).startRelative, "Tomorrow 14:00");
 });

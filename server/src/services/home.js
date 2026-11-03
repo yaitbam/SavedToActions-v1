@@ -15,7 +15,7 @@ import { getActionView } from "../actions.js";
 import { getGoogleEmail, getSettings, setGoogleEmail } from "../db.js";
 import { METRIC_DEFINITIONS } from "../stats.js";
 import { toIso } from "../scheduler/time.js";
-import { formatForDisplay } from "../tz.js";
+import { formatForDisplay, formatRelative } from "../tz.js";
 
 const LIMIT = 10;
 const CHECK_ALERTS = new Set(["amber", "red", "needs_input", "error"]);
@@ -35,7 +35,7 @@ export function actionSummary(view) {
     goalId: view.goalId,
     isDemo: view.isDemo,
     screenshotUrl: view.screenshotUrl,
-    deadline: view.deadline && { wall: view.deadline.wall, tz: view.deadline.tz, utc: view.deadline.utc, display: view.deadline.display },
+    deadline: view.deadline && { wall: view.deadline.wall, tz: view.deadline.tz, utc: view.deadline.utc, display: view.deadline.display, relative: view.deadline.relative },
     effort: view.effort,
     block: view.block && {
       id: view.block.id,
@@ -45,6 +45,9 @@ export function actionSummary(view) {
       durationMin: view.block.durationMin,
       startDisplay: view.block.startDisplay,
       endDisplay: view.block.endDisplay,
+      startRelative: view.block.startRelative,
+      endRelative: view.block.endRelative,
+      rangeRelative: view.block.rangeRelative,
       readback: { status: view.block.readback.status },
     },
     check:
@@ -55,6 +58,7 @@ export function actionSummary(view) {
         source: view.check.source,
         checkedAt: view.check.checkedAt,
         checkedAtDisplay: view.check.checkedAtDisplay,
+        checkedAtRelative: view.check.checkedAtRelative,
         latestFeasibleStart: view.check.latestFeasibleStart,
       },
     warnings: view.warnings.map((w) => w.code),
@@ -86,6 +90,7 @@ export function createHomeService({ db, calendar, googleAuth, clock = Date.now }
     const nowIso = toIso(nowMs);
     const { tz } = getSettings(db);
     const fmt = (iso) => (tz && iso ? formatForDisplay(iso, tz) : null);
+    const rel = (iso) => (tz && iso ? formatRelative(iso, tz, nowMs) : null);
 
     // Next up.
     const upNext = db
@@ -147,6 +152,7 @@ export function createHomeService({ db, calendar, googleAuth, clock = Date.now }
           saveId: s.id,
           importedAt: s.imported_at,
           importedAtDisplay: fmt(s.imported_at),
+          importedAtRelative: rel(s.imported_at),
           note: s.note ? String(s.note).slice(0, 200) : "",
           screenshotUrl: `/api/saves/${s.id}/screenshot`,
           isDemo: Boolean(s.is_demo),

@@ -1,7 +1,7 @@
 // Upload a screenshot + note, extract, and read or edit the resulting action.
 import crypto from "node:crypto";
 import { createExtractionJobs } from "../services/extractionJobs.js";
-import { formatForDisplay } from "../tz.js";
+import { formatForDisplay, formatRelative } from "../tz.js";
 import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
@@ -127,7 +127,7 @@ export function registerSaveRoutes(app, { db, config, provider, clock, locks }) 
   app.get('/api/saves/:id',(req,res)=>{
     const save=getSave(db,Number(req.params.id));if(!save)return res.status(404).json({error:'not_found'});
     const action=getActionForSave(db,save.id),job=jobs.latest(save.id),tz=getSettings(db).tz;
-    res.json({saveId:save.id,note:save.note??'',importedAt:save.imported_at,importedAtDisplay:tz?formatForDisplay(save.imported_at,tz):null,isDemo:Boolean(save.is_demo),screenshotUrl:`/api/saves/${save.id}/screenshot`,extractionStatus:job?.state??(action?'done':'failed'),job,action:action?getActionView(db,action.id,{nowMs:clock()}):null});
+    res.json({saveId:save.id,note:save.note??'',importedAt:save.imported_at,importedAtDisplay:tz?formatForDisplay(save.imported_at,tz):null,importedAtRelative:tz?formatRelative(save.imported_at,tz,clock()):null,isDemo:Boolean(save.is_demo),screenshotUrl:`/api/saves/${save.id}/screenshot`,extractionStatus:job?.state??(action?'done':'failed'),job,action:action?getActionView(db,action.id,{nowMs:clock()}):null});
   });
   app.post("/api/saves", upload.single("image"), async (req, res) => {
     const note = typeof req.body?.note === "string" ? req.body.note.trim() : "";

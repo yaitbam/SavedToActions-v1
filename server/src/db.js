@@ -3,9 +3,9 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 export const PRESET_GOALS = [
-  "Make money",
-  "Level up as a dev",
-  "Join events and opportunities",
+  "Earn more",
+  "Learn a skill",
+  "Don't miss deadlines",
 ];
 
 export const DEFAULT_SETTINGS = Object.freeze({

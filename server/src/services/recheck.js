@@ -64,7 +64,7 @@ export function createRecheckService({ db, calendar, clock = Date.now, canRun = 
 
     const store = (payload) => {
       const id = insertCheck(db, { actionId, blockId: block.id, checkedAt: toIso(nowMs), source, payload });
-      return checkView(getCheck(db, id));
+      return checkView(getCheck(db, id), { nowMs });
     };
 
     let events = [];
@@ -122,7 +122,7 @@ export function createRecheckService({ db, calendar, clock = Date.now, canRun = 
   /** Past checks of an action, newest first. */
   function history({ actionId, limit = 20 }) {
     if (!getRow(actionId)) return fail(404, "not_found");
-    return { ok: true, checks: listChecks(db, actionId, Math.min(Number(limit) || 20, 100)).map(checkView) };
+    return { ok: true, checks: listChecks(db, actionId, Math.min(Number(limit) || 20, 100)).map((row) => checkView(row, { nowMs: clock() })) };
   }
 
   return { recheckAction, recheckAll, history };

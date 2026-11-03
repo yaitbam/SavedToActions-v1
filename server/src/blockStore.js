@@ -2,7 +2,7 @@
 // row superseded_by the new one, skipping with removal marks it cancelled. Active means neither.
 import { supersededKeys } from "./scheduler/blocks.js";
 import { MIN, toMs } from "./scheduler/time.js";
-import { formatForDisplay } from "./tz.js";
+import { formatForDisplay, formatRelative, withRelativeSlot } from "./tz.js";
 
 export const getBlock = (db, id) => db.prepare("SELECT * FROM blocks WHERE id = ?").get(id);
 export const getBlockByKey = (db, key) => db.prepare("SELECT * FROM blocks WHERE idempotency_key = ?").get(key);
@@ -58,14 +58,19 @@ export function saveReadback(db, id, { status, drift, error }, nowIso) {
 }
 
 /** A slot for the API: instants plus server formatted times. The browser must never convert them. */
-export const decorateSlot = (slot, tz, durationMin) => ({
-  startUtc: slot.startUtc,
-  endUtc: slot.endUtc,
-  tz,
-  durationMin,
-  startDisplay: formatForDisplay(slot.startUtc, tz),
-  endDisplay: formatForDisplay(slot.endUtc, tz),
-});
+export const decorateSlot = (slot, tz, durationMin, nowMs) =>
+  withRelativeSlot(
+    {
+      startUtc: slot.startUtc,
+      endUtc: slot.endUtc,
+      tz,
+      durationMin,
+      startDisplay: formatForDisplay(slot.startUtc, tz),
+      endDisplay: formatForDisplay(slot.endUtc, tz),
+    },
+    tz,
+    nowMs,
+  );
 
 /** One Recheck result (button or watcher). `payload` is the already formatted result stored as JSON. */
 export function insertCheck(db, { actionId, blockId, checkedAt, source, payload }) {
@@ -83,21 +88,30 @@ export const listChecks = (db, actionId, limit = 20) =>
 export const getLatestCheck = (db, actionId, blockId) =>
   db.prepare("SELECT * FROM checks WHERE action_id = ? AND block_id = ? ORDER BY id DESC LIMIT 1").get(actionId, blockId);
 
-export function checkView(row) {
+export function checkView(row, { nowMs = Date.now() } = {}) {
   if (!row) return null;
   const payload = JSON.parse(row.result_json);
+  const tz = payload.tz;
+  // The stored payload keeps absolute strings only. Relative ones go stale, so they are added on every read.
+  const slot = (s) => withRelativeSlot(s, tz, nowMs);
   return {
     id: row.id,
     blockId: row.block_id,
     checkedAt: row.checked_at,
-    checkedAtDisplay: payload.tz ? formatForDisplay(row.checked_at, payload.tz) : null,
+    checkedAtDisplay: tz ? formatForDisplay(row.checked_at, tz) : null,
+    checkedAtRelative: tz ? formatRelative(row.checked_at, tz, nowMs) : null,
     source: row.source,
     ...payload,
+    conflicts: payload.conflicts?.map(slot),
+    alternative: slot(payload.alternative),
+    hints: payload.hints && { ...payload.hints, fitsIfWorkingHoursExtended: slot(payload.hints.fitsIfWorkingHoursExtended) },
+    latestFeasibleStart: slot(payload.latestFeasibleStart),
+    deadline: payload.deadline && tz ? { ...payload.deadline, relative: formatRelative(payload.deadline.utc, tz, nowMs) } : payload.deadline,
   };
 }
 
 /** API shape. Times are formatted here, the browser must never convert them. */
-export function blockView(row) {
+export function blockView(row, { nowMs = Date.now() } = {}) {
   if (!row) return null;
   const rb = row.readback_json ? JSON.parse(row.readback_json) : { drift: [], error: null };
   return {
@@ -111,6 +125,9 @@ export function blockView(row) {
     durationMin: (toMs(row.end_utc) - toMs(row.start_utc)) / MIN,
     startDisplay: formatForDisplay(row.start_utc, row.tz),
     endDisplay: formatForDisplay(row.end_utc, row.tz),
+    startRelative: formatRelative(row.start_utc, row.tz, nowMs),
+    endRelative: formatRelative(row.end_utc, row.tz, nowMs),
+    rangeRelative: withRelativeSlot({ startUtc: row.start_utc, endUtc: row.end_utc }, row.tz, nowMs).rangeRelative,
     supersededBy: row.superseded_by,
     cancelledAt: row.cancelled_at,
     eventDeletedAt: row.event_deleted_at,

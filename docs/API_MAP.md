@@ -5,7 +5,7 @@ Longer contract with every route: server/docs/API.md. This file is the compact c
 Base http://localhost:3000. Vite proxies /api and /auth. JSON in and out, no cookies, no auth header.
 Errors: `{ error: "code", detail?: "text", field?: "name" }` with a 4xx or 5xx status.
 Writes from a browser need the Origin header equal to the frontend origin or be absent.
-All times: `*Utc` are ISO instants, `*Display` are server strings like `Thu 5 Nov 2026, 18:00 (+00:00)`. The browser never converts.
+All times: `*Utc` are ISO instants, `*Display` are server strings like `Thu 5 Nov 2026, 18:00 (+00:00)`. `*Relative` are short strings relative to now: `Today 18:30`, `Tomorrow 09:00`, `Yesterday 22:00`, `Thu 14:00` (2 to 6 days ahead), else `Thu 12 Nov 14:00` (year added when it differs). Slots, blocks and ranges also carry `rangeRelative` like `Thu 14:00 to 15:00`. Relative strings are computed per response, never stored. The browser never converts.
 IDs are positive integers. Other routes exist (export, delete data, trace stream, undo, restore, readback, timeline, capabilities). Not used by the core flow.
 
 ## Auth and settings
@@ -22,7 +22,7 @@ IDs are positive integers. Other routes exist (export, delete data, trace stream
 | PUT /api/goals/:id | `{ name }` | `{ id, name }`. 400 `invalid_goal_or_name` |
 
 Goal `metrics`: `{ importedSaves, demoSaves, planned, markedDone, savesWithDoneAction, deadlinePassedWithoutCompletion, actionRate (0 to 1 or null), timeScheduledMin }`. Definitions are in `metric_definitions` of GET /api/home and `definitions` of GET /api/insights.
-Goal presets today: "Make money", "Level up as a dev", "Join events and opportunities". Renaming is Phase 1 (not done).
+Goal presets for a fresh database: "Earn more", "Learn a skill", "Don't miss deadlines" (ids 1 to 3). An existing database keeps the names it has. Extraction receives the current goal list (id and name) and `goalId` is one of those ids or null.
 
 ## Home and week
 
@@ -54,18 +54,19 @@ GET /api/actions/:id returns Action:
 ```
 { id, saveId, status "open|planned|done|skipped", goalId|null, kind "try|opportunity|other", label "claim|validate|read|someday"|null,
   title, note, transcription, screenshotUrl, isDemo,
-  block: Block|null, check: Check|null, doneAt, doneAtDisplay,
-  deadline: { wall, tz, tzSource, tzSourceLabel, utc, display, label, quote, yearAssumed } | null,
+  block: Block|null, check: Check|null, doneAt, doneAtDisplay, doneAtRelative,
+  deadline: { wall, tz, tzSource, tzSourceLabel, utc, display, relative, label, quote, yearAssumed } | null,
   eventDates[{ text, start, end, matches, badge, badgeLabel }],
   deliverables[string],
   verbatimItems[{ type "prompt|link|keyword", text, matches, badge, badgeLabel }],
   evidence{ quote, matches{note,transcription}, badge, badgeLabel },
   effort{ suggestedMin|null, confirmedMin|null, confirmed bool, label "Model estimate"|"Your estimate"|null, scheduledMin },
-  edited[fieldNames], warnings[{ code, field?, proposed?, ... }], model (model name string), createdAt }
+  edited[fieldNames], warnings[{ code, field?, proposed?, ... }], model (model name string), extractionLatencyMs (int|null),
+  hasTimezoneCorrection (bool), createdAt }
 ```
-Block: `{ id, actionId, googleEventId, idempotencyKey, startUtc, endUtc, tz, durationMin, startDisplay, endDisplay, supersededBy, cancelledAt, eventDeletedAt, readback{ status "ok|drift|failed|null", at, atDisplay, drift[{field,expected,actual}], driftDisplay[{field,expectedDisplay,actualDisplay}], error } }`.
+Block: `{ id, actionId, googleEventId, idempotencyKey, startUtc, endUtc, tz, durationMin, startDisplay, endDisplay, startRelative, endRelative, rangeRelative, supersededBy, cancelledAt, eventDeletedAt, readback{ status "ok|drift|failed|null", at, atDisplay, drift[{field,expected,actual}], driftDisplay[{field,expectedDisplay,actualDisplay}], error } }`.
 Check: `{ id, blockId, checkedAt, checkedAtDisplay, source "manual|watcher", state "green|amber|red|needs_input|error", reason, tz, explanation[string], conflicts[{...,startDisplay,endDisplay}], problems[string], alternative Slot|null, hints|null, latestFeasibleStart Slot+label|null, ownEventFound, deadline{utc,display}|null }`.
-Slot: `{ startUtc, endUtc, tz, durationMin, startDisplay, endDisplay }`.
+Slot: `{ startUtc, endUtc, tz, durationMin, startDisplay, endDisplay, startRelative, endRelative, rangeRelative }`. Check also has `checkedAtRelative`, `deadline.relative`, and the same relative fields on `conflicts`, `alternative`, `latestFeasibleStart` and `hints.fitsIfWorkingHoursExtended`.
 UI mapping: green is Fits, amber is Conflict (`alternative` holds the move target), red is Doesn't fit.
 
 | Method, path | Body | Response |
@@ -92,7 +93,7 @@ Failures return `{ error, detail?, ... }`. Common: 404 `not_found`, 409 `action_
 | POST /api/actions/:id/done | `{}` | `{ action }`. Self reported |
 | POST /api/actions/:id/skip | `{ removeFromCalendar?: bool, approved?: bool }` | `{ action, calendar{ hadBlock, removed, removeError } }`. `removeFromCalendar: true` needs `approved: true` else 400 `approval_required` |
 | GET /api/actions/:id/traces | none | `{ traces[{ id, actionId, createdAt, finishedAt, instruction, outcome, model, turns }] }` newest first |
-| GET /api/traces/:id | none | `{ trace{ ...summary, result, steps[{ n, at, ms, type, ... }] } }`. Step types seen: `extraction`, `timezone_correction`, `start`, `model_request`, `validation`, `fallback`, `end`, `error`. Tool call step type names: unclear. Labels are raw types, not readable text |
+| GET /api/traces/:id | none | `{ trace{ ...summary, result, steps[{ n, at, ms, type, ... }] } }`. Step types seen: `extraction`, `timezone_correction`, `start`, `model_request`, `validation`, `fallback`, `end`, `error`. Also `model_response`, `tool_call` (`name` is `get_availability` or `find_slot`) and `final`. Every step has `label`, a plain sentence ("Code checked the slot: passed"), and keeps its raw `type` |
 
 ## Insights
 
@@ -104,13 +105,12 @@ Failures return `{ error, detail?, ... }`. Common: 404 `not_found`, 409 `action_
 
 Upcoming deadlines for Progress: use `upcoming` from GET /api/home.
 
-## Gaps against REBUILD_PLAN (Phase 1 items, not fixed here)
+## Gaps against REBUILD_PLAN
 
-1. Extraction goal assignment is not constrained to the user goal ids by this read. Whether `goalId` is filled on extract: unclear. Phase 1 step 1.
-2. Display strings are absolute only (`Thu 5 Nov 2026, 18:00 (+00:00)`). No relative "Today 18:30". Phase 1 step 3.
-3. No `has_timezone_correction` field. The correction exists as a warning with code `deadline_offset_ignored` (`proposed.corrected`) and as a trace step `timezone_correction`. The web can derive the chip from warnings until then.
-4. Model name is `action.model`. Extraction latency is only in the POST /api/saves response (`extraction.ms`) and in the first trace step (`type extraction`, `ms`). Not on GET action.
-5. Trace step labels are raw types. Phase 1 step 4.
-6. No endpoint returns only our blocks for the week strip. Filter GET /api/week chips on kind "prep", or build from `next_up` and `upcoming` blocks.
-7. There is no server side "recheck all". The web sends the planned ids to POST /api/actions/recheck.
-8. `fixtures/demo/` exists with 14 PNGs (01 to 14), `manifest.json`, `README.md` and `flyer.png`. Phase 1 step 5 can use it. `docs/demo-posts/` is a separate older set of 16 files.
+Phase 1 steps 1 to 4 are done (Nov 3). Still open:
+1. Phase 1 steps 5 and 6: seed and demo reset scripts.
+2. `hasTimezoneCorrection` is true when the model wrote an offset that code corrected. The chip text uses the warning `deadline_offset_ignored` (`proposed.modelOffset`, `proposed.computedOffset`, `proposed.tz`). It clears when the user edits the deadline.
+3. Model name is `action.model` (the id the provider returned). The display name "Muse Spark Open" is not sent. Extraction latency is `action.extractionLatencyMs`, read from the extraction trace, null if unknown.
+4. No endpoint returns only our blocks for the week strip. Filter GET /api/week chips on kind "prep", or build from `next_up` and `upcoming` blocks. Week chips have `startDisplay` only, no relative strings.
+5. There is no server side "recheck all". The web sends the planned ids to POST /api/actions/recheck.
+6. `fixtures/demo/` exists with 14 PNGs (01 to 14), `manifest.json`, `README.md` and `flyer.png`. `docs/demo-posts/` is a separate older set of 16 files.

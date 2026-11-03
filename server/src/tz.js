@@ -57,6 +57,44 @@ export function formatForDisplay(instant, tz) {
 }
 
 /**
+ * Short display relative to now, in the zone's own calendar days: "Today 18:30", "Tomorrow 09:00",
+ * "Yesterday 22:00", "Thu 14:00" (2 to 6 days ahead), else "Thu 12 Nov 14:00" (year added when it differs).
+ * Seven days ahead is never a bare weekday, it would read as today. Days are compared as calendar dates in
+ * `tz`, so DST changes and midnight cannot shift them. It goes stale, compute it per response, never store it.
+ */
+export function formatRelative(instant, tz, nowMs) {
+  if (!isValidTimezone(tz)) throw new Error(`invalid timezone: ${tz}`);
+  const at = moment.utc(instant).tz(tz);
+  const now = moment.utc(nowMs).tz(tz);
+  const days = moment.utc(at.format("YYYY-MM-DD")).diff(moment.utc(now.format("YYYY-MM-DD")), "days");
+  const time = at.format("HH:mm");
+  if (days === 0) return `Today ${time}`;
+  if (days === 1) return `Tomorrow ${time}`;
+  if (days === -1) return `Yesterday ${time}`;
+  if (days >= 2 && days <= 6) return `${at.format("ddd")} ${time}`;
+  return `${at.format(at.year() === now.year() ? "ddd D MMM" : "ddd D MMM YYYY")} ${time}`;
+}
+
+/** "Thu 14:00 to 15:00". The end repeats its day only when it falls on another local day. */
+export function formatRelativeRange(startInstant, endInstant, tz, nowMs) {
+  const start = formatRelative(startInstant, tz, nowMs);
+  const sameDay = localDate(startInstant, tz) === localDate(endInstant, tz);
+  const end = sameDay ? moment.utc(endInstant).tz(tz).format("HH:mm") : formatRelative(endInstant, tz, nowMs);
+  return `${start} to ${end}`;
+}
+
+/** Adds the relative strings next to a slot-like object ({ startUtc, endUtc }). Unchanged without a clock. */
+export const withRelativeSlot = (slot, tz, nowMs) =>
+  slot && tz && Number.isFinite(nowMs)
+    ? {
+        ...slot,
+        startRelative: formatRelative(slot.startUtc, tz, nowMs),
+        endRelative: formatRelative(slot.endUtc, tz, nowMs),
+        rangeRelative: formatRelativeRange(slot.startUtc, slot.endUtc, tz, nowMs),
+      }
+    : slot;
+
+/**
  * Startup self test. Throws if moment-timezone does not give the expected offset.
  * `check` is injectable so the failure path can be unit tested.
  */

@@ -39,7 +39,7 @@ Rules:
 3. Every quote ("evidence_quote", "deadline.quote", verbatim item text) must be copied character for character from the image text or the note. Do not translate, shorten or fix it.
 4. The note says what the user wants to do. Use it to decide what the action is. "title" is a short action title. "evidence_quote" is the exact phrase that best shows what the user should do. If the note states what the user wants, quote the note, not the image.
 5. "kind": "try" is something to try or use. "opportunity" is something to join, apply to or claim. Otherwise "other". "label" is an optional hint only.
-6. "goal_id": pick the goal that fits best from this list, or null if none fits.
+6. "goal_id" is the integer id of the one goal that fits best, copied exactly from this list. Use null if none clearly fits. Never invent an id and never write a goal name.
 ${goalList}
 7. "deadline" is the last moment the user can still act: registration closes, submission due, offer ends. The date of an event is not a deadline unless acting requires attending then. The date of a past edition is not a deadline for the next edition. If nothing like that is stated, "deadline" is null.
 8. "deadline.wall" is the local date and time as written, format YYYY-MM-DDTHH:mm in 24 hour time. Do NOT add a UTC offset or Z. Do NOT convert between timezones. If only a date is given with no time, set "wall" to null and put the date in "date" as YYYY-MM-DD.

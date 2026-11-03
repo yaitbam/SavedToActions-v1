@@ -100,7 +100,8 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
     return { ok: true };
   }
 
-  const decorate = decorateSlot;
+  // Slots carry relative strings ("Thu 14:00") computed from the injected clock.
+  const decorate = (slot, tz, durationMin) => decorateSlot(slot, tz, durationMin, clock());
 
   const blockShape = (row) => ({
     startMs: Date.parse(row.start_utc),
@@ -366,7 +367,7 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
         const active = getActiveBlock(db, actionId);
         if (row.status === "planned" || active) {
           if (active && active.start_utc === parsed.startUtc && active.end_utc === parsed.endUtc) {
-            return { ok: true, replayed: true, ...summary(row), block: blockView(active) };
+            return { ok: true, replayed: true, ...summary(row), block: blockView(active, { nowMs: clock() }) };
           }
           return fail(409, "already_planned", { detail: "This action already has a block. Move it instead." });
         }
@@ -395,7 +396,7 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
           db.prepare("UPDATE actions SET status = 'planned', updated_at = ? WHERE id = ?").run(nowIso, actionId);
           return id;
         })();
-        return { ok: true, replayed: false, ...summary(row), block: blockView(getBlock(db, blockId)) };
+        return { ok: true, replayed: false, ...summary(row), block: blockView(getBlock(db, blockId), { nowMs: clock() }) };
       });
     },
 
@@ -460,7 +461,7 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
         return {
           ok: true,
           ...summary(row),
-          block: blockView(getBlock(db, newId)),
+          block: blockView(getBlock(db, newId), { nowMs: clock() }),
           previous: { id: old.id, eventDeleted, deleteError },
         };
       });
@@ -489,7 +490,7 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
         if (!block) return fail(409, "no_active_block");
         const result = await readBack(block.google_event_id, block);
         saveReadback(db, block.id, result, toIso(clock()));
-        return { ok: true, block: blockView(getBlock(db, block.id)) };
+        return { ok: true, block: blockView(getBlock(db, block.id), { nowMs: clock() }) };
       });
     },
 

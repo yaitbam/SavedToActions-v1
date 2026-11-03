@@ -93,6 +93,47 @@ export function buildUserMessage(facts, instruction) {
   ].join("\n");
 }
 
+/** Plain words for a trace step. The raw type stays on the step, this is what the Review screen shows. */
+const TOOL_LABELS = { get_availability: "Read your calendar availability", find_slot: "Searched for a free slot" };
+const OUTCOME_LABELS = {
+  proposed: "Proposed a slot",
+  rejected: "Proposal rejected, using the earliest slot",
+  no_slot: "No free slot found",
+  max_turns: "Stopped at the turn limit",
+  failed: "Planning failed",
+  extracted: "Screenshot read",
+};
+export function stepLabel(step) {
+  switch (step.type) {
+    case "extraction":
+      return "Muse Spark Open read the screenshot";
+    case "timezone_correction":
+      return step.modelOffset && step.computedOffset
+        ? `Model wrote ${step.modelOffset}. Code corrected it to ${step.computedOffset}`
+        : "Code corrected the deadline offset";
+    case "start":
+      return "Planning started";
+    case "model_request":
+      return "Asked the model for a plan";
+    case "model_response":
+      return "Model answered";
+    case "tool_call":
+      return TOOL_LABELS[step.name] ?? "Model used a tool";
+    case "final":
+      return "Model proposed a slot";
+    case "validation":
+      return step.ok ? "Code checked the slot: passed" : "Code checked the slot: rejected";
+    case "fallback":
+      return step.slot ? "Fell back to the earliest free slot" : "No fallback slot found";
+    case "end":
+      return OUTCOME_LABELS[step.outcome] ?? "Finished";
+    case "error":
+      return "Something went wrong";
+    default:
+      return String(step.type ?? "Step").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+  }
+}
+
 export function createAgent({ db, provider, planning, clock = Date.now, logger = console }) {
   function insertTrace({ actionId, createdAt, instruction, model }) {
     const info = db
@@ -121,7 +162,7 @@ export function createAgent({ db, provider, planning, clock = Date.now, logger =
       model: row.model,
       turns: steps.filter((s) => s.type === "model_request").length,
     };
-    return full ? { ...base, result: row.result_json ? JSON.parse(row.result_json) : null, steps } : base;
+    return full ? { ...base, result: row.result_json ? JSON.parse(row.result_json) : null, steps: steps.map((st) => ({ ...st, label: stepLabel(st) })) } : base;
   };
 
   async function run({ actionId, instruction = "" }) {

@@ -35,9 +35,9 @@ const small = await prepareForModel(original, mime);
 console.log(`image: ${small.originalWidth}x${small.originalHeight} ${(original.length / 1024).toFixed(0)} KB -> sent ${small.width}x${small.height} ${(small.buffer.length / 1024).toFixed(0)} KB`);
 
 const goals = [
-  { id: 1, name: "Make money" },
-  { id: 2, name: "Level up as a dev" },
-  { id: 3, name: "Join events and opportunities" },
+  { id: 1, name: "Earn more" },
+  { id: 2, name: "Learn a skill" },
+  { id: 3, name: "Don't miss deadlines" },
 ];
 const note = "Saw this on Instagram. I want to join the next edition. Check if registration is still open .";
 const today = new Date().toISOString().slice(0, 10);

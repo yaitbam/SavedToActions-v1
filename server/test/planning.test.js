@@ -120,6 +120,9 @@ test("propose: first slot comes from FreeBusy, earliest valid, formatted by the 
       durationMin: 60,
       startDisplay: "Mon 2 Nov 2026, 13:30 (+00:00)",
       endDisplay: "Mon 2 Nov 2026, 14:30 (+00:00)",
+      startRelative: "Today 13:30",
+      endRelative: "Today 14:30",
+      rangeRelative: "Today 13:30 to 14:30",
     });
     assert.ok(cal.calls.includes("freeBusy"));
     assert.deepEqual(writes(cal), []);

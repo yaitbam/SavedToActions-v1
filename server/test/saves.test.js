@@ -102,6 +102,15 @@ test('extraction trace retains real telemetry and records only actual timezone c
       assert.deepEqual(steps[0].usage,extraction.usage);
       assert.deepEqual(steps[0].image,extraction.image);
       assert.equal(steps.some(s=>s.type==='timezone_correction'),corrected);
+      assert.equal(action.hasTimezoneCorrection,corrected);
+      assert.equal(action.extractionLatencyMs,extraction.ms);
+      const read=await(await fetch(`${base}/api/actions/${action.id}`)).json();
+      assert.equal(read.hasTimezoneCorrection,corrected);
+      assert.equal(read.extractionLatencyMs,extraction.ms);
+      assert.equal(read.model,'fake-model');
+      const full=(await(await fetch(`${base}/api/traces/${(await(await fetch(`${base}/api/actions/${action.id}/traces`)).json()).traces[0].id}`)).json()).trace;
+      assert.equal(full.steps[0].label,'Muse Spark Open read the screenshot');
+      if(corrected)assert.equal(full.steps[1].label,'Model wrote +01:00. Code corrected it to +00:00');
       if(corrected){assert.equal(steps[1].modelOffset,'+01:00');assert.equal(steps[1].computedOffset,'+00:00');assert.ok(Number.isInteger(steps[1].ms))}
       const list=await(await fetch(`${base}/api/actions/${action.id}/traces`)).json();
       assert.equal(list.traces[0].outcome,'extracted');

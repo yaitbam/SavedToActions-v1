@@ -1,7 +1,7 @@
 import moment from 'moment-timezone';
 import { getActionView } from '../actions.js';
 import { getSettings } from '../db.js';
-import { formatForDisplay } from '../tz.js';
+import { formatForDisplay, formatRelative } from '../tz.js';
 
 function invalid(code,detail){const error=new Error(detail);error.status=400;error.publicCode=code;throw error}
 function integer(value,fallback,min){if(value===undefined||value==='')return fallback;const number=Number(value);if(!Number.isSafeInteger(number)||number<min)invalid('invalid_pagination','limit must be a positive integer and offset a nonnegative integer.');return number}
@@ -31,7 +31,7 @@ export function registerCollectionRoutes(app,{db,clock=Date.now}){
   let items=db.prepare('SELECT * FROM saves ORDER BY imported_at DESC,id DESC').all().map(s=>{
    const row=db.prepare('SELECT id FROM actions WHERE save_id=? ORDER BY id LIMIT 1').get(s.id),action=row?getActionView(db,row.id,{nowMs:clock()}):null;
    const job=db.prepare('SELECT id,state FROM extraction_jobs WHERE save_id=? ORDER BY id DESC LIMIT 1').get(s.id);
-   return {saveId:s.id,note:s.note??'',importedAt:s.imported_at,importedAtDisplay:tz?formatForDisplay(s.imported_at,tz):null,screenshotUrl:`/api/saves/${s.id}/screenshot`,isDemo:Boolean(s.is_demo),extraction:job?.state??(action?'done':'failed'),jobId:job?.id??null,action};
+   return {saveId:s.id,note:s.note??'',importedAt:s.imported_at,importedAtDisplay:tz?formatForDisplay(s.imported_at,tz):null,importedAtRelative:tz?formatRelative(s.imported_at,tz,clock()):null,screenshotUrl:`/api/saves/${s.id}/screenshot`,isDemo:Boolean(s.is_demo),extraction:job?.state??(action?'done':'failed'),jobId:job?.id??null,action};
   });
   if(req.query.status==='review')items=items.filter(s=>s.action?.status==='open'&&!s.action.effort.confirmed);
   else if(req.query.status==='input')items=items.filter(s=>s.extraction==='failed');

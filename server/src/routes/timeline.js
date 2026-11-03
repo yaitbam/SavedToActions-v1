@@ -51,7 +51,7 @@ export function registerTimelineRoute(app,{db,calendar,clock}){
    return res.json({tz:settings.tz,days:timelineDays({action,events,settings,now,privateEvents:true,supersededKeys:allSupersededKeys(db)}),maxDays:21,
     workingWindow:{start:settings.workStart,end:settings.workEnd},now:{utc:new Date(now).toISOString(),display:formatForDisplay(now,settings.tz)},deadline:action.deadline,
     proposed:action.check?.alternative??null,proposalSource:action.check?.alternative?'latest_recheck':null,
-    previousBlocks:listBlocks(db,action.id).filter(b=>b.superseded_by!==null).map(blockView)});
+    previousBlocks:listBlocks(db,action.id).filter(b=>b.superseded_by!==null).map((b)=>blockView(b,{nowMs:clock()}))});
   }catch(error){if(error instanceof CalendarError)return res.status(calendarErrorStatus(error.code)).json({error:error.code,detail:error.message});throw error}
  });
 }
