@@ -9,7 +9,7 @@ export const SEEDED_SNAPSHOT = path.join(BACKUP_DIR, "seeded.db");
 export const MANIFEST = path.join(ROOT, "fixtures", "demo", "manifest.json");
 
 // Same ids as the old presets, new names (rebuild plan section 2). Matched by position, ids are kept.
-export const GOAL_NAMES = ["Earn more", "Learn a skill", "Don't miss deadlines"];
+export const GOAL_NAMES = ["Earn more", "Learn a skill", "Events and opportunities"];
 
 const stamp = () => new Date().toISOString().replace(/[:.]/g, "-");
 

@@ -5,7 +5,7 @@ import Database from "better-sqlite3";
 export const PRESET_GOALS = [
   "Earn more",
   "Learn a skill",
-  "Don't miss deadlines",
+  "Events and opportunities",
 ];
 
 export const DEFAULT_SETTINGS = Object.freeze({

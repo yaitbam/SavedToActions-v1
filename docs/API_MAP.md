@@ -22,7 +22,7 @@ IDs are positive integers. Other routes exist (export, delete data, trace stream
 | PUT /api/goals/:id | `{ name }` | `{ id, name }`. 400 `invalid_goal_or_name` |
 
 Goal `metrics`: `{ importedSaves, demoSaves, planned, markedDone, savesWithDoneAction, deadlinePassedWithoutCompletion, actionRate (0 to 1 or null), timeScheduledMin }`. Definitions are in `metric_definitions` of GET /api/home and `definitions` of GET /api/insights.
-Goal presets for a fresh database: "Earn more", "Learn a skill", "Don't miss deadlines" (ids 1 to 3). An existing database keeps the names it has. Extraction receives the current goal list (id and name) and `goalId` is one of those ids or null.
+Goal presets for a fresh database: "Earn more", "Learn a skill", "Events and opportunities" (ids 1 to 3). An existing database keeps the names it has. Extraction receives the current goal list (id and name) and `goalId` is one of those ids or null.
 
 ## Home and week
 

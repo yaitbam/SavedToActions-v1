@@ -37,7 +37,7 @@ console.log(`image: ${small.originalWidth}x${small.originalHeight} ${(original.l
 const goals = [
   { id: 1, name: "Earn more" },
   { id: 2, name: "Learn a skill" },
-  { id: 3, name: "Don't miss deadlines" },
+  { id: 3, name: "Events and opportunities" },
 ];
 const note = "Saw this on Instagram. I want to join the next edition. Check if registration is still open .";
 const today = new Date().toISOString().slice(0, 10);

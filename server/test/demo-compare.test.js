@@ -5,7 +5,7 @@ import { compareToManifest, parseExpectedDeadline } from "../../scripts/lib/demo
 const goals = [
   { id: 1, name: "Earn more" },
   { id: 2, name: "Learn a skill" },
-  { id: 3, name: "Don't miss deadlines" },
+  { id: 3, name: "Events and opportunities" },
 ];
 const deadline = (wall, tz = "UTC") => ({ wall, tz, utc: `${wall}:00.000Z` });
 
@@ -18,7 +18,7 @@ test("parseExpectedDeadline: date, time and UTC mark, null stays null", () => {
 });
 
 test("compare: matching goal and deadline is ok", () => {
-  const entry = { file: "01.png", expected_goal: "Don't miss deadlines", deadline_in_image: "2026-11-20 23:59 GMT" };
+  const entry = { file: "01.png", expected_goal: "Events and opportunities", deadline_in_image: "2026-11-20 23:59 GMT" };
   const r = compareToManifest(entry, { goalId: 3, deadline: deadline("2026-11-20T23:59"), warnings: [] }, goals);
   assert.equal(r.ok, true);
   assert.equal(r.deadline.got, "2026-11-20 23:59 UTC");

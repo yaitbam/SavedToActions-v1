@@ -5,7 +5,7 @@ import { badgeFor, badgeLabel, normalizeExtraction, textMatches } from "../src/e
 const goals = [
   { id: 1, name: "Earn more" },
   { id: 2, name: "Learn a skill" },
-  { id: 3, name: "Don't miss deadlines" },
+  { id: 3, name: "Events and opportunities" },
 ];
 const NOW = Date.parse("2026-11-02T12:00:00Z");
 const note = "Saw this on Instagram. I want to join the next edition. Check if registration is still open .";

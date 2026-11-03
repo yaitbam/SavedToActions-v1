@@ -1,6 +1,7 @@
 // Puts the local database back to the state seed-demo.mjs left it in (server/data/backups/seeded.db).
 //
-// Run: node scripts/demo-reset.mjs       (stop the server first, it holds the database)
+// Run: node scripts/demo-reset.mjs [snapshot.db]   (stop the server first, it holds the database)
+// With no argument it restores the seeded snapshot. Pass a backup file to restore that one instead.
 //
 // What it does:
 // - Backs up the current database first to server/data/backups/before-reset-<time>.db.
@@ -14,19 +15,21 @@ import { config } from "../server/src/config.js";
 import { openDb, schemaVersion } from "../server/src/db.js";
 import { ROOT, SEEDED_SNAPSHOT, backupDb, serverIsRunning } from "./lib/demo-db.mjs";
 
+const SNAPSHOT = process.argv[2] ? path.resolve(process.argv[2]) : SEEDED_SNAPSHOT;
+
 const fail = (msg) => {
   console.error(msg);
   process.exit(1);
 };
 
-if (!fs.existsSync(SEEDED_SNAPSHOT)) fail("No seeded snapshot. Run node scripts/seed-demo.mjs first. Nothing was changed.");
+if (!fs.existsSync(SNAPSHOT)) fail(`No snapshot at ${SNAPSHOT}. Run node scripts/seed-demo.mjs first. Nothing was changed.`);
 if (await serverIsRunning(config.port)) fail(`A server is running on port ${config.port}. Stop it first. Nothing was changed.`);
 
 // Children first when deleting, parents first when inserting.
 const TABLES = ["action_transitions", "checks", "agent_traces", "blocks", "extraction_jobs", "actions", "saves", "goals"];
 
 const db = openDb(config.dbPath);
-db.prepare("ATTACH DATABASE ? AS snap").run(SEEDED_SNAPSHOT);
+db.prepare("ATTACH DATABASE ? AS snap").run(SNAPSHOT);
 if (db.pragma("snap.user_version", { simple: true }) !== schemaVersion(db)) fail("The snapshot was made by another schema version. Run seed-demo.mjs again. Nothing was changed.");
 
 console.log(`Backup: ${path.relative(ROOT, backupDb(db, "before-reset"))}`);

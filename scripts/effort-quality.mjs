@@ -71,7 +71,7 @@ const cases = [
 const goals = [
   { id: 1, name: "Earn more" },
   { id: 2, name: "Learn a skill" },
-  { id: 3, name: "Don't miss deadlines" },
+  { id: 3, name: "Events and opportunities" },
 ];
 const images = [];
 for (const c of cases) images.push(await c.image());

@@ -3,7 +3,7 @@
     "file": "01.png",
     "style": "feed post",
     "source": "buildweekend.hq",
-    "expected_goal": "Don't miss deadlines",
+    "expected_goal": "Events and opportunities",
     "deadline_in_image": "2026-11-20 23:59 GMT",
     "notes": ""
   },
@@ -43,7 +43,7 @@
     "file": "06.png",
     "style": "feed post",
     "source": "studiokora.events",
-    "expected_goal": "Don't miss deadlines",
+    "expected_goal": "Events and opportunities",
     "deadline_in_image": "2026-11-24 (RSVP)",
     "notes": ""
   },
@@ -91,7 +91,7 @@
     "file": "12.png",
     "style": "forum post",
     "source": "devconf.talks",
-    "expected_goal": "Don't miss deadlines",
+    "expected_goal": "Events and opportunities",
     "deadline_in_image": "2026-12-01 23:59 UTC",
     "notes": ""
   },

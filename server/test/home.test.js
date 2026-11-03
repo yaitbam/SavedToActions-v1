@@ -97,7 +97,7 @@ test("goal metrics on an empty database: zeros, a null action rate, and the old 
     assert.deepEqual(json.map(({ id, name }) => ({ id, name })), [
       { id: 1, name: "Earn more" },
       { id: 2, name: "Learn a skill" },
-      { id: 3, name: "Don't miss deadlines" },
+      { id: 3, name: "Events and opportunities" },
     ]);
     for (const g of json) {
       assert.deepEqual(g.metrics, {

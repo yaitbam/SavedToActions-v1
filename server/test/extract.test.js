@@ -40,10 +40,10 @@ test("prompt: lists the user's goals by id and limits goal_id to those ids or nu
   const preset = [
     { id: 1, name: "Earn more" },
     { id: 2, name: "Learn a skill" },
-    { id: 3, name: "Don't miss deadlines" },
+    { id: 3, name: "Events and opportunities" },
   ];
   const p = buildSystemPrompt({ goals: preset, today: "2026-11-02" });
-  assert.match(p, /1: Earn more\n2: Learn a skill\n3: Don't miss deadlines/);
+  assert.match(p, /1: Earn more\n2: Learn a skill\n3: Events and opportunities/);
   assert.match(p, /integer id of the one goal that fits best, copied exactly from this list/);
   assert.match(p, /Use null if none clearly fits/);
   assert.match(p, /never write a goal name/i);
