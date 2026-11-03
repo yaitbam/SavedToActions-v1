@@ -4,12 +4,13 @@ import { cx } from "./cx";
 export type ButtonVariant = "primary" | "secondary" | "text";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-[transform,box-shadow,background-color] duration-150 disabled:cursor-not-allowed disabled:opacity-50";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "h-12 px-6 bg-brand text-white hover:bg-brand/90",
-  secondary: "h-12 px-6 bg-surface text-ink border border-line hover:bg-brand-soft",
-  text: "h-10 px-3 text-brand hover:bg-brand-soft",
+  primary:
+    "h-12 px-6 border-[1.5px] border-ink bg-ink text-white shadow-hard active:translate-x-0.5 active:translate-y-0.5 active:shadow-hard-pressed disabled:shadow-none",
+  secondary: "h-12 px-6 bg-surface text-ink border border-line hover:bg-bg",
+  text: "h-10 px-3 text-ink underline underline-offset-4 hover:bg-missing-bg",
 };
 
 export function buttonClass(variant: ButtonVariant = "primary", extra?: string): string {

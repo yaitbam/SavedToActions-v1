@@ -32,7 +32,7 @@ export function Popover({ label, children }: PopoverProps) {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className="text-small font-medium text-brand underline-offset-4 hover:underline"
+        className="text-small font-medium text-ink underline underline-offset-4"
       >
         {label}
       </button>
@@ -40,7 +40,7 @@ export function Popover({ label, children }: PopoverProps) {
         <div
           id={panelId}
           role="dialog"
-          className="animate-enter absolute left-0 top-full z-20 mt-2 w-72 rounded-thumb bg-surface p-4 text-small text-ink shadow-card"
+          className="animate-enter absolute left-0 top-full z-20 mt-2 w-72 rounded-card border border-line bg-surface p-4 text-small text-ink"
         >
           {children}
         </div>

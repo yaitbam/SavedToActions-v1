@@ -16,5 +16,5 @@ export function SourceChip({ badge, badgeLabel }: SourceChipProps) {
   if (!badge) return null;
   const label = labels[badge] ?? badgeLabel;
   if (!label) return null;
-  return <Chip tone={badge === "edited" ? "brand" : "neutral"}>{label}</Chip>;
+  return <Chip tone={badge === "edited" ? "accent" : "neutral"}>{label}</Chip>;
 }

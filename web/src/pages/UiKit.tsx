@@ -19,11 +19,11 @@ import { Thumb } from "../ui/Thumb";
 const sample =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="#EEF2FF"/><rect x="32" y="48" width="336" height="28" rx="14" fill="#4F46E5"/><rect x="32" y="104" width="260" height="20" rx="10" fill="#111827"/><rect x="32" y="140" width="300" height="20" rx="10" fill="#6B7280"/><rect x="32" y="176" width="200" height="20" rx="10" fill="#6B7280"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="#FFD84D"/><rect x="32" y="48" width="336" height="28" rx="14" fill="#14110F"/><rect x="32" y="104" width="260" height="20" rx="10" fill="#14110F"/><rect x="32" y="140" width="300" height="20" rx="10" fill="#6B645C"/><rect x="32" y="176" width="200" height="20" rx="10" fill="#6B645C"/></svg>`,
   );
 
 const statuses: StatusKey[] = ["fits", "conflict", "nofit", "done", "planned", "needs_input", "error", "drift", "missing"];
-const swatches = ["bg-brand", "bg-brand-soft", "bg-ink", "bg-muted", "bg-line", "bg-bg", "bg-surface", "bg-fits-bg", "bg-conflict-bg", "bg-nofit-bg", "bg-missing-bg", "bg-goal-earn", "bg-goal-learn", "bg-goal-deadlines"];
+const swatches = ["bg-ink", "bg-muted", "bg-line", "bg-bg", "bg-surface", "bg-accent", "bg-fits-bg", "bg-conflict-bg", "bg-nofit-bg", "bg-missing-bg", "bg-goal-earn", "bg-goal-learn", "bg-goal-deadlines"];
 
 const driftReadback: Readback = {
   status: "drift",
@@ -71,7 +71,7 @@ export function UiKit() {
       </Section>
       <Section title="Chips">
         <Chip>Neutral</Chip>
-        <Chip tone="brand">Brand</Chip>
+        <Chip tone="accent">Accent</Chip>
         {statuses.map((status) => (
           <StatusChip key={status} status={status} />
         ))}
@@ -93,6 +93,12 @@ export function UiKit() {
           <Receipt startDisplay="Thu 14:00" endDisplay="14:30" readback={driftReadback} />
           <Receipt startDisplay="Thu 14:00" endDisplay="14:30" readback={{ ...driftReadback, status: "failed", driftDisplay: [] }} />
         </div>
+      </Section>
+      <Section title="Cards">
+        <Card note className="w-56 -rotate-2">
+          <Thumb src={sample} alt="Sample screenshot" />
+        </Card>
+        <Card className="w-56">Flat card</Card>
       </Section>
       <Section title="Thumb, viewer, skeleton">
         <div className="w-40">

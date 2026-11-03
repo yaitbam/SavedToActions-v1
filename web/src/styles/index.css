@@ -1,4 +1,3 @@
-@import "@fontsource/bricolage-grotesque/700.css";
 @import "@fontsource/bricolage-grotesque/800.css";
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
@@ -9,35 +8,36 @@
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand: #4f46e5;
-  --color-brand-soft: #eef2ff;
-  --color-ink: #111827;
-  --color-muted: #6b7280;
-  --color-line: #e5e7eb;
-  --color-bg: #f7f6fb;
+  --color-bg: #faf7f2;
   --color-surface: #ffffff;
+  --color-ink: #14110f;
+  --color-muted: #6b645c;
+  --color-line: #e7e1d8;
+  --color-accent: #d4f24b;
 
-  --color-fits: #15803d;
+  --color-fits: #166534;
   --color-fits-bg: #dcfce7;
-  --color-conflict: #b45309;
+  --color-conflict: #92400e;
   --color-conflict-bg: #fef3c7;
   --color-nofit: #b91c1c;
   --color-nofit-bg: #fee2e2;
-  --color-missing: #6b7280;
-  --color-missing-bg: #f3f4f6;
+  --color-missing: #6b645c;
+  --color-missing-bg: #f1ede6;
 
-  --color-goal-earn: #f472b6;
-  --color-goal-learn: #60a5fa;
-  --color-goal-deadlines: #fbbf24;
+  --color-goal-earn: #ff9ec4;
+  --color-goal-learn: #8ec5ff;
+  --color-goal-deadlines: #ffd84d;
 
   --text-title: 2.25rem;
-  --text-title--line-height: 1.1;
+  --text-title--line-height: 1.05;
+  --text-title--letter-spacing: -0.03em;
   --text-small: 0.8125rem;
   --text-small--line-height: 1.25rem;
 
-  --radius-card: 20px;
-  --radius-thumb: 16px;
-  --shadow-card: 0 1px 2px rgb(17 24 39 / 0.04), 0 8px 24px rgb(17 24 39 / 0.06);
+  --radius-card: 14px;
+  --radius-thumb: 12px;
+  --shadow-hard: 3px 3px 0 var(--color-ink);
+  --shadow-hard-pressed: 1px 1px 0 var(--color-ink);
 }
 
 @layer base {
@@ -57,9 +57,10 @@
   h3 {
     font-family: var(--font-display);
     font-weight: 800;
+    letter-spacing: -0.03em;
   }
   :focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
 }
@@ -76,7 +77,7 @@
 }
 
 @utility animate-enter {
-  animation: fade-in 180ms ease-out;
+  animation: fade-in 150ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

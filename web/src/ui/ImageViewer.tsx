@@ -23,7 +23,7 @@ export function ImageViewer({ src, alt, open, onClose }: ImageViewerProps) {
       onClose={onClose}
       onClick={(event) => event.target === ref.current && onClose()}
       aria-label={alt}
-      className="m-auto max-h-[92vh] max-w-[92vw] overflow-hidden rounded-card bg-surface p-0 shadow-card backdrop:bg-ink/70"
+      className="m-auto max-h-[92vh] max-w-[92vw] overflow-hidden rounded-card border border-line bg-surface p-0 backdrop:bg-ink/70"
     >
       {open && (
         <div className="relative animate-enter">
@@ -31,7 +31,7 @@ export function ImageViewer({ src, alt, open, onClose }: ImageViewerProps) {
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 h-10 rounded-full bg-surface px-4 text-small font-semibold text-ink shadow-card"
+            className="absolute right-3 top-3 h-10 rounded-xl border border-line bg-surface px-4 text-small font-semibold text-ink"
           >
             Close
           </button>

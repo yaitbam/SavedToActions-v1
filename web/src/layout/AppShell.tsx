@@ -31,7 +31,7 @@ export function AppShell({ onNewSave }: AppShellProps) {
               className={({ isActive }) =>
                 cx(
                   "flex h-12 items-center gap-3 rounded-full px-4 font-semibold transition-colors duration-150",
-                  isActive ? "bg-brand-soft text-brand" : "text-ink hover:bg-surface",
+                  isActive ? "bg-accent text-ink" : "text-ink hover:bg-surface",
                 )
               }
             >
@@ -64,8 +64,8 @@ export function AppShell({ onNewSave }: AppShellProps) {
             end={item.end}
             className={({ isActive }) =>
               cx(
-                "flex h-16 flex-col items-center justify-center gap-1 text-small font-semibold",
-                isActive ? "text-brand" : "text-muted",
+                "m-1 flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-small font-semibold",
+                isActive ? "bg-accent text-ink" : "text-muted",
               )
             }
           >

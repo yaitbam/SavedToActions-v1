@@ -17,7 +17,7 @@ const statuses: Record<StatusKey, { label: string; tone: Tone }> = {
   conflict: { label: "Conflict", tone: "conflict" },
   nofit: { label: "Doesn't fit", tone: "nofit" },
   done: { label: "Done", tone: "fits" },
-  planned: { label: "Planned", tone: "brand" },
+  planned: { label: "Planned", tone: "accent" },
   needs_input: { label: "Needs input", tone: "missing" },
   error: { label: "Error", tone: "nofit" },
   drift: { label: "Calendar changed", tone: "conflict" },

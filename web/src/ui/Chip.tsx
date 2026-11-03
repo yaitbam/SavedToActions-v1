@@ -1,11 +1,11 @@
 import type { HTMLAttributes } from "react";
 import { cx } from "./cx";
 
-export type Tone = "neutral" | "brand" | "fits" | "conflict" | "nofit" | "missing";
+export type Tone = "neutral" | "accent" | "fits" | "conflict" | "nofit" | "missing";
 
 const tones: Record<Tone, string> = {
   neutral: "bg-surface text-ink border border-line",
-  brand: "bg-brand-soft text-brand",
+  accent: "bg-accent text-ink",
   fits: "bg-fits-bg text-fits",
   conflict: "bg-conflict-bg text-conflict",
   nofit: "bg-nofit-bg text-nofit",
