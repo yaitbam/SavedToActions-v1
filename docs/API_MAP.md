@@ -108,7 +108,7 @@ Upcoming deadlines for Progress: use `upcoming` from GET /api/home.
 ## Gaps against REBUILD_PLAN
 
 Phase 1 is done (Nov 3). Notes for the web:
-1. Local data: `node scripts/seed-demo.mjs` (server stopped) imports fixtures/demo/01 to 14 as demo saves, goals renamed, effort unconfirmed, nothing planned. `node scripts/demo-reset.mjs` restores that state and keeps settings and the Google connection. Seed result Nov 3: 14 of 14 extracted, 7.0 s per file, deadlines 14 of 14 as expected, goal differs from the manifest on 5 files (01, 03, 06, 12 came back Missing, 09 got Earn more). Show Missing and let the user pick.
+1. Local data: `node scripts/seed-demo.mjs` (server stopped) imports fixtures/demo/01 to 14 as demo saves, goals renamed, effort unconfirmed, nothing planned. `node scripts/demo-reset.mjs` restores that state and keeps settings and the Google connection. Seed result Nov 3: 14 of 14 extracted, 7.2 s per file, deadlines 14 of 14 as expected, goal differs from the manifest on 2 files (03 and 09 came back Missing). Show Missing and let the user pick.
 2. `hasTimezoneCorrection` is true when the model wrote an offset that code corrected. The chip text uses the warning `deadline_offset_ignored` (`proposed.modelOffset`, `proposed.computedOffset`, `proposed.tz`). It clears when the user edits the deadline.
 3. Model name is `action.model` (the id the provider returned). The display name "Muse Spark Open" is not sent. Extraction latency is `action.extractionLatencyMs`, read from the extraction trace, null if unknown.
 4. No endpoint returns only our blocks for the week strip. Filter GET /api/week chips on kind "prep", or build from `next_up` and `upcoming` blocks. Week chips have `startDisplay` only, no relative strings.
