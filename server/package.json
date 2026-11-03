@@ -1,0 +1,23 @@
+{
+  "name": "savedtoaction-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test \"test/*.test.js\"",
+    "smoke": "node scripts/readiness-smoke.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.3.0",
+    "googleapis": "^189.0.0",
+    "moment-timezone": "0.6.6",
+    "multer": "^2.5.0",
+    "sharp": "^0.35.5"
+  }
+}

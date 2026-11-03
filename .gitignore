@@ -1,0 +1,19 @@
+# Secrets. Only the empty template is committed.
+.env
+.env.*
+!.env.example
+node_modules/
+.DS_Store
+# Build output and local UI capture screenshots.
+web/dist/
+web/artifacts/
+# Local SQLite database. Holds Google OAuth tokens and uploaded screenshots.
+server/data/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
