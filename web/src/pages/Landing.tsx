@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { SocialPost } from "../features/landing/SocialPosts";
+import { GOOGLE_REVIEW_PENDING } from "../links";
 import { buttonClass } from "../ui/Button";
 import { Logo } from "../ui/Logo";
 import "../features/landing/landing.css";
@@ -54,7 +55,7 @@ const faqs = [
   { q: "What is the note for?", a: "To tell Muse when and for how long. It reads only those two things and ignores the rest." },
   { q: "Can Muse book without me?", a: "No. Muse only reads your calendar. A write happens after you approve, then it is read back to check." },
   { q: "Is it free?", a: "Yes. A free account gets 20 Muse reads a day. There are no paid plans." },
-  { q: "Can anyone sign in?", a: "Not yet. Google sign in is in Testing mode, so people are added as test users for now." },
+  { q: "Can anyone sign in?", a: `Yes, with a Google account.${GOOGLE_REVIEW_PENDING ? " Google may show an unverified app screen while our review is in progress. Choose Advanced, then continue." : ""}` },
   { q: "What is Muse Spark Open?", a: "An open weights model, called through Baseten. It reads and proposes. Code checks every fact and every write." },
 ];
 
@@ -157,8 +158,8 @@ export function Landing() {
             <h2 id="impact-title">See whether saving<br /><em>became doing.</em></h2>
             <p className="lp-copy">For each goal, the app counts what really happened, from your own records only.</p>
           </header>
-          <aside className="goal-card" aria-label="Example of progress by goal">
-            <header><b>Saves done, by goal</b><span>Example data</span></header>
+          <aside className="goal-card" aria-label="Progress by goal">
+            <header><b>Saves done, by goal</b></header>
             <ul>
               {goals.map((g) => (
                 <li key={g.name}>

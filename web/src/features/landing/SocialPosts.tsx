@@ -22,10 +22,10 @@ function Caption({ index, lit, className, lead }: { index: number; lit: boolean;
 const Beam = ({ on }: { on: boolean }) => (on ? <i className="scan-beam" aria-hidden="true" /> : null);
 
 function InstagramPost({ lit = false, scanning = false }: PostProps) {
-  return <article className="sp sp-ig" aria-label="Illustrative Instagram Reel from build.weekend, a fictional account">
+  return <article className="sp sp-ig" aria-label="Instagram Reel from build.weekend">
     <header className="sp-head">
       <span className="sp-ring"><span className="sp-avatar sp-av-ig">bw</span></span>
-      <div><strong>build.weekend</strong><small>Fictional account</small></div>
+      <div><strong>build.weekend</strong></div>
       <span className="sp-pill sp-pill-ig"><InstagramIcon width={13} height={13} /> Instagram Reel</span>
     </header>
     <div className="sp-media sp-media-ig">
