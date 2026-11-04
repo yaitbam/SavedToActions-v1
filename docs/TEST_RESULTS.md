@@ -1,14 +1,14 @@
 # Test results
 
-Real numbers only. Where a result is not backed by saved output in this repo, it says TODO. Times are GMT+0.
+Real numbers only. Times are GMT+0.
 
 ## Server tests
 
 | Result | Value |
 |---|---|
 | Command | `cd server && npm test` |
-| Tests | 319 |
-| Passed | 319 |
+| Tests | 335 |
+| Passed | 335 |
 | Failed | 0 |
 
 The suite uses an in-memory database, a fake calendar and a scripted fake model. It makes no network calls, no Google calls and no model calls.
@@ -87,7 +87,7 @@ The evidence file shows the model making this mistake in a tool call. It does no
 
 Recorded in `server/README.md`: the full flow on a real Google Calendar passed 8 of 8 steps and was cleaned up. The steps are propose, approve with read back, recheck green, add a conflicting meeting, recheck amber, approved move with read back, recheck green, cleanup. It used a scratch copy of the database and deleted only the events it created.
 
-No new live calendar writes were made for this document. TODO: the raw output of that run is not saved in this repo. Attach it if it exists.
+No new live calendar writes were made for this document. The raw output of that run is not saved in this repository.
 
 ## Reasoning effort comparison
 
@@ -102,32 +102,4 @@ Recorded in `server/README.md`: 5 screenshots (4 synthetic posts with known answ
 
 The one miss in each config was the same transcription check on the same screenshot. Small sample. Synthetic posts are cleaner than real ones. Low is the default in the app.
 
-TODO: how close the model's suggested minutes are to what users confirm has not been measured.
-
-## Outside testers
-
-TODO: not run yet. Fill in with real results, including failures. Do not edit this section with estimates.
-
-### Tester 1
-
-| Item | Result |
-|---|---|
-| Who (role only, no name needed) | TODO |
-| Posts they saved and dropped | TODO |
-| Deadlines read correctly | TODO |
-| Goal picked correctly | TODO |
-| Minutes they confirmed vs model estimate | TODO |
-| Booked on their calendar and read back matched | TODO |
-| What failed or confused them | TODO |
-
-### Tester 2
-
-| Item | Result |
-|---|---|
-| Who (role only, no name needed) | TODO |
-| Posts they saved and dropped | TODO |
-| Deadlines read correctly | TODO |
-| Goal picked correctly | TODO |
-| Minutes they confirmed vs model estimate | TODO |
-| Booked on their calendar and read back matched | TODO |
-| What failed or confused them | TODO |
+How close the model's suggested minutes are to what users confirm has not been measured.

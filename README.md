@@ -45,7 +45,7 @@ A second provider, the Meta Model API, is built behind `MODEL_PROVIDER=meta` (ke
 
 These were checked by running them. Details and numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
-- Server tests: 340 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
+- Server tests: 335 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
 - Browser checks: the crop editor was exercised with the mouse and keyboard and the uploaded image size was checked (`web/test/crop.cjs`).
 - Demo seed, run on 14 invented posts before the seed script was removed from this repository: 14 of 14 posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
 - Timezone: Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so all conversions use moment-timezone and the server refuses to start if its startup self test fails. When the model writes an offset, code ignores it and computes the time itself.
@@ -64,7 +64,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 - Completions are self reported. Progress numbers are computed from database records only.
 - The reasoning effort setting was compared on 5 screenshots, 4 of them synthetic. That is a small sample.
 - Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and most of the Meta Model API provider (the smoke script found that a forced tool choice returns HTTP 400 and `auto` works, and its full results are not recorded here).
-- Outside tester results are not in yet. See the empty section in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
+- Outside tester results are not in yet.
 - Model suggested minutes have not been measured against what users confirm.
 - How often the note's "when" and "how long" are read correctly has not been measured yet.
 

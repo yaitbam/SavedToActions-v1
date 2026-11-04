@@ -345,7 +345,7 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
 
 ## Tests
 
-`npm test` runs `node --test "test/*.test.js"`. 319 tests, using local HTTP where needed, with no external Google or model calls. They use:
+`npm test` runs `node --test "test/*.test.js"`. 335 tests, using local HTTP where needed, with no external Google or model calls. They use:
 
 - `test/fakeCalendar.js`: an in memory calendar with Google's behavior where it matters (unique ids with 409, deleted events stay readable as cancelled, events.list hides cancelled, FreeBusy merges, offsets in returned times, all-day events). `sim` switches on failures: wrong offset, shifted instants, changed timezone, stripped tags.
 - A fixed clock (Mon 2 Nov 2026 12:00 UTC in most files) injected into `createApp`.
