@@ -35,6 +35,11 @@ export function Home() {
   }, []);
   // After the calendar is connected, a new user confirms their timezone, then chooses their goals.
   const connected = !!data?.google_connected && session?.kind !== "demo";
+  // Until both setup answers are in, show a loader. Otherwise the drop zone or dashboard flashes first
+  // and is then swapped for the setup step.
+  const checking = !data
+    ? !home.error
+    : connected && ((tzSetup.loading && !tzSetup.data && !tzSetup.error) || (setup.loading && !setup.data && !setup.error));
   const needsTimezone = connected && tzSetup.data?.done === false;
   const needsGoals = connected && tzSetup.data?.done === true && setup.data?.done === false;
   const goalName = (id: number | null | undefined) => goals.data?.find((goal) => goal.id === id)?.name;
@@ -61,7 +66,9 @@ export function Home() {
       </header>
 
       {data && !data.google_connected && <ConnectCard />}
-      {needsTimezone ? (
+      {!data && !home.error ? null : checking ? (
+        <Skeleton className="h-72 rounded-[28px]" />
+      ) : needsTimezone ? (
         <TimezoneSetup current={tzSetup.data?.tz ?? null} onDone={() => void Promise.all([tzSetup.reload(), reload()])} />
       ) : needsGoals ? (
         <GoalsSetup onDone={() => void Promise.all([setup.reload(), reload()])} />
@@ -76,7 +83,7 @@ export function Home() {
           <Skeleton className="cell-next h-56" />
           <Skeleton className="cell-goals h-56" />
         </div>
-      ) : !data.google_connected || isEmpty || needsTimezone || needsGoals ? null : (
+      ) : !data.google_connected || isEmpty || checking || needsTimezone || needsGoals ? null : (
         <>
         <Pulse planned={plannedItems.length} attention={attention.length} toConfirm={inboxTotal} />
         <div className="home-bento">

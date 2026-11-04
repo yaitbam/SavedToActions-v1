@@ -38,7 +38,7 @@ npm run preview
 
 The session provider checks `/auth/session` before mounting private routes. An anonymous visitor goes to login. An incomplete profile goes to confirmation. A failed session request shows the login page with a general message and Retry, keeping private data closed.
 
-Cookies stay on the same origin. The API client includes the session's CSRF token on writes. On a private API `401`, it clears its session state, hides the current page and hard navigates to login. Sign-out revokes the server session and hard navigates too. Account details, screenshots and Google tokens are not persisted in browser storage.
+Cookies stay on the same origin. The API client includes the session's CSRF token on writes. On a private API `401`, it clears its session state, hides the current page and hard navigates to login. Sign-out revokes the server session and hard navigates too. Only the first session check replaces the page with a loader. Later reloads, such as saving a name, refresh in the background so the page keeps its state. A signed out visitor's requested `/app/...` page is remembered in session storage for 10 minutes, so signing in returns them there and not to Overview. Account details, screenshots and Google tokens are not persisted in browser storage.
 
 Calendar connection is separate from app login and must use the same Google account. Disconnecting Calendar leaves the login active. Login uses the registered Calendar callback by default. See [account setup](../docs/AUTH_SETUP.md) when configuring a different callback.
 

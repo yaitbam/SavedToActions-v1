@@ -16,12 +16,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
+  // Only the first load replaces the page with a loader. Later reloads (saving a name, finishing the profile step)
+  // refresh the session in the background, so the page the user is on stays mounted and keeps its state.
+  const loadedOnce = useRef(false);
 
   async function reload() {
     const turn = ++generation.current;
-    setLoading(true);
-    setSession(null);
-    clearSession();
+    if (!loadedOnce.current) {
+      setLoading(true);
+      setSession(null);
+      clearSession();
+    }
     try {
       const result = await getSession();
       if (turn !== generation.current) return;
@@ -30,7 +35,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSession(result);
       setError(null);
     } catch (cause) { if (turn === generation.current) setError(cause); }
-    finally { if (turn === generation.current) setLoading(false); }
+    finally { if (turn === generation.current) { loadedOnce.current = true; setLoading(false); } }
   }
   useEffect(() => { void reload(); return () => { generation.current++; }; }, []);
 
