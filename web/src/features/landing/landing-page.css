@@ -129,6 +129,12 @@ section[id] { scroll-margin-top:72px; }
 .landing-close h2 { font-family:var(--font-display); font-weight:800; font-size:clamp(38px,6vw,84px); line-height:1; letter-spacing:-.05em; margin:0 0 22px; }
 .landing-close .section-copy { margin:0 auto 32px; font-size:17px; }
 .landing-footer { border-top:1px solid var(--color-line); }
+/* The same two part badge as the README: grey label, near black value. Drawn here so the page makes no outside request. */
+.landing-credit { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding-bottom:32px; color:var(--color-muted); font-size:13px; }
+.built-badge { display:inline-flex; overflow:hidden; border-radius:4px; font:600 11px/20px Verdana,Geneva,sans-serif; color:#fff; }
+.built-badge b,.built-badge i { padding:0 7px; font:inherit; font-style:normal; }
+.built-badge b { background:#555; }
+.built-badge i { background:#14110f; }
 
 @media(max-width:1000px) {
  .lp-hero { grid-template-columns:minmax(0,1fr); gap:40px; padding:40px 0 40px; }
