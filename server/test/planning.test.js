@@ -71,7 +71,7 @@ async function withApp(opts, fn) {
   }
 }
 
-const writes = (cal) => cal.calls.filter((c) => c === "insertEvent" || c === "deleteEvent");
+const writes = (cal) => cal.calls.filter((c) => c === "insertEvent" || c === "patchEvent" || c === "deleteEvent");
 
 test("propose: stops with a clear reason when something required is missing, and reads nothing", async () => {
   await withApp({}, async ({ api, db, seed, cal }) => {
@@ -452,21 +452,30 @@ test("move: a block whose calendar event was deleted can be re-created at the sa
   });
 });
 
-test("done: self reported, works with or without a block, leaves the calendar alone, closes the action", async () => {
+test("done: self reported, approves and verifies the calendar title, works without a block, closes the action", async () => {
   await withApp({}, async ({ api, seed, cal, db }) => {
     const planned = seed();
     const block = (await api.approve(planned, slot("13:00"))).json.block;
-    const r = await api.post(`/api/actions/${planned}/done`);
+    assert.equal((await api.post(`/api/actions/${planned}/done`)).json.error, "approval_required");
+    const r = await api.post(`/api/actions/${planned}/done`, { approved: true });
     assert.equal(r.status, 200);
     assert.equal(r.json.action.status, "done");
     assert.equal(r.json.action.doneAt, new Date(NOW).toISOString());
     assert.equal(cal.raw(block.googleEventId).status, "confirmed");
+    assert.equal(cal.raw(block.googleEventId).summary, "Done · Check registration");
+    assert.equal(r.json.action.block.readback.status, "ok");
     assert.equal(getActiveBlock(db, planned).id, block.id, "the block still counts as time scheduled");
 
     assert.equal((await api.post(`/api/actions/${planned}/done`)).json.error, "action_closed");
     assert.equal((await api.propose(planned)).json.error, "action_closed");
     assert.equal((await api.approve(planned, slot("15:00"))).json.error, "action_closed");
     assert.equal((await api.move(planned, slot("15:00"))).json.error, "action_closed");
+
+    assert.equal((await api.post(`/api/actions/${planned}/undo`)).json.error, "approval_required");
+    const undone = await api.post(`/api/actions/${planned}/undo`, { approved: true });
+    assert.equal(undone.json.action.status, "planned");
+    assert.equal(undone.json.calendarUnchanged, false);
+    assert.equal(cal.raw(block.googleEventId).summary, "Check registration");
 
     const openOne = seed();
     assert.equal((await api.post(`/api/actions/${openOne}/done`)).json.action.status, "done");

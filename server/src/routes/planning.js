@@ -49,11 +49,11 @@ export function registerPlanningRoutes(app, { planning, recheck, agent, locks })
     if(!slot.ok)return send(res,slot);
     return send(res,await planning.move({actionId:id(req),slot:slot.slot,approved:req.body?.approved,restore:true}),201);
   });
-  app.post('/api/actions/:id/undo',(req,res)=>send(res,planning.undo({actionId:id(req)})));
+  app.post('/api/actions/:id/undo',async(req,res)=>send(res,await planning.undo({actionId:id(req),approved:req.body?.approved})));
 
   app.post("/api/actions/:id/readback", async (req, res) => send(res, await planning.readback({ actionId: id(req) })));
 
-  app.post("/api/actions/:id/done", (req, res) => send(res, planning.markDone({ actionId: id(req) })));
+  app.post("/api/actions/:id/done", async (req, res) => send(res, await planning.markDone({ actionId: id(req), approved: req.body?.approved })));
 
   app.post("/api/actions/:id/skip", async (req, res) => {
     if(req.body?.removeFromCalendar===true && req.body?.approved!==true)return res.status(400).json({error:'approval_required'});

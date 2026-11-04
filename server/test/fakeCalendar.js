@@ -29,6 +29,7 @@ export function createFakeCalendar() {
     const day = (ms) => new Date(ms).toISOString().slice(0, 10);
     return {
       id: e.id,
+      etag: `"${e.revision ?? 0}"`,
       status: e.status,
       summary: e.summary,
       description: e.description,
@@ -108,6 +109,23 @@ export function createFakeCalendar() {
       maybeFail("getEvent");
       const e = store.get(id);
       return e ? render(e) : null;
+    },
+
+    async patchEvent(id, body, { etag } = {}) {
+      calls.push("patchEvent");
+      maybeFail("patchEvent");
+      const e = store.get(id);
+      if (!e || e.status === "cancelled") throw new CalendarError("google_not_found", "Event missing.", { status: 404 });
+      if (etag && etag !== render(e).etag) throw new CalendarError("calendar_event_changed", "Event changed.", { status: 412 });
+      if (body.summary !== undefined) e.summary = body.summary;
+      const privateTags = { ...e.extendedProperties?.private };
+      for (const [key, value] of Object.entries(body.extendedProperties?.private ?? {})) {
+        if (value === null) delete privateTags[key];
+        else privateTags[key] = value;
+      }
+      e.extendedProperties = { ...e.extendedProperties, private: privateTags };
+      e.revision = (e.revision ?? 0) + 1;
+      return render(e);
     },
 
     async deleteEvent(id) {

@@ -76,15 +76,18 @@ export function StateButton({ stage, action, proposal, minutes, busy, on }: Prop
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Button onClick={primary.onClick} loading={primary.loading} disabled={primary.disabled || (working && !primary.loading)}>
-        {primary.label}
-      </Button>
-      {secondary && (
-        <Button variant="secondary" onClick={secondary.onClick} loading={secondary.loading} disabled={working && !secondary.loading}>
-          {secondary.label}
+    <div className="space-y-2">
+      {primary.onClick === on.done && action.block && <p className="text-small text-muted">Also marks the calendar event title Done</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button onClick={primary.onClick} loading={primary.loading} disabled={primary.disabled || (working && !primary.loading)}>
+          {primary.label}
         </Button>
-      )}
+        {secondary && (
+          <Button variant="secondary" onClick={secondary.onClick} loading={secondary.loading} disabled={working && !secondary.loading}>
+            {secondary.label}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

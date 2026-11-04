@@ -44,6 +44,7 @@ import {
 } from "../scheduler/index.js";
 
 import { formatForDisplay } from "../tz.js";
+import { updateCompletionTitle } from "./completionCalendar.js";
 
 const DAY_MS = 24 * 60 * MIN;
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
@@ -471,15 +472,23 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
       const block=getActiveBlock(db,actionId);
       return block?{ok:true,slot:{startUtc:block.start_utc,endUtc:block.end_utc}}:fail(409,'no_active_block');
     },
-    undo({actionId}) {
-      const row=getRow(actionId);if(!row)return fail(404,'not_found');
-      const transition=db.prepare('SELECT * FROM action_transitions WHERE action_id=? AND undone_at IS NULL ORDER BY id DESC LIMIT 1').get(actionId);
-      if(!transition || !['done','skipped'].includes(row.status) || row.status!==transition.next_status || row.updated_at!==transition.changed_at)return fail(409,'nothing_to_undo',{detail:'Only the latest unchanged done or skip transition can be undone.'});
-      const block=getActiveBlock(db,actionId);
-      if(transition.previous_status==='planned'&&!block)return fail(409,'calendar_restore_required',{detail:'The calendar block was removed. A new explicitly approved plan is required.'});
-      const nowIso=toIso(clock());
-      db.transaction(()=>{db.prepare('UPDATE actions SET status=?,done_at=?,updated_at=? WHERE id=?').run(transition.previous_status,transition.previous_done_at,nowIso,actionId);db.prepare('UPDATE action_transitions SET undone_at=? WHERE id=?').run(nowIso,transition.id)})();
-      return {ok:true,...summary(row),calendarUnchanged:true};
+    undo({actionId, approved}) {
+      return guard(async () => {
+        const row=getRow(actionId);if(!row)return fail(404,'not_found');
+        const transition=db.prepare('SELECT * FROM action_transitions WHERE action_id=? AND undone_at IS NULL ORDER BY id DESC LIMIT 1').get(actionId);
+        if(!transition || !['done','skipped'].includes(row.status) || row.status!==transition.next_status || row.updated_at!==transition.changed_at)return fail(409,'nothing_to_undo',{detail:'Only the latest unchanged done or skip transition can be undone.'});
+        const block=getActiveBlock(db,actionId);
+        if(transition.previous_status==='planned'&&!block)return fail(409,'calendar_restore_required',{detail:'The calendar block was removed. A new explicitly approved plan is required.'});
+        let calendarChanged = false;
+        if (row.status === 'done' && block) {
+          const result = await updateCompletionTitle({ db, calendar, block, done: false, approved, clock });
+          if (!result.ok) return result;
+          calendarChanged = result.updated;
+        }
+        const nowIso=toIso(clock());
+        db.transaction(()=>{db.prepare('UPDATE actions SET status=?,done_at=?,updated_at=? WHERE id=?').run(transition.previous_status,transition.previous_done_at,nowIso,actionId);db.prepare('UPDATE action_transitions SET undone_at=? WHERE id=?').run(nowIso,transition.id)})();
+        return {ok:true,...summary(row),calendarUnchanged:!calendarChanged};
+      });
     },
     /** Re-fetch the active block's event and compare again. */
     readback({ actionId }) {
@@ -494,17 +503,24 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
       });
     },
 
-    /** User reports it done. Self reported, the calendar event is left as it is. */
-    markDone({ actionId }) {
-      const row = getRow(actionId);
-      if (!row) return fail(404, "not_found");
-      if (isClosed(row)) return fail(409, "action_closed");
-      const nowIso = toIso(clock());
-      db.transaction(()=>{
-        db.prepare('INSERT INTO action_transitions(action_id,previous_status,next_status,previous_done_at,changed_at) VALUES (?,?,?,?,?)').run(actionId,row.status,'done',row.done_at,nowIso);
-        db.prepare("UPDATE actions SET status = 'done', done_at = ?, updated_at = ? WHERE id = ?").run(nowIso, nowIso, actionId);
-      })();
-      return { ok: true, ...summary(row) };
+    /** User reports it done and approves the completion title on the active calendar event. */
+    markDone({ actionId, approved }) {
+      return guard(async () => {
+        const row = getRow(actionId);
+        if (!row) return fail(404, "not_found");
+        if (isClosed(row)) return fail(409, "action_closed");
+        const block = getActiveBlock(db, actionId);
+        if (block) {
+          const result = await updateCompletionTitle({ db, calendar, block, done: true, approved, clock });
+          if (!result.ok) return result;
+        }
+        const nowIso = toIso(clock());
+        db.transaction(()=>{
+          db.prepare('INSERT INTO action_transitions(action_id,previous_status,next_status,previous_done_at,changed_at) VALUES (?,?,?,?,?)').run(actionId,row.status,'done',row.done_at,nowIso);
+          db.prepare("UPDATE actions SET status = 'done', done_at = ?, updated_at = ? WHERE id = ?").run(nowIso, nowIso, actionId);
+        })();
+        return { ok: true, ...summary(row) };
+      });
     },
 
     /** Skip. The calendar block is only removed if the user asks for it (removeFromCalendar: true). */

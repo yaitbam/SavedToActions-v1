@@ -1,5 +1,5 @@
 // Google Calendar access: FreeBusy for the first slot search, events.list for event level reads,
-// and the writes (insert, delete) behind the approval gate. Primary calendar only.
+// and the writes (insert, patch, delete) behind the approval gate. Primary calendar only.
 // Everything returns plain data or throws CalendarError with a stable code.
 import { google } from "googleapis";
 import { toIso } from "../scheduler/time.js";
@@ -19,7 +19,7 @@ export class CalendarError extends Error {
 }
 
 /** HTTP status for a calendar error code. Setup problems are 409, an expired login 401, the rest is Google's fault. */
-export const calendarErrorStatus = (code) => ({ google_not_connected: 409, google_missing_scopes: 409, google_auth_error: 401 })[code] ?? 502;
+export const calendarErrorStatus = (code) => ({ google_not_connected: 409, google_missing_scopes: 409, google_auth_error: 401, calendar_event_changed: 409 })[code] ?? 502;
 
 /** googleapis / gaxios errors carry the HTTP status in err.code (number) or err.response.status. */
 export function mapGoogleError(err) {
@@ -36,6 +36,7 @@ export function mapGoogleError(err) {
   }
   if (status === 404) return new CalendarError("google_not_found", "Google could not find that item.", { status });
   if (status === 409) return new CalendarError("event_exists", "An event with this id already exists.", { status });
+  if (status === 412) return new CalendarError("calendar_event_changed", "The calendar event changed. Try again.", { status });
   if (status === 429 || (status && status >= 500)) return new CalendarError("google_unavailable", `Google is unavailable (HTTP ${status}).`, { status });
   if (status) return new CalendarError("google_error", `Google returned HTTP ${status}.`, { status });
   return new CalendarError("google_unreachable", `Could not reach Google: ${message}`);
@@ -135,6 +136,12 @@ export function createCalendarClient({ googleAuth, apiFactory = (auth) => google
 
     async insertEvent(body) {
       const res = await call((a) => a.events.insert({ calendarId: CALENDAR_ID, requestBody: body }));
+      return res.data;
+    },
+
+    async patchEvent(eventId, body, { etag } = {}) {
+      const options = etag ? { headers: { "If-Match": etag } } : {};
+      const res = await call((a) => a.events.patch({ calendarId: CALENDAR_ID, eventId, requestBody: body }, options));
       return res.data;
     },
 

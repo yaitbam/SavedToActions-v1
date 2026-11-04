@@ -14,6 +14,7 @@ function clientWith(handlers, authOver) {
     events: {
       list: async (p) => (seen.push(["events.list", p]), handlers.list(p)),
       insert: async (p) => (seen.push(["events.insert", p]), handlers.insert(p)),
+      patch: async (p, options) => (seen.push(["events.patch", p, options]), handlers.patch(p)),
       get: async (p) => (seen.push(["events.get", p]), handlers.get(p)),
       delete: async (p) => (seen.push(["events.delete", p]), handlers.delete(p)),
     },
@@ -87,6 +88,14 @@ test("getEvent: the event, null when gone (404 or 410), errors otherwise", async
     assert.equal(await clientWith({ get: async () => { throw httpError(code); } }).client.getEvent("x"), null);
   }
   await assert.rejects(clientWith({ get: async () => { throw httpError(500); } }).client.getEvent("x"), { code: "google_unavailable" });
+});
+
+test("patchEvent: changes supplied fields only and protects the fetched event version", async () => {
+  const body = { summary: "Done · Check registration" };
+  const { client, seen } = clientWith({ patch: async () => ({ data: { id: "x", ...body } }) });
+  assert.equal((await client.patchEvent("x", body, { etag: '"v1"' })).summary, body.summary);
+  assert.deepEqual(seen[0], ["events.patch", { calendarId: "primary", eventId: "x", requestBody: body }, { headers: { "If-Match": '"v1"' } }]);
+  await assert.rejects(clientWith({ patch: async () => { throw httpError(412); } }).client.patchEvent("x", body), { code: "calendar_event_changed" });
 });
 
 test("deleteEvent: already gone is fine, a real failure is not", async () => {

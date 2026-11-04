@@ -175,6 +175,7 @@ async function main() {
       return route.fulfill({ json: { action, block: action.block, previous: { id: 91000, eventDeleted: true } } });
     });
     await page.route('**/api/actions/91001/done', route => {
+      assert.equal(route.request().postDataJSON().approved, true);
       action = { ...action, status: 'done' };
       return route.fulfill({ json: { action } });
     });
