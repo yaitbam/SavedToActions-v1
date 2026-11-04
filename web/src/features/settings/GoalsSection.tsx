@@ -21,6 +21,8 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
   const [rows, setRows] = useState<Row[]>(() => initial.map(toRow));
   const [starters, setStarters] = useState<StarterGoal[]>([]);
   const [editing, setEditing] = useState<number | "new" | null>(null);
+  // A starter goal the user picked. It fills the form so the name and description can still be changed.
+  const [prefill, setPrefill] = useState<StarterGoal | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const alert = useAlert();
 
@@ -53,6 +55,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
     run("new", async () => {
       const goal = await createGoal({ name: draft.name, description: draft.description.trim() || null });
       setRows((current) => [...current, { ...goal, saves: 0 }]);
+      setPrefill(null);
       setEditing(null);
     }, "Goal not added");
 
@@ -99,13 +102,14 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
                   <b>{goal.name}</b>
                   <span>{goal.description ?? "No description. Add one to help Muse match saves"}</span>
                   <small>{goal.saves} {goal.saves === 1 ? "save" : "saves"}</small>
+                  {goal.saves > 0 && <em className="st-goal-lock">To archive this goal, move its saves to another goal first</em>}
                 </div>
                 <div className="st-goal-tools">
                   <button type="button" className="st-btn" aria-label={`Move ${goal.name} up`} disabled={index === 0 || busy !== null} onClick={() => void move(goal.id, -1)}>↑</button>
                   <button type="button" className="st-btn" aria-label={`Move ${goal.name} down`} disabled={index === active.length - 1 || busy !== null} onClick={() => void move(goal.id, 1)}>↓</button>
                   <button type="button" className="st-btn" onClick={() => setEditing(goal.id)} disabled={busy !== null}>Edit</button>
-                  <button type="button" className="st-btn" onClick={() => void archive(goal.id)} disabled={busy !== null || active.length <= 1}
-                    title={active.length <= 1 ? "Keep at least one active goal" : undefined}>Archive</button>
+                  <button type="button" className="st-btn" onClick={() => void archive(goal.id)} disabled={busy !== null || active.length <= 1 || goal.saves > 0}
+                    title={goal.saves > 0 ? "Move its saves to another goal first" : active.length <= 1 ? "Keep at least one active goal" : undefined}>Archive</button>
                 </div>
               </>
             )}
@@ -120,21 +124,22 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
               <p className="st-label">Start from a general goal</p>
               <div className="st-chips">
                 {offered.map((starter) => (
-                  <button key={starter.name} type="button" className="st-chip" disabled={busy !== null}
-                    onClick={() => void add({ name: starter.name, description: starter.description })}>
-                    + {starter.name}
+                  <button key={starter.name} type="button" className="st-chip" aria-pressed={prefill?.name === starter.name} disabled={busy !== null}
+                    onClick={() => setPrefill(starter)}>
+                    {starter.name}
                   </button>
                 ))}
               </div>
             </div>
           )}
-          <p className="st-label">{offered.length > 0 ? "Or write your own" : "Add your own"}</p>
-          <GoalEditor initial={{ name: "", description: "" }} submitLabel="Add goal" busy={busy === "new"}
-            onSubmit={(draft) => void add(draft)} onCancel={() => setEditing(null)} />
+          <p className="st-label">{prefill ? "Adjust it if you like, then add it" : offered.length > 0 ? "Or write your own" : "Add your own"}</p>
+          <GoalEditor key={prefill?.name ?? "blank"} initial={{ name: prefill?.name ?? "", description: prefill?.description ?? "" }}
+            requireChange={false} submitLabel="Add goal" busy={busy === "new"}
+            onSubmit={(draft) => void add(draft)} onCancel={() => { setPrefill(null); setEditing(null); }} />
         </div>
       ) : (
         <div className="st-actions">
-          <button type="button" className="st-btn st-btn-main" onClick={() => setEditing("new")} disabled={full || busy !== null}>Add a goal</button>
+          <button type="button" className="st-btn st-btn-main" onClick={() => { setPrefill(null); setEditing("new"); }} disabled={full || busy !== null}>Add a goal</button>
           {full && <span className="st-hint" style={{ margin: 0 }}>Archive a goal to add another</span>}
         </div>
       )}
@@ -142,7 +147,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
       {archived.length > 0 && (
         <details className="st-archived">
           <summary>Archived goals ({archived.length})</summary>
-          <p className="st-hint">Archived goals keep their saves and history. New saves are not sorted into them.</p>
+          <p className="st-hint">Archived goals are hidden from new saves. Restore one any time.</p>
           <ul className="st-goal-list">
             {archived.map((goal) => (
               <li key={goal.id} className="st-goalrow">

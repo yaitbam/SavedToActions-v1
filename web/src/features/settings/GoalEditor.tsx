@@ -17,6 +17,8 @@ interface Props {
   initial: GoalDraft;
   // Without a color, the swatches are hidden and the server picks the next free one.
   withColor?: boolean;
+  // When adding, the starting values are already valid, so the button works without a change.
+  requireChange?: boolean;
   submitLabel: string;
   busy: boolean;
   onSubmit: (draft: GoalDraft) => void;
@@ -24,7 +26,7 @@ interface Props {
 }
 
 // One form for adding and editing a goal. A clear description is what helps Muse sort saves into the right goal.
-export function GoalEditor({ initial, withColor = false, submitLabel, busy, onSubmit, onCancel }: Props) {
+export function GoalEditor({ initial, withColor = false, requireChange = true, submitLabel, busy, onSubmit, onCancel }: Props) {
   const [draft, setDraft] = useState(initial);
   const name = draft.name.trim();
   const changed = draft.name !== initial.name || draft.description !== initial.description || draft.color !== initial.color;
@@ -62,7 +64,7 @@ export function GoalEditor({ initial, withColor = false, submitLabel, busy, onSu
         </fieldset>
       )}
       <div className="st-actions">
-        <Button type="submit" loading={busy} disabled={!name || !changed}>{submitLabel}</Button>
+        <Button type="submit" loading={busy} disabled={!name || (requireChange && !changed)}>{submitLabel}</Button>
         <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>Cancel</Button>
       </div>
     </form>

@@ -33,14 +33,14 @@ Version 1. This describes the implemented backend, replacing the earlier fronten
 | POST | /api/goals | Body {name,description?}. Returns 201 and the goal. 409 goal_name_exists, goal_limit_reached |
 | PUT | /api/goals/:id | Body with any of name, description, color (0 to 5). Returns the goal |
 | PUT | /api/goals/order | Body {ids}, every active goal once. Returns the active goals in order |
-| POST | /api/goals/:id/archive | Keeps saves and history. 409 last_active_goal |
+| POST | /api/goals/:id/archive | Only a goal with no saves. 409 goal_in_use, last_active_goal |
 | POST | /api/goals/:id/restore | 409 goal_limit_reached when six goals are active |
 | GET | /api/goals/:id | Goal, linked actions, totals, weekly series, definitions |
 | GET | /api/home | Server clock, next_up, upcoming, needs_attention, recent_saves, inbox/alert counts |
 | GET | /api/insights | totals, weekly, goals, kinds, definitions, seriesNote |
 | GET | /api/about | Model/provider names, timezone self-test, storage and calendar/input policies |
 
-Working hours use HH:mm, with start before end. End may be 24:00. Timezone is an IANA name or null. Only confirmed effort is scheduled. Goals: names are 1 to 40 characters and unique ignoring case, descriptions are at most 120, and at most six goals are active. Goals are archived, never deleted. Calendar selection is not an advertised capability of this build.
+Working hours use HH:mm, with start before end. End may be 24:00. Timezone is an IANA name or null. Only confirmed effort is scheduled. Goals: names are 1 to 40 characters and unique ignoring case, descriptions are at most 120, and at most six goals are active. Goals are archived, never deleted, and only a goal with no saves can be archived. Calendar selection is not an advertised capability of this build.
 
 ## Upload, extraction and Inbox
 

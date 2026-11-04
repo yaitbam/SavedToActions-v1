@@ -5,14 +5,14 @@ import Database from "better-sqlite3";
 // General goals offered to every user. Broad on purpose, so most saves match one of them.
 // The first three are what a new workspace starts with.
 export const STARTER_GOALS = Object.freeze([
-  { name: "Earn more", description: "Freelance work, side income, grants, prizes" },
-  { name: "Learn a skill", description: "Courses, tutorials, tools and prompts to try" },
-  { name: "Events and opportunities", description: "Hackathons, programs, applications, meetups" },
-  { name: "Career growth", description: "Jobs, networking, portfolio, professional development" },
-  { name: "Health and wellbeing", description: "Fitness, nutrition, sleep, mental health" },
-  { name: "Create and build", description: "Content, projects, writing, design" },
-  { name: "Travel and experiences", description: "Trips, places, things to do" },
-  { name: "Home and family", description: "Household, relationships, personal errands" },
+  { name: "Earn more", description: "Freelance, side income, grants" },
+  { name: "Learn a skill", description: "Courses, tutorials, tools to try" },
+  { name: "Events and opportunities", description: "Hackathons, programs, meetups" },
+  { name: "Career growth", description: "Jobs, networking, portfolio" },
+  { name: "Health and wellbeing", description: "Fitness, nutrition, sleep" },
+  { name: "Create and build", description: "Content, projects, writing" },
+  { name: "Travel and experiences", description: "Trips, places, activities" },
+  { name: "Home and family", description: "Household, family, errands" },
 ].map((goal) => Object.freeze(goal)));
 
 export const PRESET_GOALS = STARTER_GOALS.slice(0, 3).map((goal) => goal.name);
@@ -234,6 +234,14 @@ export const MIGRATIONS = [
   UPDATE goals SET description = 'Hackathons, programs, applications, meetups' WHERE name = 'Events and opportunities' AND description IS NULL;
   `,
 
+  // v8. Shorter default descriptions. Only descriptions still equal to the old default text change,
+  // so anything the user wrote stays.
+  `
+  UPDATE goals SET description = 'Freelance, side income, grants' WHERE description = 'Freelance work, side income, grants, prizes';
+  UPDATE goals SET description = 'Courses, tutorials, tools to try' WHERE description = 'Courses, tutorials, tools and prompts to try';
+  UPDATE goals SET description = 'Hackathons, programs, meetups' WHERE description = 'Hackathons, programs, applications, meetups';
+  `,
+
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -407,12 +415,16 @@ export function updateGoal(db, id, patch = {}) {
   return loadGoal(db, id);
 }
 
-/** Archived goals keep their saves and history. Open actions are not reassigned. */
+/** Only a goal with no saves can be archived, so an archived goal never hides live work. History is kept either way. */
 export function archiveGoal(db, id) {
   const goal = loadGoal(db, id);
   if (!goal) return null;
   if (goal.archived) return goal;
   if (activeCount(db) <= 1) throw new GoalError(409, "last_active_goal", "Keep at least one active goal.");
+  const linked = db.prepare("SELECT COUNT(DISTINCT save_id) AS n FROM actions WHERE goal_id = ?").get(id).n;
+  if (linked > 0) {
+    throw new GoalError(409, "goal_in_use", `${linked} ${linked === 1 ? "save is" : "saves are"} in this goal. Move ${linked === 1 ? "it" : "them"} to another goal first.`);
+  }
   db.prepare("UPDATE goals SET archived_at = ? WHERE id = ?").run(new Date().toISOString(), id);
   return loadGoal(db, id);
 }

@@ -50,7 +50,7 @@ function code(fn) {
 
 test("starter goals are general and start with the three presets", () => {
   assert.equal(STARTER_GOALS.length, 8);
-  assert.ok(STARTER_GOALS.every((g) => g.name && g.description));
+  assert.ok(STARTER_GOALS.every((g) => g.name && g.description && g.description.length <= 40));
   const db = openDb(":memory:");
   const goals = listGoals(db);
   assert.deepEqual(goals.map((g) => g.name), STARTER_GOALS.slice(0, 3).map((g) => g.name));
@@ -83,7 +83,7 @@ test("at most six active goals, archiving frees a slot", () => {
   assert.equal(code(() => restoreGoal(db, first.id)), "goal_limit_reached");
 });
 
-test("archiving keeps the goal and its saves, and the last active goal stays", () => {
+test("archiving keeps the goal and the last active goal stays", () => {
   const db = openDb(":memory:");
   const [a, b, c] = listGoals(db);
   archiveGoal(db, a.id);
@@ -96,6 +96,20 @@ test("archiving keeps the goal and its saves, and the last active goal stays", (
   assert.equal(code(() => createGoal(db, { name: a.name })), "goal_name_exists");
   assert.equal(restoreGoal(db, a.id).archived, false);
   assert.equal(archiveGoal(db, 999), null);
+});
+
+test("a goal with saves cannot be archived until they move", () => {
+  const db = openDb(":memory:");
+  const [a, b] = listGoals(db);
+  const now = "2026-01-01T00:00:00Z";
+  db.prepare("INSERT INTO saves (screenshot_path, imported_at) VALUES ('x.png', ?)").run(now);
+  db.prepare("INSERT INTO actions (save_id, goal_id, kind, status, created_at, updated_at) VALUES (1, ?, 'other', 'done', ?, ?)").run(a.id, now, now);
+  assert.equal(code(() => archiveGoal(db, a.id)), "goal_in_use");
+  assert.equal(listGoals(db).length, 3);
+  // Another goal with no saves can still be archived.
+  assert.equal(archiveGoal(db, b.id).archived, true);
+  db.prepare("UPDATE actions SET goal_id = ? WHERE id = 1").run(listGoals(db)[1].id);
+  assert.equal(archiveGoal(db, a.id).archived, true);
 });
 
 test("updateGoal changes only the fields sent", () => {
@@ -169,8 +183,8 @@ test("an archived goal cannot be assigned to an action", async () => {
     const res = await send(`${base}/api/actions/1`, "PATCH", { goalId: b.id });
     assert.equal(res.status, 400);
     assert.equal((await res.json()).error, "invalid_goal");
-    // Sending the goal it already has still works after that goal is archived.
-    archiveGoal(db, a.id);
+    // Sending the goal it already has still works if that goal was archived some other way.
+    db.prepare("UPDATE goals SET archived_at = ? WHERE id = ?").run(now, a.id);
     const same = await send(`${base}/api/actions/1`, "PATCH", { goalId: a.id });
     assert.equal(same.status, 200);
   });

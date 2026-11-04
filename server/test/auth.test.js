@@ -151,3 +151,20 @@ test('login can use the registered Calendar callback without an existing session
   assert.equal(session.authenticated, true);
   assert.equal(session.profile_complete, false);
 }, true));
+
+test('goals can be added, archived and restored through the signed-in app', () => withApp(async ({ browser, login }) => {
+  const client = browser(), session = await login(client), csrf = session.csrf_token;
+  await client.request('/api/me', { method: 'PATCH', body: { name: 'User' }, csrf });
+  const starters = await (await client.request('/api/goals/starters')).json();
+  assert.equal(starters.length, 8);
+  const created = await client.request('/api/goals', { method: 'POST', body: { name: 'Health and wellbeing', description: 'Fitness, nutrition, sleep' }, csrf });
+  assert.equal(created.status, 201);
+  const goal = await created.json();
+  const archived = await client.request(`/api/goals/${goal.id}/archive`, { method: 'POST', body: {}, csrf });
+  assert.equal(archived.status, 200);
+  assert.equal((await archived.json()).archived, true);
+  const restored = await client.request(`/api/goals/${goal.id}/restore`, { method: 'POST', body: {}, csrf });
+  assert.equal((await restored.json()).archived, false);
+  const list = await (await client.request('/api/goals')).json();
+  assert.deepEqual(list.map(g => g.name), ['Earn more', 'Learn a skill', 'Events and opportunities', 'Health and wellbeing']);
+}));
