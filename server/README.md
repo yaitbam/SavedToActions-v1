@@ -151,7 +151,7 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 
 | Table | Purpose |
 |---|---|
-| `goals` | `name`, `description` (sent to the model with the name), `color` slot 0 to 5, `archived_at`, `position`. A new workspace starts with 3 general goals (Earn more, Learn a skill, Events and opportunities). Users add, edit, reorder and archive up to 6 active goals. Five more general starters are offered |
+| `goals` | `name`, `description` (sent to the model with the name), `color` slot 0 to 5, `archived_at`, `position`. A new workspace starts with 6 general goals (Earn more, Learn a skill, Events and opportunities, Career growth, Health and wellbeing, Create and build). Users add, edit, reorder and archive up to 6 active goals. Two more general starters are offered (Travel and experiences, Home and family) |
 | `saves` | screenshot filename, note, `imported_at`, `is_demo` (imported demo history, labeled in the UI) |
 | `actions` | one per save. kind (try, opportunity, other), label (claim, validate, read, someday, label only), title, goal_id (nullable, never defaulted), deadline wall plus tz plus `deadline_tz_source` (model, settings_fallback, user) plus computed `deadline_utc`, deliverables, verbatim items, `event_dates_json`, evidence quote, transcription, warnings, raw model output, `suggested_effort_min` (model) and `confirmed_effort_min` (user), status, `edited_fields_json`, done_at |
 | `blocks` | action_id, `google_event_id`, `idempotency_key` (unique), start_utc, end_utc, tz, `superseded_by`, `cancelled_at`, `event_deleted_at`, read-back status and drift |

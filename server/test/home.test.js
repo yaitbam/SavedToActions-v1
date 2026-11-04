@@ -98,6 +98,9 @@ test("goal metrics on an empty database: zeros, a null action rate, and the old 
       { id: 1, name: "Earn more" },
       { id: 2, name: "Learn a skill" },
       { id: 3, name: "Events and opportunities" },
+      { id: 4, name: "Career growth" },
+      { id: 5, name: "Health and wellbeing" },
+      { id: 6, name: "Create and build" },
     ]);
     for (const g of json) {
       assert.deepEqual(g.metrics, {

@@ -123,7 +123,7 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
       const ws = registry.get(req.account);
       ws.googleAuth.saveVerifiedTokens(tokens); setGoogleEmail(ws.db, profile.email);
       db.prepare("UPDATE accounts SET calendar_sub=? WHERE id=?").run(profile.sub, req.account.id);
-      res.redirect(`${config.frontendOrigin}/app/settings?google=connected`);
+      res.redirect(`${config.frontendOrigin}/app?google=connected`);
     } catch (error) { recordFailure(error); res.redirect(`${config.frontendOrigin}/app/settings?google=error`); }
   });
   app.use((req, res, next) => {

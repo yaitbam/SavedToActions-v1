@@ -3,7 +3,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 // General goals offered to every user. Broad on purpose, so most saves match one of them.
-// The first three are what a new workspace starts with.
+// The first six are what a new workspace starts with, and the user can change them at once on first login.
 export const STARTER_GOALS = Object.freeze([
   { name: "Earn more", description: "Freelance, side income, grants" },
   { name: "Learn a skill", description: "Courses, tutorials, tools to try" },
@@ -15,7 +15,8 @@ export const STARTER_GOALS = Object.freeze([
   { name: "Home and family", description: "Household, family, errands" },
 ].map((goal) => Object.freeze(goal)));
 
-export const PRESET_GOALS = STARTER_GOALS.slice(0, 3).map((goal) => goal.name);
+export const DEFAULT_GOAL_COUNT = 6;
+export const PRESET_GOALS = STARTER_GOALS.slice(0, DEFAULT_GOAL_COUNT).map((goal) => goal.name);
 
 export const MAX_ACTIVE_GOALS = 6;
 // Colors are palette slots, matched by the goal color classes in the web app.
@@ -275,11 +276,11 @@ function migrate(db) {
   }
 }
 
-/** Gives an empty workspace the three starting goals. Does nothing when goals already exist. */
+/** Gives an empty workspace its starting goals. Does nothing when goals already exist. */
 export function seedGoals(db) {
   if (db.prepare("SELECT COUNT(*) AS n FROM goals").get().n > 0) return;
   const insert = db.prepare("INSERT INTO goals (name, description, color, position) VALUES (?, ?, ?, ?)");
-  STARTER_GOALS.slice(0, 3).forEach((goal, i) => insert.run(goal.name, goal.description, i, i));
+  STARTER_GOALS.slice(0, DEFAULT_GOAL_COUNT).forEach((goal, i) => insert.run(goal.name, goal.description, i % GOAL_COLOR_SLOTS, i));
 }
 
 function seed(db) {

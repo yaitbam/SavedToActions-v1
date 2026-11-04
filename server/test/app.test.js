@@ -95,10 +95,10 @@ test("settings: defaults, validation, partial update", async () => {
   });
 });
 
-test("goals: three presets, names editable", async () => {
+test("goals: six starting goals, names editable", async () => {
   await withServer(stubGoogle(), async (base) => {
     const goals = await (await fetch(`${base}/api/goals`)).json();
-    assert.deepEqual(goals.map((g) => g.name), ["Earn more", "Learn a skill", "Events and opportunities"]);
+    assert.deepEqual(goals.map((g) => g.name), ["Earn more", "Learn a skill", "Events and opportunities", "Career growth", "Health and wellbeing", "Create and build"]);
     const renamed = await put(`${base}/api/goals/2`, { name: "Get better at React" });
     const body = await renamed.json();
     assert.equal(body.id, 2);

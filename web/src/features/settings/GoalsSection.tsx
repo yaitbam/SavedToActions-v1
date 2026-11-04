@@ -3,7 +3,8 @@ import { archiveGoal, createGoal, getStarterGoals, reorderGoals, restoreGoal, up
 import { errorText } from "../../api/errors";
 import type { Goal, StarterGoal } from "../../api/types";
 import { useAlert } from "../../ui/AlertProvider";
-import { goalDotClass } from "../../ui/GoalChip";
+import { registerGoals } from "../../api/goalColors";
+import { colorDotClass } from "../../ui/GoalChip";
 import { cx } from "../../ui/cx";
 import { GoalEditor, type GoalDraft } from "./GoalEditor";
 import { SettingsSection } from "./SettingsSection";
@@ -48,12 +49,16 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
     }
   }
 
-  const patchRow = (updated: Omit<Goal, "metrics">) =>
+  // Chips elsewhere in the app look colors up by goal id, so they learn the change here as well.
+  const patchRow = (updated: Omit<Goal, "metrics">) => {
+    registerGoals([updated]);
     setRows((current) => current.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
+  };
 
   const add = (draft: GoalDraft) =>
     run("new", async () => {
       const goal = await createGoal({ name: draft.name, description: draft.description.trim() || null });
+      registerGoals([goal]);
       setRows((current) => [...current, { ...goal, saves: 0 }]);
       setPrefill(null);
       setEditing(null);
@@ -79,6 +84,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
     [ids[from], ids[to]] = [ids[to], ids[from]];
     return run(`move-${id}`, async () => {
       const updated = await reorderGoals(ids);
+      registerGoals(updated);
       setRows((current) => current.map((row) => {
         const next = updated.find((goal) => goal.id === row.id);
         return next ? { ...row, ...next } : row;
@@ -97,7 +103,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
                 submitLabel="Save goal" busy={busy === `edit-${goal.id}`} onSubmit={(draft) => void save(goal.id, draft)} onCancel={() => setEditing(null)} />
             ) : (
               <>
-                <span aria-hidden="true" className={cx("st-goal-dot", goalDotClass(goal.id))} />
+                <span aria-hidden="true" className={cx("st-goal-dot", colorDotClass(goal.color))} />
                 <div className="st-goal-text">
                   <b>{goal.name}</b>
                   <span>{goal.description ?? "No description. Add one to help Muse match saves"}</span>
@@ -151,7 +157,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
           <ul className="st-goal-list">
             {archived.map((goal) => (
               <li key={goal.id} className="st-goalrow">
-                <span aria-hidden="true" className={cx("st-goal-dot", goalDotClass(goal.id))} />
+                <span aria-hidden="true" className={cx("st-goal-dot", colorDotClass(goal.color))} />
                 <div className="st-goal-text"><b>{goal.name}</b><small>{goal.saves} {goal.saves === 1 ? "save" : "saves"}</small></div>
                 <div className="st-goal-tools">
                   <button type="button" className="st-btn" onClick={() => void restore(goal.id)} disabled={full || busy !== null}

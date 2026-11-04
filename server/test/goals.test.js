@@ -48,32 +48,34 @@ function code(fn) {
   assert.fail("expected a GoalError");
 }
 
-test("starter goals are general and start with the three presets", () => {
+test("starter goals are general and a new workspace starts with the first six", () => {
   assert.equal(STARTER_GOALS.length, 8);
   assert.ok(STARTER_GOALS.every((g) => g.name && g.description && g.description.length <= 40));
   const db = openDb(":memory:");
   const goals = listGoals(db);
-  assert.deepEqual(goals.map((g) => g.name), STARTER_GOALS.slice(0, 3).map((g) => g.name));
-  assert.deepEqual(goals.map((g) => g.color), [0, 1, 2]);
+  assert.deepEqual(goals.map((g) => g.name), STARTER_GOALS.slice(0, 6).map((g) => g.name));
+  assert.deepEqual(goals.map((g) => g.color), [0, 1, 2, 3, 4, 5]);
   assert.ok(goals.every((g) => g.description && g.archived === false));
 });
 
 test("createGoal validates the name, rejects duplicates and assigns a free color", () => {
   const db = openDb(":memory:");
-  const goal = createGoal(db, { name: "  Health   and wellbeing ", description: " Fitness,  sleep " });
-  assert.equal(goal.name, "Health and wellbeing");
-  assert.equal(goal.description, "Fitness, sleep");
-  assert.equal(goal.color, 3);
+  // Make room: a new workspace already has six goals.
+  const removed = listGoals(db).at(-1);
+  db.prepare("DELETE FROM goals WHERE id = ?").run(removed.id);
   assert.equal(code(() => createGoal(db, { name: "   " })), "invalid_goal_or_name");
   assert.equal(code(() => createGoal(db, { name: "x".repeat(41) })), "goal_name_too_long");
   assert.equal(code(() => createGoal(db, { name: "earn MORE" })), "goal_name_exists");
   assert.equal(code(() => createGoal(db, { name: "Fine", description: "y".repeat(121) })), "goal_description_too_long");
-  assert.equal(createGoal(db, { name: "No description" }).description, null);
+  const goal = createGoal(db, { name: "  Side   projects ", description: " Apps,  tools " });
+  assert.equal(goal.name, "Side projects");
+  assert.equal(goal.description, "Apps, tools");
+  assert.equal(goal.color, removed.color);
+  assert.equal(code(() => createGoal(db, { name: "One too many" })), "goal_limit_reached");
 });
 
 test("at most six active goals, archiving frees a slot", () => {
   const db = openDb(":memory:");
-  for (const name of ["Four", "Five", "Six"]) createGoal(db, { name });
   assert.equal(listGoals(db).length, MAX_ACTIVE_GOALS);
   assert.equal(code(() => createGoal(db, { name: "Seven" })), "goal_limit_reached");
   const first = listGoals(db)[0];
@@ -83,16 +85,17 @@ test("at most six active goals, archiving frees a slot", () => {
   assert.equal(code(() => restoreGoal(db, first.id)), "goal_limit_reached");
 });
 
-test("archiving keeps the goal and the last active goal stays", () => {
+test("archiving hides a goal from the active list and the last active goal stays", () => {
   const db = openDb(":memory:");
-  const [a, b, c] = listGoals(db);
+  const goals = listGoals(db);
+  const [a, ...others] = goals;
   archiveGoal(db, a.id);
-  assert.deepEqual(listGoals(db).map((g) => g.id), [b.id, c.id]);
+  assert.deepEqual(listGoals(db).map((g) => g.id), others.map((g) => g.id));
   const all = listGoals(db, { includeArchived: true });
-  assert.deepEqual(all.map((g) => g.id), [b.id, c.id, a.id]);
+  assert.deepEqual(all.map((g) => g.id), [...others.map((g) => g.id), a.id]);
   assert.equal(all.at(-1).archived, true);
-  archiveGoal(db, b.id);
-  assert.equal(code(() => archiveGoal(db, c.id)), "last_active_goal");
+  for (const goal of others.slice(0, -1)) archiveGoal(db, goal.id);
+  assert.equal(code(() => archiveGoal(db, others.at(-1).id)), "last_active_goal");
   assert.equal(code(() => createGoal(db, { name: a.name })), "goal_name_exists");
   assert.equal(restoreGoal(db, a.id).archived, false);
   assert.equal(archiveGoal(db, 999), null);
@@ -105,7 +108,7 @@ test("a goal with saves cannot be archived until they move", () => {
   db.prepare("INSERT INTO saves (screenshot_path, imported_at) VALUES ('x.png', ?)").run(now);
   db.prepare("INSERT INTO actions (save_id, goal_id, kind, status, created_at, updated_at) VALUES (1, ?, 'other', 'done', ?, ?)").run(a.id, now, now);
   assert.equal(code(() => archiveGoal(db, a.id)), "goal_in_use");
-  assert.equal(listGoals(db).length, 3);
+  assert.equal(listGoals(db).length, 6);
   // Another goal with no saves can still be archived.
   assert.equal(archiveGoal(db, b.id).archived, true);
   db.prepare("UPDATE actions SET goal_id = ? WHERE id = 1").run(listGoals(db)[1].id);
@@ -128,10 +131,11 @@ test("updateGoal changes only the fields sent", () => {
 
 test("reorderGoals needs every active goal exactly once", () => {
   const db = openDb(":memory:");
-  const [a, b, c] = listGoals(db).map((g) => g.id);
-  assert.deepEqual(reorderGoals(db, [c, a, b]).map((g) => g.id), [c, a, b]);
-  assert.equal(code(() => reorderGoals(db, [a, b])), "invalid_goal_order");
-  assert.equal(code(() => reorderGoals(db, [a, a, b])), "invalid_goal_order");
+  const ids = listGoals(db).map((g) => g.id);
+  const rotated = [...ids.slice(1), ids[0]];
+  assert.deepEqual(reorderGoals(db, rotated).map((g) => g.id), rotated);
+  assert.equal(code(() => reorderGoals(db, ids.slice(1))), "invalid_goal_order");
+  assert.equal(code(() => reorderGoals(db, [ids[0], ...ids.slice(0, -1)])), "invalid_goal_order");
   assert.equal(code(() => reorderGoals(db, "abc")), "invalid_goal_order");
 });
 
@@ -141,33 +145,44 @@ test("goal API: create, edit, reorder, archive and restore", async () => {
     assert.equal(starters.length, 8);
     assert.ok(starters.every((g) => g.name && g.description));
 
-    const created = await send(`${base}/api/goals`, "POST", { name: "Create and build", description: "Content, projects" });
+    // A new workspace has six goals, so one must be archived before another can be added.
+    const full = await send(`${base}/api/goals`, "POST", { name: "Side projects" });
+    assert.equal(full.status, 409);
+    assert.equal((await full.json()).error, "goal_limit_reached");
+    const start = await (await fetch(`${base}/api/goals`)).json();
+    assert.equal(start.length, 6);
+    const spare = start.at(-1);
+    const archived = await send(`${base}/api/goals/${spare.id}/archive`, "POST");
+    assert.equal((await archived.json()).archived, true);
+
+    const created = await send(`${base}/api/goals`, "POST", { name: "Side projects", description: "Apps to ship" });
     assert.equal(created.status, 201);
     const goal = await created.json();
-    assert.equal(goal.name, "Create and build");
+    assert.equal(goal.name, "Side projects");
 
-    const dup = await send(`${base}/api/goals`, "POST", { name: "create and build" });
+    const dup = await send(`${base}/api/goals`, "POST", { name: "side PROJECTS" });
     assert.equal(dup.status, 409);
     assert.equal((await dup.json()).error, "goal_name_exists");
 
-    const edited = await send(`${base}/api/goals/${goal.id}`, "PUT", { description: "Writing and design" });
-    assert.equal((await edited.json()).description, "Writing and design");
+    const edited = await send(`${base}/api/goals/${goal.id}`, "PUT", { description: "Things I build" });
+    assert.equal((await edited.json()).description, "Things I build");
 
     const list = await (await fetch(`${base}/api/goals`)).json();
-    assert.equal(list.length, 4);
+    assert.equal(list.length, 7);
+    assert.equal(list.at(-1).id, spare.id);
+    assert.equal(list.at(-1).archived, true);
     assert.ok(list.every((g) => g.metrics && g.metrics.importedSaves === 0));
 
-    const order = list.map((g) => g.id).reverse();
+    const order = list.filter((g) => !g.archived).map((g) => g.id).reverse();
     const reordered = await send(`${base}/api/goals/order`, "PUT", { ids: order });
     assert.deepEqual((await reordered.json()).map((g) => g.id), order);
     assert.equal((await send(`${base}/api/goals/order`, "PUT", { ids: [1] })).status, 400);
 
-    const archived = await send(`${base}/api/goals/${goal.id}/archive`, "POST");
-    assert.equal((await archived.json()).archived, true);
-    const after = await (await fetch(`${base}/api/goals`)).json();
-    assert.equal(after.length, 4);
-    assert.equal(after.at(-1).archived, true);
-    const restored = await send(`${base}/api/goals/${goal.id}/restore`, "POST");
+    // Six are active again, so the archived goal cannot come back until another is archived.
+    const blocked = await send(`${base}/api/goals/${spare.id}/restore`, "POST");
+    assert.equal(blocked.status, 409);
+    await send(`${base}/api/goals/${goal.id}/archive`, "POST");
+    const restored = await send(`${base}/api/goals/${spare.id}/restore`, "POST");
     assert.equal((await restored.json()).archived, false);
     assert.equal((await send(`${base}/api/goals/999/archive`, "POST")).status, 404);
   });
@@ -249,7 +264,7 @@ test("first login setup can be skipped and validates the choice", () => {
   assert.equal(code(() => setupGoals(db, { goals: [{ name: "A" }, { name: "a" }] })), "goal_name_exists");
   assert.equal(code(() => setupGoals(db, { goals: [{ name: "" }] })), "invalid_goal_or_name");
   assert.equal(goalsSetupDone(db), false);
-  assert.equal(setupGoals(db, { skip: true }).length, 3);
+  assert.equal(setupGoals(db, { skip: true }).length, 6);
   assert.equal(goalsSetupDone(db), true);
 });
 
@@ -260,7 +275,7 @@ test("setup is not asked of a workspace that already has saves, and cannot remov
   assert.equal(goalsSetupDone(db), true);
   db.prepare("INSERT INTO actions (save_id, goal_id, kind, status, created_at, updated_at) VALUES (1, 1, 'other', 'open', ?, ?)").run(now, now);
   assert.equal(code(() => setupGoals(db, { goals: [{ name: "Other" }] })), "goals_setup_unavailable");
-  assert.equal(listGoals(db).length, 3);
+  assert.equal(listGoals(db).length, 6);
 });
 
 test("goal setup API and editing a goal both mark setup as done", async () => {

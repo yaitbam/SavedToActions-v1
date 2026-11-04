@@ -160,7 +160,10 @@ test('goals can be added, archived and restored through the signed-in app', () =
   assert.equal((await (await client.request('/api/goals/setup')).json()).done, false);
   const starters = await (await client.request('/api/goals/starters')).json();
   assert.equal(starters.length, 8);
-  const created = await client.request('/api/goals', { method: 'POST', body: { name: 'Health and wellbeing', description: 'Fitness, nutrition, sleep' }, csrf });
+  assert.equal(first.length, 6);
+  const spare = first.at(-1);
+  assert.equal((await client.request(`/api/goals/${spare.id}/archive`, { method: 'POST', body: {}, csrf })).status, 200);
+  const created = await client.request('/api/goals', { method: 'POST', body: { name: 'Side projects', description: 'Apps I want to ship' }, csrf });
   assert.equal(created.status, 201);
   const goal = await created.json();
   const archived = await client.request(`/api/goals/${goal.id}/archive`, { method: 'POST', body: {}, csrf });
@@ -169,5 +172,6 @@ test('goals can be added, archived and restored through the signed-in app', () =
   const restored = await client.request(`/api/goals/${goal.id}/restore`, { method: 'POST', body: {}, csrf });
   assert.equal((await restored.json()).archived, false);
   const list = await (await client.request('/api/goals')).json();
-  assert.deepEqual(list.map(g => g.name), ['Earn more', 'Learn a skill', 'Events and opportunities', 'Health and wellbeing']);
+  assert.deepEqual(list.map(g => g.name), ['Earn more', 'Learn a skill', 'Events and opportunities', 'Career growth', 'Health and wellbeing', 'Side projects', 'Create and build']);
+  assert.equal(list.at(-1).archived, true);
 }));

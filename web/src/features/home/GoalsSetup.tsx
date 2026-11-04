@@ -10,8 +10,8 @@ import "./goals-setup.css";
 const MAX_GOALS = 6;
 const NAME_MAX = 40;
 const DESCRIPTION_MAX = 120;
-// What a new workspace already has. Pre selected, so one click keeps the usual starting point.
-const DEFAULT_PICKS = ["Earn more", "Learn a skill", "Events and opportunities"];
+// A new workspace starts with the first six starter goals. They are pre selected, so one click keeps them.
+const DEFAULT_COUNT = 6;
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -23,7 +23,7 @@ interface Props {
 export function GoalsSetup({ onDone }: Props) {
   const [starters, setStarters] = useState<StarterGoal[]>([]);
   const [custom, setCustom] = useState<StarterGoal[]>([]);
-  const [picked, setPicked] = useState<string[]>(DEFAULT_PICKS);
+  const [touched, setTouched] = useState<string[] | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: "", description: "" });
   const [busy, setBusy] = useState<"save" | "skip" | null>(null);
@@ -36,22 +36,23 @@ export function GoalsSetup({ onDone }: Props) {
   }, []);
 
   const options = [...starters, ...custom];
+  const picked = touched ?? starters.slice(0, DEFAULT_COUNT).map((goal) => goal.name);
   const chosen = options.filter((goal) => picked.some((name) => sameName(name, goal.name)));
   const full = chosen.length >= MAX_GOALS;
   const draftName = draft.name.trim();
   const draftTaken = options.some((goal) => sameName(goal.name, draftName));
 
   function toggle(goal: StarterGoal) {
-    setPicked((current) => current.some((name) => sameName(name, goal.name))
-      ? current.filter((name) => !sameName(name, goal.name))
-      : [...current, goal.name]);
+    setTouched(picked.some((name) => sameName(name, goal.name))
+      ? picked.filter((name) => !sameName(name, goal.name))
+      : [...picked, goal.name]);
   }
 
   function addCustom(event: FormEvent) {
     event.preventDefault();
     if (!draftName || draftTaken || full) return;
     setCustom((current) => [...current, { name: draftName, description: draft.description.trim() }]);
-    setPicked((current) => [...current, draftName]);
+    setTouched([...picked, draftName]);
     setDraft({ name: "", description: "" });
     setAdding(false);
   }
@@ -116,7 +117,9 @@ export function GoalsSetup({ onDone }: Props) {
       </ul>
 
       <div className="gs-foot">
-        <p role="status">{chosen.length} of {MAX_GOALS} chosen{chosen.length < 2 ? ". Two or more works best" : ""}</p>
+        <p role="status">
+          {chosen.length} of {MAX_GOALS} chosen{full ? ". Untick one to add another" : chosen.length < 2 ? ". Two or more works best" : ""}
+        </p>
         <div className="gs-actions">
           <Button type="button" variant="text" onClick={() => void finish("skip")} loading={busy === "skip"} disabled={busy !== null}>Skip for now</Button>
           <Button type="button" onClick={() => void finish("save")} loading={busy === "save"} disabled={busy !== null || chosen.length === 0}>Save my goals</Button>

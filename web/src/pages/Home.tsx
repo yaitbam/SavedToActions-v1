@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getGoalsSetup } from "../api/goals";
 import { useAsync } from "../api/useAsync";
@@ -25,6 +26,10 @@ export function Home() {
   const { session } = useSession();
   const setup = useAsync(getGoalsSetup, []);
   const data = home.data;
+  // Coming back from Google, the address still carries the result. The page already shows it, so tidy the address.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("google")) window.history.replaceState(null, "", window.location.pathname);
+  }, []);
   // After the calendar is connected, a new user chooses their goals before anything else.
   const needsGoals = !!data?.google_connected && session?.kind !== "demo" && setup.data?.done === false;
   const goalName = (id: number | null | undefined) => goals.data?.find((goal) => goal.id === id)?.name;
