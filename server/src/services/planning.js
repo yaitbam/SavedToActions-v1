@@ -53,7 +53,7 @@ const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}
 
 const fail = (status, error, extra = {}) => ({ ok: false, status, error, ...extra });
 
-export function createPlanningService({ db, calendar, clock = Date.now }) {
+export function createPlanningService({ db, calendar, clock = Date.now, appOrigin = null }) {
   const getRow = (id) => db.prepare("SELECT * FROM actions WHERE id = ?").get(id);
   const isClosed = (row) => row.status === "done" || row.status === "skipped";
 
@@ -211,10 +211,14 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
   const describe = (row) => {
     const deliverables = JSON.parse(row.deliverables_json ?? "[]");
     // The original post, so the link is one tap away when the block starts.
-    const link = linkView(db.prepare("SELECT source_url FROM saves WHERE id = ?").get(row.save_id)?.source_url);
+    const save = db.prepare("SELECT source_url, screenshot_path FROM saves WHERE id = ?").get(row.save_id);
+    const link = linkView(save?.source_url);
+    // The save page shows the screenshot next to what to do. It opens in the app, so the viewer signs in as usual.
+    const screenshot = appOrigin && save?.screenshot_path ? `${appOrigin}/app/saves/${row.save_id}` : null;
     return [
       "Planned with SavedToAction.",
       ...(link ? ["", `Original post: ${link.url}`] : []),
+      ...(screenshot ? ["", `Screenshot and details: ${screenshot}`] : []),
       ...(deliverables.length ? ["", ...deliverables.map((d) => `- ${d}`)] : []),
     ].join("\n");
   };

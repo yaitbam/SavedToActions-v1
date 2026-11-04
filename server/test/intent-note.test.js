@@ -209,6 +209,25 @@ test("approve: the minutes shown with the time are confirmed by approving, and t
   }, { link: "https://x.com/someone/status/123" });
 });
 
+test("approve: the event description links to the save page when the save has a screenshot", async () => {
+  await withApp(async ({ cal, db, id, propose, approve }) => {
+    const saveId = db.prepare("SELECT save_id FROM actions WHERE id = ?").get(id).save_id;
+    db.prepare("UPDATE saves SET screenshot_path = ? WHERE id = ?").run("11111111-1111-1111-1111-111111111111.png", saveId);
+    const proposed = (await propose({ effortMin: 30 })).json.slot;
+    assert.equal((await approve(proposed, { effortMin: 30 })).status, 201);
+    const description = cal.bodies.at(-1).description;
+    assert.match(description, new RegExp(`Screenshot and details: http://localhost:5173/app/saves/${saveId}(\\n|$)`));
+  }, { effort: 30 });
+});
+
+test("approve: no screenshot means no screenshot line in the event description", async () => {
+  await withApp(async ({ cal, propose, approve }) => {
+    const proposed = (await propose({ effortMin: 30 })).json.slot;
+    assert.equal((await approve(proposed, { effortMin: 30 })).status, 201);
+    assert.doesNotMatch(cal.bodies.at(-1).description, /Screenshot and details/);
+  }, { effort: 30 });
+});
+
 test("approve: minutes shown again can replace minutes confirmed earlier, as long as the block matches", async () => {
   await withApp(async ({ db, id, propose, approve }) => {
     const proposed = (await propose({ effortMin: 60 })).json.slot;

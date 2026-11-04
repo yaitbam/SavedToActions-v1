@@ -182,7 +182,7 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
   const jobs=registerSaveRoutes(app, { db, config, provider, clock, locks });
   registerAccountDataRoutes(app,{db,config,clock,jobs,locks});
   app.locals.workspaceBusy = () => jobs.isBusy() || locks.isBusy();
-  const planning = createPlanningService({ db, calendar, clock });
+  const planning = createPlanningService({ db, calendar, clock, appOrigin: config.frontendOrigin });
   const agent = createAgent({ db, provider, planning, clock });
   registerPlanningRoutes(app, { db, planning, recheck, agent, locks, config, jobs });
   app.post('/api/actions/recheck',async(req,res)=>{

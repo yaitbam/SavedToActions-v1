@@ -12,7 +12,7 @@ You save a post because you mean to act on it: a hackathon deadline, a prompt to
 
 1. Drop a screenshot of a saved post, with a one line note of when and for how long ("tonight, 30 min") and, if you like, the link to the post. You can crop the screenshot first, to cut out the phone status bar, the bottom bar and other posts. Cropping happens in your browser, so the parts you cut are never uploaded.
 2. Muse reads the screenshot and your note and suggests a free time, so the first thing you see is a time and not a form. The minutes are on screen and you can change them. If nothing fits the time your note asked for, it says so and shows the next free time.
-3. Approve it with one tap. The minutes shown with the time are confirmed by that tap, and only confirmed minutes are ever scheduled. The block is written to your Google Calendar with a link back to the original post, read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
+3. Approve it with one tap. The minutes shown with the time are confirmed by that tap, and only confirmed minutes are ever scheduled. The block is written to your Google Calendar with a link back to the original post and a link to the save in the app, where the screenshot and what to do are shown (the image itself is never sent to Google), read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
 
 ## Goals
 
