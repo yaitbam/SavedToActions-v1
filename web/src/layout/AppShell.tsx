@@ -81,9 +81,9 @@ export function AppShell() {
     </aside>
     <div className="app-main">
       <header className="app-topbar">
-        <NavLink to="/app" aria-label="Overview"><Logo /></NavLink>
+        <NavLink to="/app" aria-label="Overview"><Logo compact /></NavLink>
         <div className="topbar-right">
-            {drop("h-10 px-4")}
+            {drop("topbar-drop")}
           <ProfileMenu />
         </div>
       </header>

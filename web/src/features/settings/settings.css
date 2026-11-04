@@ -77,3 +77,11 @@
  .st-goalrow { flex-wrap:wrap; }
  .st-goal-tools { width:100%; justify-content:flex-start; }
 }
+
+/* Phone: the save bar sits above the bottom navigation, with the state on top and two even buttons below. */
+@media(max-width:900px) {
+ .st-savebar { bottom:calc(84px + env(safe-area-inset-bottom)); padding:12px 14px; gap:10px; }
+ .st-savebar-state { flex:1 1 100%; }
+ .st-savebar-buttons { flex:1 1 100%; }
+ .st-savebar-buttons > * { flex:1 1 0; min-height:44px; white-space:nowrap; }
+}

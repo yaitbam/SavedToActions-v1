@@ -20,7 +20,7 @@ export function Chip({ tone = "neutral", className, ...rest }: ChipProps) {
   return (
     <span
       className={cx(
-        "semantic-pill inline-flex min-h-7 items-center gap-2 whitespace-nowrap rounded-full px-3 text-small font-medium",
+        "semantic-pill inline-flex min-h-7 max-w-full items-center gap-2 whitespace-nowrap rounded-full px-3 text-small font-medium",
         tones[tone],
         className,
       )}

@@ -180,3 +180,28 @@ button:not(:disabled), summary { cursor:pointer; }
  .home-bento .cell-inbox ul { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:12px; }
  .home-bento .cell-inbox ul > li { margin:0; }
 }
+
+/* Phone account menu: full width actions that never wrap, so Account settings and Sign out are easy to tap. */
+@media(max-width:560px) {
+ .profile-panel { width:min(320px, calc(100vw - 32px)); padding:14px; }
+ .profile-actions { flex-direction:column; align-items:stretch; gap:8px; }
+ .profile-actions > * { display:flex; align-items:center; justify-content:center; width:100%; min-height:44px; padding:0 14px; border:1px solid var(--color-line); border-radius:12px; background:var(--color-surface); font-size:15px; font-weight:600; text-decoration:none; white-space:nowrap; }
+ .profile-actions > a:hover { background:var(--color-accent); }
+}
+
+/* Phone type scale. Titles and large numbers come down, body text stays readable, form fields stay 16px so iOS does not zoom. */
+@media(max-width:560px) {
+ :root { --text-title: 1.75rem; --text-small: .9375rem; --text-small--line-height: 1.375rem; }
+ .hm-setup h2,.gs-head h2 { font-size:24px; }
+ .hm-tile b { font-size:32px; }
+ .hm-next-time { font-size:18px; }
+ .hm-head h2 { font-size:17px; }
+ .pg-goal-rate { font-size:26px; }
+ .pg-metrics dd { font-size:19px; }
+ .pc-title { font-size:22px; }
+ .pc-time { font-size:24px; }
+ .rv-time { font-size:22px; }
+ .rv-step-head h2 { font-size:18px; }
+ .ns-title { font-size:24px; }
+ .lg-card h1,.lg-card h2 { font-size:24px; }
+}

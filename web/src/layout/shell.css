@@ -53,3 +53,12 @@
  .app-topbar .profile-trigger-name { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 }
 .app-topbar .profile-panel { max-width:calc(100vw - 32px); }
+
+/* Phone top bar: a smaller mark, a smaller add button and a lower bar. */
+.app-topbar .topbar-drop { height:36px; padding:0 14px; border-radius:10px; font-size:15px; }
+@media(max-width:560px) {
+ .app-topbar { min-height:52px; padding:6px 14px; gap:8px; }
+ .app-topbar .topbar-drop { width:36px; padding:0; }
+ .app-topbar .profile-trigger { padding:2px; }
+ .app-topbar .profile-avatar { width:30px; height:30px; }
+}

@@ -22,8 +22,8 @@ export function GoalChip({ goalId, name }: GoalChipProps) {
   if (goalId === null || !name) return <Chip tone="missing">Missing</Chip>;
   return (
     <Chip>
-      <span aria-hidden="true" className={cx("size-2 rounded-full", goalDotClass(goalId))} />
-      {name}
+      <span aria-hidden="true" className={cx("size-2 shrink-0 rounded-full", goalDotClass(goalId))} />
+      <span className="truncate">{name}</span>
     </Chip>
   );
 }

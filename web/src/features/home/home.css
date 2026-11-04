@@ -88,3 +88,11 @@ a.hm-tile:hover { box-shadow:var(--shadow-lift); transform:translateY(-1px); }
  .hm-tile b { order:2; font-size:36px; }
  .hm-tile small { display:none; }
 }
+
+/* Phone: a tighter card and a smaller thumbnail leave room for a long goal name beside it. */
+@media(max-width:560px) {
+ .hm-card { padding:18px; }
+ .hm-next { gap:12px; padding:12px; }
+ .hm-next > .shrink-0 { width:68px; }
+ .hm-next .semantic-pill { gap:6px; padding-inline:10px; }
+}
