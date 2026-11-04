@@ -4,6 +4,8 @@
 
 Saved is not done. SavedToAction turns a screenshot of a post you saved into protected time on your calendar, and moves it when your week changes.
 
+Repository cleaned of third party assets before submission. Commit dates are original.
+
 ## The problem
 
 You save a post because you mean to act on it: a hackathon deadline, a prompt to try, a course, a freelance tip. It sits in Saved. The deadline passes. Saving feels like progress, but nothing happens.

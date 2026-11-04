@@ -17,3 +17,12 @@ server/data/
 *.sqlite3
 *.sqlite-wal
 *.sqlite-shm
+# Local app data (the default DATA_DIR holds token.key and user uploads), keys and logs.
+/data/
+*.key
+*.pem
+*.log
+# Agent notes stay local.
+CLAUDE.md
+AGENTS.md
+.claude/

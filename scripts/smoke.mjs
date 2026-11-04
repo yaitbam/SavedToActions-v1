@@ -1,4 +1,4 @@
-// smoke.mjs : Baseten smoke test for Muse Spark Open (SavedToAction / SavedToAction)
+// smoke.mjs : Baseten smoke test for Muse Spark Open (SavedToAction)
 // Run: node smoke.mjs [path/to/screenshot.png]
 // Needs Node 18+ (built-in fetch). No npm install.
 //
