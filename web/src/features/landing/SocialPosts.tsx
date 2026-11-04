@@ -29,7 +29,6 @@ function InstagramPost({ lit = false, scanning = false }: PostProps) {
       <span className="sp-pill sp-pill-ig"><InstagramIcon width={13} height={13} /> Instagram Reel</span>
     </header>
     <div className="sp-media sp-media-ig">
-      <img src="/demo/photos/desk.jpg" alt="" loading="lazy" draggable={false} />
       <span className="sp-glass"><PlayIcon width={12} height={12} /> Reel</span>
       <p className="sp-reel-title">A weekend.<br />One working idea.</p>
       <span className="sp-saved"><span className="sp-saved-dot" aria-hidden="true" />Saved<BookmarkIcon filled width={14} height={14} /></span>
@@ -67,7 +66,6 @@ function LinkedInPost({ lit = false, scanning = false }: PostProps) {
     </header>
     <Caption index={2} lit={lit} className="sp-body" />
     <div className="sp-media sp-media-li">
-      <img src="/demo/photos/notes.jpg" alt="" loading="lazy" draggable={false} />
       <span className="sp-event">Event</span>
       <Beam on={scanning} />
     </div>
