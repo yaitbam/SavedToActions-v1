@@ -3,8 +3,17 @@ import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { SessionProvider, useSession } from "./SessionContext";
 import { NewSaveProvider } from "../newSave/NewSaveContext";
 
+// If the session cannot be read at all (the API is down or answers with an error), nothing else can work.
+// Go to the 500 page and remember where the visitor was going.
+function SessionGate() {
+  const { session, error } = useSession();
+  const location = useLocation();
+  if (error && !session) return <Navigate to="/500" replace state={{ from: location.pathname + location.search }} />;
+  return <Outlet />;
+}
+
 export function SessionRoutes() {
-  return <SessionProvider><Outlet /></SessionProvider>;
+  return <SessionProvider><SessionGate /></SessionProvider>;
 }
 // The page a signed out visitor asked for is remembered across the Google round trip, so after signing in
 // they land there and not on Overview. It expires, and only paths inside the app are ever used.

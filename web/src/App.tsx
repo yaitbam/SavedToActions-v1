@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { SessionRoutes, RequireWorkspace } from "./features/auth/SessionRoutes";
 import { Login } from "./pages/Login";
 import { CompleteProfile } from "./pages/CompleteProfile";
@@ -11,11 +11,15 @@ import { Review } from "./pages/Review";
 import { Saves } from "./pages/Saves";
 import { Settings } from "./pages/Settings";
 import { UiKit } from "./pages/UiKit";
+import { NotFound, ServerError } from "./pages/StatusPages";
+import { ErrorBoundary } from "./features/auth/ErrorBoundary";
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/500" element={<ServerError />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route element={<SessionRoutes />}>
         <Route path="/login" element={<Login />} />
@@ -31,7 +35,8 @@ export default function App() {
         </Route>
         </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
     </Routes>
+    </ErrorBoundary>
   );
 }
