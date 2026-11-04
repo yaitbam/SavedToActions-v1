@@ -1,6 +1,6 @@
 import { listSaves } from "../../api/saves";
 import type { SaveListItem } from "../../api/types";
-import { statusFromCheck, type StatusKey } from "../../ui/StatusChip";
+import { plannedStatus, type StatusKey } from "../../ui/StatusChip";
 
 export const filters = ["All", "Needs review", "Planned", "Done"] as const;
 export type SaveFilter = (typeof filters)[number];
@@ -30,7 +30,7 @@ export function matchesSave(save: SaveListItem, filter: SaveFilter, query: strin
 export function saveStatus(save: SaveListItem): StatusKey {
   const action = save.action;
   if (!action) return save.extraction === "failed" ? "error" : "review";
-  if (action.status === "planned") return action.check ? statusFromCheck(action.check.state) : "planned";
+  if (action.status === "planned") return plannedStatus(action.check);
   if (action.status === "open") return "review";
   return action.status;
 }

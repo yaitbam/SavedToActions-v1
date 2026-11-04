@@ -1,11 +1,11 @@
 import type { Action, Home, HomeAttention, HomeRecentSave, HomeSummary, Week, WeekChip, WeekDay } from "../../api/types";
-import { statusFromCheck, type StatusKey } from "../../ui/StatusChip";
+import { plannedStatus, type StatusKey } from "../../ui/StatusChip";
 
 // Status word for a save card. Open saves with confirmed minutes show nothing.
 export function summaryStatus(action: HomeSummary): StatusKey | null {
   if (action.status === "done") return "done";
   if (action.status === "skipped") return null;
-  if (action.status === "planned") return action.check ? statusFromCheck(action.check.state) : "planned";
+  if (action.status === "planned") return plannedStatus(action.check);
   return action.effort.confirmed ? null : "needs_input";
 }
 

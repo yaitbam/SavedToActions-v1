@@ -16,11 +16,11 @@ export type StatusKey =
   | "missing";
 
 const statuses: Record<StatusKey, { label: string; tone: Tone }> = {
-  fits: { label: "Fits", tone: "fits" },
+  fits: { label: "Planned", tone: "fits" },
   conflict: { label: "Conflict", tone: "conflict" },
   nofit: { label: "Doesn't fit", tone: "nofit" },
   done: { label: "Done", tone: "fits" },
-  planned: { label: "Planned", tone: "accent" },
+  planned: { label: "Planned", tone: "fits" },
   review: { label: "Needs review", tone: "missing" },
   skipped: { label: "Skipped", tone: "missing" },
   needs_input: { label: "Needs input", tone: "missing" },
@@ -40,6 +40,11 @@ const fromCheck: Record<CheckState, StatusKey> = {
 
 export function statusFromCheck(state: CheckState): StatusKey {
   return fromCheck[state];
+}
+
+// A planned save: the latest check decides the word. A passing check reads "Planned", the same as no check yet.
+export function plannedStatus(check: { state: CheckState } | null | undefined): StatusKey {
+  return check ? statusFromCheck(check.state) : "planned";
 }
 
 export function StatusChip({ status }: { status: StatusKey }) {
