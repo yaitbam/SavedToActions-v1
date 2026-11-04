@@ -55,7 +55,7 @@ export function ReviewHeader({ action, goals, busy, onGoal }: Props) {
                 <span className="rv-ask w-full">
                   <b>Which goal is this for?</b>
                   <span className="rv-chips">
-                    {goals.map((item) => (
+                    {goals.filter((item) => !item.archived).map((item) => (
                       <button
                         key={item.id}
                         type="button"

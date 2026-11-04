@@ -2,11 +2,26 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 
-export const PRESET_GOALS = [
-  "Earn more",
-  "Learn a skill",
-  "Events and opportunities",
-];
+// General goals offered to every user. Broad on purpose, so most saves match one of them.
+// The first three are what a new workspace starts with.
+export const STARTER_GOALS = Object.freeze([
+  { name: "Earn more", description: "Freelance work, side income, grants, prizes" },
+  { name: "Learn a skill", description: "Courses, tutorials, tools and prompts to try" },
+  { name: "Events and opportunities", description: "Hackathons, programs, applications, meetups" },
+  { name: "Career growth", description: "Jobs, networking, portfolio, professional development" },
+  { name: "Health and wellbeing", description: "Fitness, nutrition, sleep, mental health" },
+  { name: "Create and build", description: "Content, projects, writing, design" },
+  { name: "Travel and experiences", description: "Trips, places, things to do" },
+  { name: "Home and family", description: "Household, relationships, personal errands" },
+].map((goal) => Object.freeze(goal)));
+
+export const PRESET_GOALS = STARTER_GOALS.slice(0, 3).map((goal) => goal.name);
+
+export const MAX_ACTIVE_GOALS = 6;
+// Colors are palette slots, matched by the goal color classes in the web app.
+export const GOAL_COLOR_SLOTS = 6;
+const GOAL_NAME_MAX = 40;
+const GOAL_DESCRIPTION_MAX = 120;
 
 export const DEFAULT_SETTINGS = Object.freeze({
   work_start: "09:00",
@@ -207,6 +222,18 @@ export const MIGRATIONS = [
   CREATE UNIQUE INDEX idx_saves_import_key ON saves(import_key) WHERE import_key IS NOT NULL;
   `,
 
+  // v7. Goals belong to the user: a description that guides extraction, a color slot, and archiving
+  // instead of deleting, so past saves and progress keep their goal. Existing goals keep their look.
+  `
+  ALTER TABLE goals ADD COLUMN description TEXT;
+  ALTER TABLE goals ADD COLUMN color INTEGER;
+  ALTER TABLE goals ADD COLUMN archived_at TEXT;
+  UPDATE goals SET color = (id - 1) % 6 WHERE color IS NULL;
+  UPDATE goals SET description = 'Freelance work, side income, grants, prizes' WHERE name = 'Earn more' AND description IS NULL;
+  UPDATE goals SET description = 'Courses, tutorials, tools and prompts to try' WHERE name = 'Learn a skill' AND description IS NULL;
+  UPDATE goals SET description = 'Hackathons, programs, applications, meetups' WHERE name = 'Events and opportunities' AND description IS NULL;
+  `,
+
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -240,12 +267,15 @@ function migrate(db) {
   }
 }
 
+/** Gives an empty workspace the three starting goals. Does nothing when goals already exist. */
+export function seedGoals(db) {
+  if (db.prepare("SELECT COUNT(*) AS n FROM goals").get().n > 0) return;
+  const insert = db.prepare("INSERT INTO goals (name, description, color, position) VALUES (?, ?, ?, ?)");
+  STARTER_GOALS.slice(0, 3).forEach((goal, i) => insert.run(goal.name, goal.description, i, i));
+}
+
 function seed(db) {
-  const hasGoals = db.prepare("SELECT COUNT(*) AS n FROM goals").get().n > 0;
-  if (!hasGoals) {
-    const insert = db.prepare("INSERT INTO goals (name, position) VALUES (?, ?)");
-    PRESET_GOALS.forEach((name, i) => insert.run(name, i));
-  }
+  seedGoals(db);
   const upsert = db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
   for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) upsert.run(k, v);
 }
@@ -278,15 +308,146 @@ export function saveSettings(db, { workStart, workEnd, tz, ignoreAllDay }) {
   return getSettings(db);
 }
 
-export function listGoals(db) {
-  return db.prepare("SELECT id, name FROM goals ORDER BY position").all();
+export class GoalError extends Error {
+  constructor(status, code, detail) {
+    super(code);
+    this.name = "GoalError";
+    this.status = status;
+    this.code = code;
+    this.detail = detail;
+  }
 }
 
+function goalRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? null,
+    color: row.color ?? (row.id - 1) % GOAL_COLOR_SLOTS,
+    archived: row.archived_at != null,
+    position: row.position,
+  };
+}
+
+/** Active goals in the user's order. With includeArchived, archived goals follow, so old saves still resolve a name. */
+export function listGoals(db, { includeArchived = false } = {}) {
+  const rows = db.prepare(
+    `SELECT id, name, description, color, archived_at, position FROM goals
+     ${includeArchived ? "" : "WHERE archived_at IS NULL"}
+     ORDER BY archived_at IS NOT NULL, position, id`,
+  ).all();
+  return rows.map(goalRow);
+}
+
+function cleanText(value) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+}
+
+function checkName(db, name, exceptId = null) {
+  const clean = cleanText(name);
+  if (!clean) throw new GoalError(400, "invalid_goal_or_name", "Give the goal a name.");
+  if (clean.length > GOAL_NAME_MAX) throw new GoalError(400, "goal_name_too_long", `Use ${GOAL_NAME_MAX} characters or fewer.`);
+  const clash = db.prepare("SELECT id, archived_at FROM goals WHERE LOWER(name) = LOWER(?) AND id IS NOT ?").get(clean, exceptId);
+  if (clash) {
+    throw new GoalError(409, "goal_name_exists", clash.archived_at ? "An archived goal has this name. Restore it instead." : "You already have a goal with this name.");
+  }
+  return clean;
+}
+
+function checkDescription(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") throw new GoalError(400, "invalid_goal_description", "Use plain text.");
+  const clean = cleanText(value);
+  if (clean.length > GOAL_DESCRIPTION_MAX) throw new GoalError(400, "goal_description_too_long", `Use ${GOAL_DESCRIPTION_MAX} characters or fewer.`);
+  return clean || null;
+}
+
+function activeCount(db) {
+  return db.prepare("SELECT COUNT(*) AS n FROM goals WHERE archived_at IS NULL").get().n;
+}
+
+function nextColor(db) {
+  const used = new Set(db.prepare("SELECT color FROM goals WHERE archived_at IS NULL").all().map((r) => r.color));
+  for (let slot = 0; slot < GOAL_COLOR_SLOTS; slot++) if (!used.has(slot)) return slot;
+  return 0;
+}
+
+function loadGoal(db, id) {
+  const row = db.prepare("SELECT id, name, description, color, archived_at, position FROM goals WHERE id = ?").get(id);
+  return row ? goalRow(row) : null;
+}
+
+export function createGoal(db, { name, description } = {}) {
+  const clean = checkName(db, name);
+  const desc = checkDescription(description);
+  if (activeCount(db) >= MAX_ACTIVE_GOALS) {
+    throw new GoalError(409, "goal_limit_reached", `You can have ${MAX_ACTIVE_GOALS} active goals. Archive one to add another.`);
+  }
+  const position = (db.prepare("SELECT MAX(position) AS p FROM goals WHERE archived_at IS NULL").get().p ?? -1) + 1;
+  const res = db.prepare("INSERT INTO goals (name, description, color, position) VALUES (?, ?, ?, ?)").run(clean, desc, nextColor(db), position);
+  return loadGoal(db, Number(res.lastInsertRowid));
+}
+
+/** Changes the fields that are present. Returns null for an unknown goal. */
+export function updateGoal(db, id, patch = {}) {
+  const current = loadGoal(db, id);
+  if (!current) return null;
+  const set = {};
+  if ("name" in patch) set.name = checkName(db, patch.name, id);
+  if ("description" in patch) set.description = checkDescription(patch.description);
+  if ("color" in patch) {
+    if (!Number.isInteger(patch.color) || patch.color < 0 || patch.color >= GOAL_COLOR_SLOTS) {
+      throw new GoalError(400, "invalid_goal_color", "Choose one of the colors.");
+    }
+    set.color = patch.color;
+  }
+  const keys = Object.keys(set);
+  if (!keys.length) throw new GoalError(400, "invalid_goal_or_name", "Send a name, description or color.");
+  db.prepare(`UPDATE goals SET ${keys.map((k) => `${k} = ?`).join(", ")} WHERE id = ?`).run(...keys.map((k) => set[k]), id);
+  return loadGoal(db, id);
+}
+
+/** Archived goals keep their saves and history. Open actions are not reassigned. */
+export function archiveGoal(db, id) {
+  const goal = loadGoal(db, id);
+  if (!goal) return null;
+  if (goal.archived) return goal;
+  if (activeCount(db) <= 1) throw new GoalError(409, "last_active_goal", "Keep at least one active goal.");
+  db.prepare("UPDATE goals SET archived_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+  return loadGoal(db, id);
+}
+
+export function restoreGoal(db, id) {
+  const goal = loadGoal(db, id);
+  if (!goal) return null;
+  if (!goal.archived) return goal;
+  if (activeCount(db) >= MAX_ACTIVE_GOALS) {
+    throw new GoalError(409, "goal_limit_reached", `You can have ${MAX_ACTIVE_GOALS} active goals. Archive one to restore this one.`);
+  }
+  const position = (db.prepare("SELECT MAX(position) AS p FROM goals WHERE archived_at IS NULL").get().p ?? -1) + 1;
+  db.prepare("UPDATE goals SET archived_at = NULL, position = ?, color = ? WHERE id = ?").run(position, nextColor(db), id);
+  return loadGoal(db, id);
+}
+
+/** ids must be exactly the active goals, in the new order. */
+export function reorderGoals(db, ids) {
+  const active = db.prepare("SELECT id FROM goals WHERE archived_at IS NULL").all().map((r) => r.id);
+  const valid = Array.isArray(ids) && ids.length === active.length && new Set(ids).size === ids.length && ids.every((id) => active.includes(id));
+  if (!valid) throw new GoalError(400, "invalid_goal_order", "Send every active goal once.");
+  const set = db.prepare("UPDATE goals SET position = ? WHERE id = ?");
+  db.transaction(() => ids.forEach((id, position) => set.run(position, id)))();
+  return listGoals(db);
+}
+
+/** Kept for older callers that only rename. */
 export function renameGoal(db, id, name) {
-  const trimmed = typeof name === "string" ? name.trim() : "";
-  if (!trimmed) return null;
-  const res = db.prepare("UPDATE goals SET name = ? WHERE id = ?").run(trimmed, id);
-  return res.changes ? { id, name: trimmed } : null;
+  try {
+    const goal = updateGoal(db, id, { name });
+    return goal ? { id: goal.id, name: goal.name } : null;
+  } catch (err) {
+    if (err instanceof GoalError) return null;
+    throw err;
+  }
 }
 
 export function loadTokens(db) {

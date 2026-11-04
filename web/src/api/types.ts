@@ -27,10 +27,23 @@ export interface GoalMetrics {
   timeScheduledMin: number;
 }
 
-export interface Goal {
+export interface GoalBase {
   id: number;
   name: string;
+  description: Nullable<string>;
+  // A color slot, 0 to 5, matched by the goal colors in the theme.
+  color: number;
+  archived: boolean;
+  position: number;
+}
+
+export interface Goal extends GoalBase {
   metrics: GoalMetrics;
+}
+
+export interface StarterGoal {
+  name: string;
+  description: string;
 }
 
 export interface Slot {

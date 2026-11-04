@@ -17,6 +17,7 @@ export function GoalMetrics({ goal }: { goal: Goal }) {
         <span id={titleId} className="hm-goal-name">
           <span aria-hidden="true" className={cx("size-3 shrink-0 rounded-full", goalDotClass(goal.id))} />
           <span>{goal.name}</span>
+          {goal.archived && <Chip>Archived</Chip>}
         </span>
         <span className="pg-goal-rate">
           {m.actionRate === null ? <Chip tone="missing">Missing</Chip> : `${Math.round(m.actionRate * 100)}%`}

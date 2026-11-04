@@ -1,29 +1,24 @@
 import { useState, type FormEvent } from "react";
 import { errorText } from "../../api/errors";
-import { renameGoal } from "../../api/goals";
 import { saveSettings } from "../../api/settings";
-import type { Goal, Settings } from "../../api/types";
+import type { Settings } from "../../api/types";
 import { useAlert } from "../../ui/AlertProvider";
 import { InlineAlert } from "../../ui/InlineAlert";
 import { Button } from "../../ui/Button";
 import { cx, fieldClass } from "../../ui/cx";
-import { goalDotClass } from "../../ui/GoalChip";
 import { SettingsSection } from "./SettingsSection";
 import { TimezonePicker } from "./TimezonePicker";
 
-export function SettingsForm({ settings, goals }: { settings: Settings; goals: Goal[] }) {
+export function SettingsForm({ settings }: { settings: Settings }) {
   const [baseline, setBaseline] = useState(settings);
-  const [savedGoals, setSavedGoals] = useState(goals);
   const [draft, setDraft] = useState(settings);
-  const [names, setNames] = useState(() => Object.fromEntries(goals.map((goal) => [goal.id, goal.name])));
   const [busy, setBusy] = useState(false);
   // Validation errors stay inline by the form. Failed saves come from the server and use the popup.
   const [error, setError] = useState<string | null>(null);
   const alert = useAlert();
   const [message, setMessage] = useState<string | null>(null);
   const settingsChanged = JSON.stringify(draft) !== JSON.stringify(baseline);
-  const changedGoals = savedGoals.filter((goal) => names[goal.id].trim() !== goal.name);
-  const dirty = settingsChanged || changedGoals.length > 0;
+  const dirty = settingsChanged;
 
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -33,7 +28,6 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
 
   function discard() {
     setDraft(baseline);
-    setNames(Object.fromEntries(savedGoals.map((goal) => [goal.id, goal.name])));
     setMessage(null);
     setError(null);
   }
@@ -50,10 +44,6 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
       setError("Choose your timezone");
       return;
     }
-    if (savedGoals.some((goal) => !names[goal.id].trim())) {
-      setError("Give each goal a name");
-      return;
-    }
     setBusy(true);
     let updated = false;
     try {
@@ -61,12 +51,6 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
         const result = await saveSettings({ ...draft, tz: draft.tz?.trim() || null });
         setBaseline(result);
         setDraft(result);
-        updated = true;
-      }
-      for (const goal of changedGoals) {
-        const result = await renameGoal(goal.id, names[goal.id].trim());
-        setSavedGoals((current) => current.map((item) => item.id === goal.id ? { ...item, name: result.name } : item));
-        setNames((current) => ({ ...current, [goal.id]: result.name }));
         updated = true;
       }
       setMessage("Settings saved");
@@ -104,21 +88,6 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
             <div><b>Ignore all-day events</b><span>All-day events do not block time when looking for a slot</span></div>
             <input type="checkbox" role="switch" className="st-switch" checked={draft.ignoreAllDay} onChange={(event) => update("ignoreAllDay", event.target.checked)} />
           </label>
-        </SettingsSection>
-        <SettingsSection title="Goal names" description="Rename the goals your saves are sorted into.">
-          <div className="st-goals">
-            {savedGoals.map((goal) => (
-              <label key={goal.id} className="st-goal">
-                <span aria-hidden className={`size-3 shrink-0 rounded-full ${goalDotClass(goal.id)}`} />
-                <span className="sr-only">Goal {goal.id} name</span>
-                <input required value={names[goal.id]} onChange={(event) => {
-                  setNames((current) => ({ ...current, [goal.id]: event.target.value }));
-                  setMessage(null);
-                  setError(null);
-                }} className={fieldClass} />
-              </label>
-            ))}
-          </div>
         </SettingsSection>
       </fieldset>
       {error && <InlineAlert className="mt-2">{error}</InlineAlert>}

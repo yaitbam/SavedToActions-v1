@@ -38,3 +38,40 @@
  .st-sec { grid-template-columns:minmax(0,1fr); gap:16px; padding:24px 0; }
  .st-grid { grid-template-columns:minmax(0,1fr); }
 }
+
+/* Goals manager */
+.st-note { margin:0; color:var(--color-muted); font-size:15px; }
+.st-goal-list { display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none; }
+.st-goalrow { display:flex; align-items:center; gap:14px; padding:14px; border:1px solid var(--color-line); border-radius:16px; background:var(--color-bg); }
+.st-goalrow > .st-editor { flex:1; }
+.st-goal-dot { flex:none; width:12px; height:12px; border-radius:50%; }
+.st-goal-text { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.st-goal-text b { font-size:16px; font-weight:600; overflow-wrap:anywhere; }
+.st-goal-text span { color:var(--color-muted); font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.st-goal-text small { color:var(--color-muted); font:500 13px var(--font-mono); }
+.st-goal-tools { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.st-btn { display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:40px; padding:0 14px; border:1px solid var(--color-line); border-radius:12px; background:var(--color-surface); color:var(--color-ink); font-size:15px; font-weight:600; transition:background-color .15s,border-color .15s; }
+.st-btn:hover:not(:disabled) { border-color:var(--color-ink); }
+.st-btn:disabled { opacity:.45; cursor:not-allowed; }
+.st-btn-main { border-color:transparent; background:var(--color-ink); color:var(--color-surface); }
+.st-btn-main:hover:not(:disabled) { border-color:transparent; opacity:.9; }
+.st-editor { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.st-add { display:flex; flex-direction:column; gap:14px; padding:18px; border:1px dashed color-mix(in srgb,var(--color-ink) 28%,var(--color-line)); border-radius:16px; }
+.st-add .st-label { margin-bottom:0; }
+.st-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.st-chip { display:inline-flex; align-items:center; height:40px; padding:0 14px; border:1px solid var(--color-line); border-radius:999px; background:var(--color-surface); font-size:15px; font-weight:600; transition:border-color .15s,background-color .15s; }
+.st-chip:hover:not(:disabled) { border-color:var(--color-brand); background:var(--color-accent); }
+.st-chip:disabled { opacity:.5; cursor:progress; }
+.st-swatches { display:flex; flex-wrap:wrap; gap:10px; margin:0; padding:0; border:0; }
+.st-swatches legend { padding:0; }
+.st-swatch { position:relative; display:grid; place-items:center; width:36px; height:36px; border-radius:50%; cursor:pointer; }
+.st-swatch-dot { width:22px; height:22px; border-radius:50%; }
+.st-swatch:has(input:checked) { box-shadow:0 0 0 2px var(--color-surface),0 0 0 4px var(--color-ink); }
+.st-swatch:has(input:focus-visible) { outline:2px solid var(--color-brand); outline-offset:3px; }
+.st-archived summary { font-size:15px; font-weight:600; color:var(--color-muted); }
+.st-archived[open] summary { margin-bottom:8px; }
+.st-archived .st-goal-list { margin-top:12px; }
+@media(max-width:640px) {
+ .st-goalrow { flex-wrap:wrap; }
+ .st-goal-tools { width:100%; justify-content:flex-start; }
+}

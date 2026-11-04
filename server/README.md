@@ -151,7 +151,7 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 
 | Table | Purpose |
 |---|---|
-| `goals` | 3 presets (Earn more, Learn a skill, Events and opportunities), names editable |
+| `goals` | `name`, `description` (sent to the model with the name), `color` slot 0 to 5, `archived_at`, `position`. A new workspace starts with 3 general goals (Earn more, Learn a skill, Events and opportunities). Users add, edit, reorder and archive up to 6 active goals. Five more general starters are offered |
 | `saves` | screenshot filename, note, `imported_at`, `is_demo` (imported demo history, labeled in the UI) |
 | `actions` | one per save. kind (try, opportunity, other), label (claim, validate, read, someday, label only), title, goal_id (nullable, never defaulted), deadline wall plus tz plus `deadline_tz_source` (model, settings_fallback, user) plus computed `deadline_utc`, deliverables, verbatim items, `event_dates_json`, evidence quote, transcription, warnings, raw model output, `suggested_effort_min` (model) and `confirmed_effort_min` (user), status, `edited_fields_json`, done_at |
 | `blocks` | action_id, `google_event_id`, `idempotency_key` (unique), start_utc, end_utc, tz, `superseded_by`, `cancelled_at`, `event_deleted_at`, read-back status and drift |
@@ -162,7 +162,7 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 | `extraction_jobs` | persisted queued/running/completed extraction state |
 | `action_transitions` | lifecycle changes supporting undo |
 
-Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. The historical v1-to-v4 migration retained tokens on a database copy.
+Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. The historical v1-to-v4 migration retained tokens on a database copy.
 
 The separate central database contains `accounts`, `sessions`, `oauth_requests`, `usage` and sanitized `auth_failures`. Accounts are identified by verified Google `sub`. Session tokens are hashed, and only random workspace keys appear in workspace paths. A cached context contains that account's database and Calendar client. Live jobs and requests prevent its eviction.
 
@@ -180,7 +180,7 @@ Account endpoints: `GET /auth/session`, `GET /auth/login/google`, `PATCH /api/me
 | `GET /api/timezones` | `{ zones: [{ id, offset }] }`. Canonical IANA names plus UTC with the current offset, computed by moment-timezone. Settings uses it for the timezone list. Aliases such as `US/Eastern` are not listed but stay valid in `PUT /api/settings` |
 | `GET /api/settings`, `PUT /api/settings` | `workStart`, `workEnd` (HH:mm, end may be 24:00), `tz` (IANA), `ignoreAllDay` (boolean). Partial updates. `tz: null` clears the timezone |
 | `GET /api/goals` | each goal is `{ id, name, metrics }`. `metrics` has `importedSaves`, `demoSaves`, `planned`, `markedDone`, `savesWithDoneAction`, `deadlinePassedWithoutCompletion`, `actionRate` (null with no saves), `timeScheduledMin`. Definitions are in `src/stats.js` and returned as `metric_definitions` by `/api/home` |
-| `PUT /api/goals/:id` | rename a goal `{name}` |
+| `GET /api/goals/starters`, `POST /api/goals`, `PUT /api/goals/:id`, `PUT /api/goals/order`, `POST /api/goals/:id/archive`, `POST /api/goals/:id/restore` | goal management, see [API.md](docs/API.md) |
 | `GET /api/home` | one read for the Home screen: `now` (server formatted), `google_connected`, `connected_email`, `next_up`, `upcoming`, `needs_attention`, `recent_saves`, `inbox_count` (+ `inbox` breakdown), `alerts_count`, `metric_definitions`. Top level keys are snake_case, items inside use the usual camelCase. Database records only, no model call |
 | `GET /auth/google` | redirect to Google consent (offline access, forced consent) |
 | `GET /auth/google/callback` | Dispatches login or Calendar using stored OAuth state. Calendar results redirect to Settings. Mismatched Google identity is rejected before tokens are saved |

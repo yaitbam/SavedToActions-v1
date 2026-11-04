@@ -15,7 +15,9 @@ export class ExtractionError extends Error {
 }
 
 export function buildSystemPrompt({ goals, today }) {
-  const goalList = goals.map((g) => `${g.id}: ${g.name}`).join("\n");
+  // Descriptions are the user's own words and help the model tell goals apart. Collapse whitespace so they stay on one line.
+  const oneLine = (text) => String(text ?? "").replace(/\s+/g, " ").trim();
+  const goalList = goals.map((g) => (g.description ? `${g.id}: ${oneLine(g.name)} (${oneLine(g.description)})` : `${g.id}: ${oneLine(g.name)}`)).join("\n");
   return `You extract one actionable item from a saved social media screenshot and the user's own note. The user saved it because they intend to act on it.
 
 Return ONLY one JSON object with exactly these keys, no markdown, no commentary:
@@ -39,7 +41,7 @@ Rules:
 3. Every quote ("evidence_quote", "deadline.quote", verbatim item text) must be copied character for character from the image text or the note. Do not translate, shorten or fix it.
 4. The note says what the user wants to do. Use it to decide what the action is. "title" is a short action title. "evidence_quote" is the exact phrase that best shows what the user should do. If the note states what the user wants, quote the note, not the image.
 5. "kind": "try" is something to try or use. "opportunity" is something to join, apply to or claim. Otherwise "other". "label" is an optional hint only.
-6. "goal_id" is the integer id of the one goal that fits best, copied exactly from this list. Use null if none clearly fits. Never invent an id and never write a goal name.
+6. "goal_id" is the integer id of the one goal that fits best, copied exactly from this list. Use null if none clearly fits. Never invent an id and never write a goal name. A description in parentheses only helps you choose, never copy it.
 ${goalList}
 7. "deadline" is the last moment the user can still act: registration closes, submission due, offer ends. The date of an event is not a deadline unless acting requires attending then. The date of a past edition is not a deadline for the next edition. If nothing like that is stated, "deadline" is null.
 8. "deadline.wall" is the local date and time as written, format YYYY-MM-DDTHH:mm in 24 hour time. Do NOT add a UTC offset or Z. Do NOT convert between timezones. If only a date is given with no time, set "wall" to null and put the date in "date" as YYYY-MM-DD.

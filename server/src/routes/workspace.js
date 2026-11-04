@@ -23,12 +23,12 @@ export function insightsView(db, now, goalId = null) {
     return {weekStart:start.format('YYYY-MM-DD'),label:start.format('D MMM'),importedSaves:n,doneSaves:done,actionRate:n?done/n:null};
   });
   const metrics=goalMetrics(db,now);
-  return {totals:{importedSaves:imported,markedDone,savesWithDoneAction:doneSaves,actionRate:imported?doneSaves/imported:null,deadlinePassedWithoutCompletion:missed,timeScheduledMin:scheduled,demoSaves:demo},weekly,goals:listGoals(db).filter(g=>goalId===null||g.id===goalId).map(g=>({...g,metrics:metrics.get(g.id)})),kinds:db.prepare(`SELECT a.kind AS name, COUNT(*) AS count FROM actions a WHERE 1=1${filter} GROUP BY a.kind`).all(...args),definitions:METRIC_DEFINITIONS,seriesNote:'Cumulative records by ISO week in UTC. Historical goal charts use current goal assignments. Completions are self reported.'};
+  return {totals:{importedSaves:imported,markedDone,savesWithDoneAction:doneSaves,actionRate:imported?doneSaves/imported:null,deadlinePassedWithoutCompletion:missed,timeScheduledMin:scheduled,demoSaves:demo},weekly,goals:listGoals(db,{includeArchived:true}).filter(g=>goalId===null||g.id===goalId).map(g=>({...g,metrics:metrics.get(g.id)})).filter(g=>!g.archived||g.metrics.importedSaves>0),kinds:db.prepare(`SELECT a.kind AS name, COUNT(*) AS count FROM actions a WHERE 1=1${filter} GROUP BY a.kind`).all(...args),definitions:METRIC_DEFINITIONS,seriesNote:'Cumulative records by ISO week in UTC. Historical goal charts use current goal assignments. Completions are self reported.'};
 }
 export function registerWorkspaceRoutes(app,{db,clock,provider,selfTest}){
   app.get('/api/insights',(_req,res)=>res.json(insightsView(db,clock())));
   app.get('/api/goals/:id',(req,res)=>{
-    const id=Number(req.params.id),goal=listGoals(db).find(g=>g.id===id);
+    const id=Number(req.params.id),goal=listGoals(db,{includeArchived:true}).find(g=>g.id===id);
     if(!goal)return res.status(404).json({error:'not_found'});
     const actions=db.prepare('SELECT id FROM actions WHERE goal_id=? ORDER BY created_at DESC').all(id).map(a=>getActionView(db,a.id,{nowMs:clock()}));
     res.json({goal,actions,...insightsView(db,clock(),id)});

@@ -100,7 +100,9 @@ test("goals: three presets, names editable", async () => {
     const goals = await (await fetch(`${base}/api/goals`)).json();
     assert.deepEqual(goals.map((g) => g.name), ["Earn more", "Learn a skill", "Events and opportunities"]);
     const renamed = await put(`${base}/api/goals/2`, { name: "Get better at React" });
-    assert.deepEqual(await renamed.json(), { id: 2, name: "Get better at React" });
+    const body = await renamed.json();
+    assert.equal(body.id, 2);
+    assert.equal(body.name, "Get better at React");
     assert.equal((await put(`${base}/api/goals/2`, { name: "" })).status, 400);
     assert.equal((await put(`${base}/api/goals/99`, { name: "Nope" })).status, 400);
   });

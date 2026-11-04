@@ -206,7 +206,7 @@ export function updateAction(db, id, patch, { settingsTz = null, nowIso }) {
 
   if ("goalId" in patch) {
     const v = patch.goalId;
-    if (v !== null && !(Number.isInteger(v) && db.prepare("SELECT 1 FROM goals WHERE id = ?").get(v))) return fail(400, "invalid_goal", "goal");
+    if (v !== null && v !== row.goal_id && !(Number.isInteger(v) && db.prepare("SELECT 1 FROM goals WHERE id = ? AND archived_at IS NULL").get(v))) return fail(400, "invalid_goal", "goal");
     if (v !== row.goal_id) {
       set.goal_id = v;
       edited.add("goal");

@@ -62,7 +62,7 @@ export function EditFields({ action, goals, busy, onPatch }: Props) {
               Choose a goal
             </option>
           )}
-          {goals.map((goal) => (
+          {goals.filter((goal) => !goal.archived || goal.id === action.goalId).map((goal) => (
             <option key={goal.id} value={goal.id}>
               {goal.name}
             </option>

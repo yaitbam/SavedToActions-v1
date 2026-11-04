@@ -13,7 +13,7 @@ export function GoalRows({ goals }: { goals: Goal[] }) {
         <Link to="/app/progress" className="hm-link">See full progress</Link>
       </div>
       <ul className="hm-goals">
-        {goals.map((goal) => {
+        {goals.filter((goal) => !goal.archived).map((goal) => {
           const { savesWithDoneAction: done, importedSaves: saved } = goal.metrics;
           const share = saved > 0 ? Math.min(100, (done / saved) * 100) : 0;
           return (
