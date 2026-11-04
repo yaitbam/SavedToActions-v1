@@ -25,7 +25,7 @@ export function Landing() {
               and moves it when your week gets in the way.
             </p>
             <div className="landing-cta">
-              <Link to="/app" className={buttonClass("primary", "min-w-36")}>
+              <Link to="/login" className={buttonClass("primary", "min-w-36")}>
                 Try it <span aria-hidden="true">↗</span>
               </Link>
               <Chip>Built on Muse Spark Open</Chip>

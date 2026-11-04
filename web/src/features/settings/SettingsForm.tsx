@@ -3,6 +3,8 @@ import { errorText } from "../../api/errors";
 import { renameGoal } from "../../api/goals";
 import { saveSettings } from "../../api/settings";
 import type { Goal, Settings } from "../../api/types";
+import { useAlert } from "../../ui/AlertProvider";
+import { InlineAlert } from "../../ui/InlineAlert";
 import { Button } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { fieldClass } from "../../ui/cx";
@@ -14,7 +16,9 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
   const [draft, setDraft] = useState(settings);
   const [names, setNames] = useState(() => Object.fromEntries(goals.map((goal) => [goal.id, goal.name])));
   const [busy, setBusy] = useState(false);
+  // Validation errors stay inline by the form. Failed saves come from the server and use the popup.
   const [error, setError] = useState<string | null>(null);
+  const alert = useAlert();
   const [message, setMessage] = useState<string | null>(null);
   const settingsChanged = JSON.stringify(draft) !== JSON.stringify(baseline);
   const changedGoals = savedGoals.filter((goal) => names[goal.id].trim() !== goal.name);
@@ -55,7 +59,7 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
       }
       setMessage("Settings saved");
     } catch (cause) {
-      setError(`${updated ? "Some changes were saved. " : ""}${errorText(cause, "Could not save changes. Try again")}`);
+      alert.error(`${updated ? "Some changes were saved. " : ""}${errorText(cause, "Could not save changes. Try again")}`, { title: "Settings not saved" });
     } finally {
       setBusy(false);
     }
@@ -111,7 +115,7 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" loading={busy} disabled={!dirty}>Save settings</Button>
         {message && <p role="status" className="text-small text-fits">{message}</p>}
-        {error && <p role="alert" className="text-small text-nofit">{error}</p>}
+        {error && <InlineAlert className="w-full">{error}</InlineAlert>}
       </div>
     </form>
   );

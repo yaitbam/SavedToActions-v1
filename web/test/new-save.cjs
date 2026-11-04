@@ -37,6 +37,7 @@ async function main() {
       }
       return route.fulfill({ json: pathname === '/api/goals' ? [] : { items: [], total: 0, limit: 100, offset: 0 } });
     });
+    await page.route('**/auth/session', route => route.fulfill({ json: { authenticated: true, kind: 'owner', profile_complete: true, name: 'Test owner', email: 'owner@example.test', csrf_token: 'test-csrf' } }));
     await page.goto(base + '/app/saves');
     await page.getByRole('heading', { name: 'Saves', exact: true }).waitFor();
 

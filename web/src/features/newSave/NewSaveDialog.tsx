@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Credits } from "../auth/Credits";
 import { ApiError } from "../../api/client";
 import { errorText } from "../../api/errors";
 import { createSave, retryExtraction } from "../../api/saves";
 import { Button } from "../../ui/Button";
+import { InlineAlert } from "../../ui/InlineAlert";
 import { Skeleton } from "../../ui/Skeleton";
 import { fieldClass } from "../../ui/cx";
 import { isSupportedImage } from "./NewSaveContext";
@@ -89,6 +91,7 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
     >
       <div className="space-y-4">
         <h2 className="text-title">New save</h2>
+        <Credits />
 
         {preview ? (
           <div className="flex gap-4">
@@ -131,11 +134,7 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
           onChange={(event) => choose(event.target.files?.[0])}
         />
 
-        {phase === "error" && (
-          <p role="alert" className="text-small text-nofit">
-            {message}
-          </p>
-        )}
+        {phase === "error" && <InlineAlert>{message}</InlineAlert>}
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="text" onClick={onClose} disabled={working}>

@@ -4,6 +4,7 @@ import { getAction, moveBlock, skipAction } from "../../api/actions";
 import { errorText } from "../../api/errors";
 import type { HomeAttention } from "../../api/types";
 import { useAsync } from "../../api/useAsync";
+import { useAlert } from "../../ui/AlertProvider";
 import { Button, buttonClass } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
@@ -25,7 +26,7 @@ export function AttentionCard({ item, onChanged }: Props) {
   const needsDetail = item.state === "amber" || (item.state === "red" && item.reason !== "deadline_passed");
   const full = useAsync(() => getAction(summary.id), [summary.id, summary.check?.id, summary.block?.id]);
   const [busy, setBusy] = useState<"move" | "skip" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const alert = useAlert();
 
   const action = full.data;
   const conflicting = item.state === "amber" && !!action?.check?.conflicts.length;
@@ -35,12 +36,11 @@ export function AttentionCard({ item, onChanged }: Props) {
 
   async function run(kind: "move" | "skip", job: () => Promise<unknown>) {
     setBusy(kind);
-    setError(null);
     try {
       await job();
       onChanged();
     } catch (e) {
-      setError(errorText(e));
+      alert.error(errorText(e), { title: kind === "move" ? "Could not move this block" : "Could not skip this save" });
     } finally {
       setBusy(null);
     }
@@ -107,11 +107,6 @@ export function AttentionCard({ item, onChanged }: Props) {
             </>
           )}
         </div>
-        {error && (
-          <p role="alert" className="text-small text-nofit">
-            {error}
-          </p>
-        )}
       </div>
     </Card>
   );

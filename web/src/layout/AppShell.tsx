@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useSession } from "../features/auth/SessionContext";
 import { useNewSave } from "../features/newSave/NewSaveContext";
 import { Button } from "../ui/Button";
 import { cx } from "../ui/cx";
@@ -14,13 +15,15 @@ const items: Array<{ to: string; label: string; icon: ReactElement; end?: boolea
 ];
 
 export function AppShell() {
+  const { session } = useSession();
+  const demo = session?.kind === "demo";
   const { open } = useNewSave();
   const onNewSave = () => open();
   return (
     <div className="min-h-screen">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col gap-8 p-6 md:flex">
         <Logo />
-        <Button onClick={onNewSave}>New save</Button>
+        <Button disabled={demo} title={demo ? "Sign in to do this" : undefined} onClick={onNewSave}>New save</Button>
         <nav aria-label="Main" className="flex flex-col gap-1">
           {items.map((item) => (
             <NavLink
@@ -43,12 +46,13 @@ export function AppShell() {
 
       <header className="flex items-center justify-between px-4 py-3 md:hidden">
         <Logo />
-        <Button className="h-10 px-4" onClick={onNewSave}>
+        <Button disabled={demo} title={demo ? "Sign in to do this" : undefined} className="h-10 px-4" onClick={onNewSave}>
           New save
         </Button>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-28 pt-4 md:ml-64 md:max-w-none md:px-10 md:py-10">
+        {demo && <div role="status" className="mb-6 rounded-card border border-line bg-accent p-4 text-small font-medium">Demo workspace. Read only. Imported demo data</div>}
         <Outlet />
       </main>
 

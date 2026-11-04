@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { useSession } from "../auth/SessionContext";
 import { NewSaveDialog } from "./NewSaveDialog";
 
 interface NewSaveApi {
@@ -13,11 +14,13 @@ export const isSupportedImage = (file: File) => /^image\/(png|jpeg|webp)$/.test(
 
 // Owns the dialog. Paste or drop of an image anywhere in the app opens it with that file.
 export function NewSaveProvider({ children }: { children: ReactNode }) {
+  const { session: identity } = useSession();
   const [session, setSession] = useState<{ id: number; file: File | null } | null>(null);
 
   const open = useCallback((file?: File) => {
+    if (identity?.kind === "demo") return;
     setSession((current) => ({ id: (current?.id ?? 0) + 1, file: file ?? null }));
-  }, []);
+  }, [identity?.kind]);
 
   useEffect(() => {
     const firstImage = (files?: FileList | null) => Array.from(files ?? []).find(isSupportedImage);

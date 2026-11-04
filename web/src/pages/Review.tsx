@@ -59,7 +59,7 @@ export function Review() {
               <Skeleton className="h-3 w-2/3" />
             </Card>
           ) : (
-            <ErrorState title="Extraction failed" error={r.error ? new Error(r.error) : undefined} onRetry={r.retryExtract} />
+            <ErrorState title="Extraction failed" onRetry={r.retryExtract} />
           )
         ) : (
           <>
@@ -86,11 +86,6 @@ export function Review() {
               )}
 
               <StateNote stage={r.stage} action={action} proposal={r.proposal} minutes={r.minutes} />
-              {r.error && (
-                <p role="alert" className="text-small text-nofit">
-                  {r.error}
-                </p>
-              )}
               <StateButton
                 stage={r.stage}
                 action={action}

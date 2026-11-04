@@ -15,7 +15,7 @@ import { Skeleton } from "../ui/Skeleton";
 const ATTENTION_VISIBLE = 2;
 
 export function Home() {
-  const { home, goals, planned, week, reload, recheck, rechecking, recheckNote } = useHomeData();
+  const { home, goals, planned, week, reload, recheck, rechecking } = useHomeData();
   const data = home.data;
   const goalName = (id: number | null | undefined) => goals.data?.find((goal) => goal.id === id)?.name;
 
@@ -39,11 +39,6 @@ export function Home() {
         </div>
         {data?.google_connected && (
           <div className="flex items-center gap-3">
-            {recheckNote && (
-              <span role="alert" className="text-small text-nofit">
-                {recheckNote}
-              </span>
-            )}
             <Button variant="secondary" onClick={recheck} loading={rechecking} disabled={plannedItems.length === 0}>
               Recheck now
             </Button>

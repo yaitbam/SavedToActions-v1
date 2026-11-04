@@ -21,7 +21,7 @@ export function Trace({ actionId }: { actionId: number }) {
         {steps.map((step) => (
           <li key={step.n} className="flex gap-3">
             <span className="w-5 shrink-0 text-muted">{step.n}</span>
-            <span className="min-w-0 flex-1">{step.label}</span>
+            <span className="min-w-0 flex-1">{step.type === "error" ? "Something went wrong while planning. Please try again" : step.label}</span>
             {step.ms != null && <span className="shrink-0 text-muted">{step.ms} ms</span>}
           </li>
         ))}

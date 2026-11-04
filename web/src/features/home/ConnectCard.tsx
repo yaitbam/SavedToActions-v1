@@ -1,9 +1,12 @@
+import { useSession } from "../auth/SessionContext";
 import { googleConnectUrl } from "../../api/auth";
 import { buttonClass } from "../../ui/Button";
 import { Card } from "../../ui/Card";
 
 // First run: shown instead of the sections that need a calendar.
 export function ConnectCard() {
+  const { session } = useSession();
+  if (session?.kind === "demo") return null;
   return (
     <Card note className="max-w-xl space-y-4">
       <h2 className="text-base">Connect Google Calendar</h2>

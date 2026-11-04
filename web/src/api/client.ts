@@ -28,12 +28,28 @@ export function withQuery(path: string, query?: Query): string {
   return text ? `${path}?${text}` : path;
 }
 
+let csrfToken: string | null = null;
+let demoReadonly = false;
+export function configureSession(token: string | null, demo: boolean) { csrfToken = token; demoReadonly = demo; }
+export function clearSession() { csrfToken = null; demoReadonly = false; }
+
 async function send<T>(method: string, path: string, init: RequestInit): Promise<T> {
+  const changing = !["GET", "HEAD", "OPTIONS"].includes(method);
+  if (changing && demoReadonly && path !== "/auth/logout" && path !== "/auth/demo") {
+    throw new ApiError(403, { error: "demo_readonly", detail: "Sign in to do this" });
+  }
+  const headers = new Headers(init.headers);
+  if (changing && csrfToken) headers.set("X-CSRF-Token", csrfToken);
   let res: Response;
   try {
-    res = await fetch(path, { method, ...init });
+    res = await fetch(path, { method, ...init, headers, credentials: "same-origin" });
   } catch {
     throw new ApiError(0, { error: "network_error", detail: "Could not reach the server" });
+  }
+  if (res.status === 401 && path !== "/auth/session") {
+    clearSession();
+    document.documentElement.style.visibility = "hidden";
+    window.location.replace("/login");
   }
   const text = await res.text();
   let body: unknown = null;
@@ -44,7 +60,11 @@ async function send<T>(method: string, path: string, init: RequestInit): Promise
       body = null;
     }
   }
-  if (!res.ok) throw new ApiError(res.status, (body as Record<string, unknown>) ?? {});
+  if (!res.ok) {
+    const error = new ApiError(res.status, (body as Record<string, unknown>) ?? {});
+    console.warn("Request failed", { method, status: error.status, code: error.code });
+    throw error;
+  }
   return body as T;
 }
 

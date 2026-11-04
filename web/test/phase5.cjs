@@ -57,6 +57,7 @@ async function main() {
       read('/api/insights'), read('/api/settings'), read('/api/saves?limit=100'), read('/auth/status'),
     ]);
     assert.ok(insights.totals.demoSaves > 0, 'Existing seeded demo records');
+    await page.route('**/auth/session', route => route.fulfill({ json: { authenticated: true, kind: 'owner', profile_complete: true, name: 'Test owner', email: 'owner@example.test', csrf_token: 'test-csrf' } }));
     await page.goto(base + '/app/progress');
     for (const goal of insights.goals) {
       const card = page.locator('section').filter({ has: page.getByRole('heading', { name: goal.name, exact: true }) });

@@ -1,4 +1,4 @@
-import { ApiError } from "../api/client";
+import { errorText } from "../api/errors";
 import { Button } from "./Button";
 import { Card } from "./Card";
 
@@ -9,7 +9,7 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ error, title = "Something went wrong", onRetry }: ErrorStateProps) {
-  const detail = error instanceof ApiError ? (error.detail ?? error.code) : null;
+  const detail = errorText(error);
   return (
     <Card role="alert" className="flex flex-col items-start gap-3">
       <h2 className="font-display text-xl">{title}</h2>

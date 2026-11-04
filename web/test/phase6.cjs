@@ -30,7 +30,7 @@ async function main() {
       await page.goto(base);
       await page.evaluate(() => document.fonts.ready);
       assert.equal(await page.locator('h1').innerText(), "Don't just\nsave it.\nBook it.");
-      assert.equal(await page.getByRole('link', { name: 'Try it', exact: true }).getAttribute('href'), '/app');
+      assert.equal(await page.getByRole('link', { name: 'Try it', exact: true }).getAttribute('href'), '/login');
       assert.equal(await page.getByRole('link', { name: 'Try it', exact: true }).count(), 1);
       await page.getByRole('link', { name: 'How it works' }).click();
       assert.equal(new URL(page.url()).hash, '#how-it-works');

@@ -15,7 +15,18 @@ import { getGoals } from "../../api/goals";
 import { confirmEffort, getSave, retryExtraction } from "../../api/saves";
 import type { Action, ActionPatch, AgentPlan, ProposeResult } from "../../api/types";
 import { useAsync } from "../../api/useAsync";
+import { useAlert } from "../../ui/AlertProvider";
 import { stageOf, type Proposal } from "./model";
+
+const failureTitle: Record<string, string> = {
+  plan: "Could not find a time",
+  book: "Could not book this time",
+  recheck: "Recheck failed",
+  done: "Could not mark this done",
+  skip: "Could not skip this save",
+  patch: "Could not save your change",
+  retry: "Extraction failed",
+};
 
 export function useReview(saveId: number) {
   const save = useAsync(() => getSave(saveId), [saveId]);
@@ -29,7 +40,7 @@ export function useReview(saveId: number) {
   const [moved, setMoved] = useState(false);
   const [preference, setPreference] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const alert = useAlert();
 
   const loaded = save.data?.action ?? null;
   useEffect(() => {
@@ -42,7 +53,6 @@ export function useReview(saveId: number) {
     setNoSlot(false);
     setUnlocked(false);
     setKept(false);
-    setError(null);
     setMoved(false);
   }, [saveId]);
 
@@ -55,11 +65,10 @@ export function useReview(saveId: number) {
 
   async function run(label: string, job: () => Promise<void>) {
     setBusy(label);
-    setError(null);
     try {
       await job();
     } catch (e) {
-      setError(errorText(e));
+      alert.error(errorText(e), { title: failureTitle[label] });
     } finally {
       setBusy(null);
     }
@@ -177,7 +186,6 @@ export function useReview(saveId: number) {
     preference,
     setPreference,
     busy,
-    error,
     stage: stageOf(action, proposal, { noSlot, unlocked, kept }),
     plan,
     book,
