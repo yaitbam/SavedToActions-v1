@@ -12,7 +12,7 @@ You save a post because you mean to act on it: a hackathon deadline, a prompt to
 
 1. Drop a screenshot of a saved post, with an optional note.
 2. Confirm how long it will take. The model suggests minutes, but only the minutes you confirm are ever scheduled.
-3. Approve a time. The block is written to your Google Calendar, read back to check it matches, and rechecked when your calendar changes.
+3. Approve a time. The block is written to your Google Calendar, read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
 
 Every field shows where it came from. A deadline only exists if its supporting quote is found in your note or in the text the model read from the image. Anything the post does not state stays **Missing**. Nothing is invented: not deadlines, not dates, not links, not urgency.
 
@@ -29,7 +29,7 @@ Muse Spark Open is an open weights model. This project calls `meta-models/muse-s
 
 These were checked by running them. Details and numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
-- Server tests: 263 pass, with no network calls.
+- Server tests: 276 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
 - Demo seed: 14 of 14 illustrative posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
 - Timezone: Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so all conversions use moment-timezone and the server refuses to start if its startup self test fails. When the model writes an offset, code ignores it and computes the time itself.
 - Google Calendar: the full flow of propose, approve, read back, recheck, conflict, move and cleanup passed 8 of 8 steps on a real calendar (recorded in `server/README.md`).
@@ -37,7 +37,8 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 
 ## Honest limits
 
-- Single user and local only. There is no login. Google OAuth runs in Testing mode, so only listed test users can connect.
+- Google login and private workspaces are implemented. Google OAuth remains in Testing mode, so accounts must be added as test users. Public Google approval is a separate release step.
+- Hosting targets one server process with persistent disk. The shared demo, trust ledger, account deletion and migration of legacy local data are not implemented.
 - Goal assignment is the weakest part of extraction. In the demo seed the model returned no goal for 2 of 14 posts, and results varied between runs. You can always pick the goal yourself.
 - Posts that give a date but no time get no deadline. The app does not guess a time.
 - The model takes about 7 s per screenshot, so the app shows loading states.
@@ -59,37 +60,47 @@ SavedToAction never scrapes a platform, reads DMs, or posts or comments for you.
 
 The 14 images in `fixtures/demo/` are original illustrative posts. Every account, event, venue, grant and organization in them is invented. They are imported as "Imported demo data" and are never presented as real saves. No financial, medical or political advice is given.
 
+## Accounts and privacy
+
+Sign in with Google, confirm your name and verified email, then connect Google Calendar using the same Google account. You can upload and review saves before connecting Calendar. Scheduling also needs your timezone and working hours.
+
+Each account has its own workspace database, screenshots, settings and Calendar credentials. Sessions use HttpOnly cookies and expire after seven days. Calendar tokens are encrypted on the server. Sign-out ends the app session. Disconnecting Calendar leaves your app login active.
+
+Free accounts receive 20 credits per GMT day, and owner accounts receive 100. One extraction or agent-planning operation consumes one credit when a model response succeeds. Failed model requests refund their reservation. A process crash during a pending request may leave the reserved credit charged. There are no payments or paid plans.
+
 ## Setup
 
-You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth client.
+You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth **Web application** client.
 
-1. Install and configure:
+1. From the repository root, install both applications:
+   ```sh
+   npm --prefix server install
+   npm --prefix web install
    ```
-   cd server
-   npm install
-   cp ../.env.example ../.env
+2. For a new checkout, copy `.env.example` to `.env`. Preserve an existing `.env`. Set `BASETEN_API_KEY`, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Keep `AUTH_MODE=on` and `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback` for local development.
+3. Enable Google Calendar API. In the OAuth client's **Authorized redirect URIs**, register `http://localhost:3000/auth/google/callback` exactly. Login and Calendar share this callback by default. If you set a different `GOOGLE_LOGIN_REDIRECT_URI`, register that exact URL too. Keep consent in Testing mode and add your Google account as a test user. Login requests `openid email profile`. Calendar connection separately requests `calendar.events` and `calendar.freebusy`.
+4. Start the backend in one terminal:
+   ```sh
+   npm --prefix server start
    ```
-   Fill in `BASETEN_API_KEY`, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`. Keep `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback`. `.env` is gitignored.
-2. In Google Cloud, enable the Google Calendar API, create an OAuth client for a web app with that redirect URI, keep the consent screen in Testing mode, and add your account as a test user. The app asks for the `calendar.events` and `calendar.freebusy` scopes.
-3. Start the server on http://localhost:3000 (loopback only):
+5. Start the frontend in another terminal:
+   ```sh
+   npm --prefix web run dev
    ```
-   npm start
-   ```
-4. In a second terminal start the web app on http://localhost:5173, which proxies `/api` and `/auth` to the server:
-   ```
-   cd web
-   npm install
-   npm run dev
-   ```
-5. Open the app, connect Google Calendar, and set your timezone and working hours in settings. Missing timezone is never defaulted, scheduling stays off until you set one.
-6. Optional demo data. Stop the server, then run these from the repo root. The seed makes 14 real model calls and backs up the database first:
-   ```
-   node scripts/seed-demo.mjs
-   node scripts/demo-reset.mjs
-   ```
-   The reset restores the seeded state and keeps your settings and Google connection. Neither script touches Google Calendar. Events you create while trying the app stay on your calendar, delete them by hand.
+6. Open **http://localhost:5173**, choose **Try it**, sign in, and confirm your details. Connect Calendar in Settings and set your timezone and working hours. Use `localhost` consistently throughout the flow.
 
-Run the tests with `cd server && npm test`. More detail on the server is in [server/README.md](server/README.md) and the API in [server/docs/API.md](server/docs/API.md).
+Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data. The old seed/reset scripts target the legacy database selected by `DB_PATH`, not signed-in account workspaces. Stop the server before using them. They never remove events already written to Google Calendar.
+
+For HTTPS production, configure the public origin and callback URLs, set `COOKIE_SECURE=true`, and supply a secret `TOKEN_ENC_KEY` containing 64 hexadecimal characters. Keep the key and persistent data backed up outside Git. Local development creates a private token key when this variable is absent. See [account setup](docs/AUTH_SETUP.md) for configuration and current limits.
+
+## Checks and component guides
+
+```sh
+npm --prefix server test
+npm --prefix web run build
+```
+
+[Server guide](server/README.md) covers storage, API behavior and scheduling. [Web guide](web/README.md) covers routes, session handling, development and browser checks. The [core API reference](server/docs/API.md) and [account setup](docs/AUTH_SETUP.md) provide further detail.
 
 ## Built with
 

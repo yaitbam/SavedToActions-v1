@@ -4,9 +4,9 @@ Backend for SavedToAction, built for the Meta Global AI Developer Hackathon (Ind
 
 This file is the single hand-over document for the server. If you are new to the project, read it top to bottom once. Scope and product rules come from the project brief kept by the owner, and the brief wins if the two ever disagree.
 
-Status on Nov 3 2026: the local backend includes the core scheduling flow, Home and goal metrics, workspace collections, background extraction jobs, traces, lifecycle undo, approved restore and account data operations. See [the current API contract](docs/API.md) and [readiness evidence](docs/READINESS.md). The React client exists under web/. Outside tester runs and submission work remain separate from API readiness. Submit target is Wed Nov 4 evening. Hard close is Thu Nov 5 02:00 GMT.
+Status on Nov 4 2026: Google login, persistent sessions, profile confirmation and private workspaces are enabled by default. Calendar connections are bound to the signed-in Google account. The backend also provides scheduling, extraction, metrics, lifecycle undo, completion titles and usage limits. Account deletion, the shared demo, trust ledger and legacy owner-data migration remain unavailable. Historical live-calendar evidence below predates the multiuser auth layer. See [account setup](../docs/AUTH_SETUP.md) and the [core API reference](docs/API.md).
 
-All times in this project are GMT+0. Morocco is permanently GMT+0 since Sep 20 2026.
+Project reporting times are GMT+0. Scheduling uses each workspace's configured IANA timezone. The startup self-test requires Africa/Casablanca to be +00:00 at 2026-11-05T10:00Z.
 
 ## Contents
 
@@ -32,7 +32,7 @@ All times in this project are GMT+0. Morocco is permanently GMT+0 since Sep 20 2
 
 ## Ground rules
 
-- Scope is frozen. Build the core flow end to end before any extra feature.
+- Preserve the scheduling, approval, timezone and data-isolation rules when extending the app.
 - No invented deadlines, efforts, dates, links, prompts, metrics or urgency. Missing means null and is shown as missing.
 - Writes to the user's real Google Calendar happen only after approval. Never create, change or delete an event on the real calendar unless the owner agreed to that specific action. Scripts under `../scripts` that write say so at the top.
 - State clearly what is verified and what is assumed. Do not guess API details.
@@ -44,51 +44,55 @@ All times in this project are GMT+0. Morocco is permanently GMT+0 since Sep 20 2
 
 Needs Node 22 or newer (developed on v22.21.0) and npm.
 
-```
-cd server
+```sh
 npm install
-cp ../.env.example ../.env        # then fill in the values, see below
-npm start                          # http://localhost:3000, loopback only
-npm test                           # isolated database, fake calendar and model
-npm run smoke                      # read-only checks against the running local API
+# New checkout only: copy ../.env.example to ../.env and fill in credentials.
+npm start
+npm test
 ```
 
-The server loads `../.env` (the repo root). It never commits secrets: `.env` is gitignored, only `.env.example` is committed. The SQLite database and uploaded screenshots live in `server/data/`, also gitignored.
+The server loads the repository-root `.env`. Configure Google and Baseten credentials there, then start the web app with `npm --prefix ../web run dev`. Open **http://localhost:5173** to sign in and confirm your details. Connect Calendar separately in Settings with the same Google account, then set your timezone and working hours.
 
-First run checklist:
+Register `http://localhost:3000/auth/google/callback` exactly as an authorized redirect URI on the OAuth web client. Login shares this existing Calendar callback by default. A custom `GOOGLE_LOGIN_REDIRECT_URI` must also be registered exactly. Add each account to Google's consent-screen test users while the client is in Testing mode.
 
-1. Fill `BASETEN_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` in `.env`.
-2. `npm start`. The log must say "Timezone self test passed". If it does not, the server exits on purpose.
-3. Open `http://localhost:3000/auth/google` and approve both calendar permissions. You land on `http://localhost:5173/?google=connected` (that page does not exist until the UI is built, which is fine).
-4. `curl localhost:3000/auth/status` must show `connected: true`, `hasRefreshToken: true`, `missingScopes: []`.
-5. Set the timezone once: `curl -X PUT localhost:3000/api/settings -H 'Content-Type: application/json' -d '{"tz":"Africa/Casablanca"}'`. Nothing schedules without a timezone.
+Account mode stores the central database in `../data/central.sqlite` and each workspace under `../data/workspaces/<workspace_key>/`. The legacy local workspace remains in `server/data/`. New accounts do not inherit its saves or credentials. Back up private data and encryption keys outside Git.
 
-Disconnect Google (local only, does not revoke at Google): `curl -X POST localhost:3000/auth/disconnect`. Do this before connecting a different account, otherwise the old refresh token is merged into the new login.
+For a public read-only health check, use `curl http://localhost:3000/ready`. Resource routes require a signed-in browser session and a complete profile. Writes additionally require the session's `X-CSRF-Token` and the configured Origin. The old `npm run smoke` script assumes the legacy API and is intended for an isolated `AUTH_MODE=off` development server.
+
+Sign-out revokes the current app session. Disconnect Calendar in Settings to remove only that workspace's stored Calendar tokens. Neither operation deletes existing Calendar events. Full account deletion is not implemented.
 
 ## Environment variables
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `BASETEN_API_KEY` | none, required for extraction and agent | Baseten key for Muse Spark Open |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | none, required | OAuth web client (Testing mode, owner is the only test user) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | none, required | OAuth web client. Add each tester while consent is in Testing mode |
 | `GOOGLE_REDIRECT_URI` | `http://localhost:3000/auth/google/callback` | Must match the Google console exactly |
 | `PORT` | `3000` | Server port. Binds to 127.0.0.1 only |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Allowed CORS origin, and where the OAuth callback redirects |
-| `DB_PATH` | `server/data/savedtoaction.db` | SQLite file |
-| `SCREENSHOT_DIR` | `server/data/screenshots` | Uploaded originals |
+| `DB_PATH` | `server/data/savedtoaction.db` | Legacy local workspace and manual seed/reset scripts |
+| `SCREENSHOT_DIR` | `server/data/screenshots` | Legacy local screenshot directory |
 | `MODEL_PROVIDER` | `baseten` | Provider switch. Only baseten exists |
 | `BASETEN_BASE_URL` | `https://inference.baseten.co/v1` | OpenAI compatible endpoint |
 | `BASETEN_MODEL` | `meta-models/muse-spark-open-1026` | Model id |
 | `BASETEN_REASONING_EFFORT` | `low` | One of minimal, low, medium, high. `off` or `default` sends nothing |
 | `WATCHER` | on | `WATCHER=off` disables the background recheck |
 | `WATCHER_INTERVAL_MS` | `300000` | Watcher period, 5 minutes |
+| `AUTH_MODE` | `on` | Google login and per-account workspaces. `off` is local development only and is refused in production |
+| `DATA_DIR` | repository-root `data/` | Persistent central database, per-account workspaces and local development encryption key |
+| `GOOGLE_LOGIN_REDIRECT_URI` | `GOOGLE_REDIRECT_URI` or the default Calendar callback | Optional dedicated login callback, which must also be registered at Google |
+| `OWNER_EMAIL` | empty | Verified email eligible for the owner account kind. Set before its first login |
+| `COOKIE_SECURE` | false locally, true in production | Secure cookies for HTTPS |
+| `TOKEN_ENC_KEY` | local key file in development | 64 hex characters for AES-256-GCM. Required in production |
+| `FREE_DAILY_CREDITS` | `20` | Successful model operations per user per GMT day. Owners receive 100 |
 
 ## Code map
 
 ```
 src/
-  index.js              Entry point. Timezone self test (exit on failure), opens the DB, wires everything, starts the watcher.
-  app.js                Express app factory. CORS, health, settings, goals, auth routes, error handler. Dependencies are injected.
+  index.js              Entry point. Timezone self test (exit on failure), account or legacy app wiring, starts the watcher.
+  auth/                 Account HTTP boundary, OIDC, sessions, workspace registry, encrypted credentials and usage budgets.
+  app.js                Workspace Express app factory. CORS, health, settings, goals, auth routes, error handler. Dependencies are injected.
   config.js             Loads ../.env, exports config and APP_ID.
   db.js                 SQLite schema as append-only migrations (PRAGMA user_version), settings and token helpers.
   tz.js                 The ONLY place for wall time <-> UTC and offsets (moment-timezone). Self test.
@@ -103,7 +107,7 @@ src/
   model/provider.js     Provider switch (baseten). Chat with optional tools. Error codes.
   google/
     auth.js             OAuth flow, token storage and refresh persistence, status.
-    calendar.js         Calendar client: FreeBusy, events.list, insert, get, delete. CalendarError codes. buildEventBody.
+    calendar.js         Calendar client: FreeBusy, events.list, insert, patch, get, delete. CalendarError codes. buildEventBody.
   scheduler/            PURE functions. No clock, network or database.
     time.js             Working windows, interval math, grid, validation.
     slots.js            findSlot, latestFeasibleStart, resolveDeadline, red hints.
@@ -136,43 +140,49 @@ screenshot + note
   POST /api/actions/:id/approve      approved:true -> fresh check, write event, read back, block saved, status planned
   POST /api/actions/:id/recheck      read only: green / amber / red against the real calendar (same code as the watcher)
   POST /api/actions/:id/move         approved:true -> new event, old block superseded, old event deleted and verified
-  POST /api/actions/:id/done         self reported, status done  (or /skip)
+  POST /api/actions/:id/done         approved:true for a booked task -> verified Done prefix, self-reported status done
 ```
 
 Action status: `open` -> `planned` (an active block exists) -> `done` or `skipped`. `done` and `skipped` are closed: no edits, no planning. A block is active while `superseded_by` and `cancelled_at` are both null.
 
 ## Data model
 
-SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAGMA user_version` is the schema version (now 4). Table rebuilds run with foreign keys off, then `foreign_key_check` must be empty.
+SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAGMA user_version` is the workspace schema version (currently 6). Table rebuilds run with foreign keys off, then `foreign_key_check` must be empty.
 
 | Table | Purpose |
 |---|---|
-| `goals` | 3 presets (Make money, Level up as a dev, Join events and opportunities), names editable |
+| `goals` | 3 presets (Earn more, Learn a skill, Events and opportunities), names editable |
 | `saves` | screenshot filename, note, `imported_at`, `is_demo` (imported demo history, labeled in the UI) |
 | `actions` | one per save. kind (try, opportunity, other), label (claim, validate, read, someday, label only), title, goal_id (nullable, never defaulted), deadline wall plus tz plus `deadline_tz_source` (model, settings_fallback, user) plus computed `deadline_utc`, deliverables, verbatim items, `event_dates_json`, evidence quote, transcription, warnings, raw model output, `suggested_effort_min` (model) and `confirmed_effort_min` (user), status, `edited_fields_json`, done_at |
 | `blocks` | action_id, `google_event_id`, `idempotency_key` (unique), start_utc, end_utc, tz, `superseded_by`, `cancelled_at`, `event_deleted_at`, read-back status and drift |
 | `settings` | work_start, work_end, tz (null until set), `ignore_all_day` ("1" default) |
-| `oauth_tokens` | single row, Google tokens as JSON (local database, plaintext, gitignored) |
+| `oauth_tokens` | one row per workspace. AES-256-GCM encrypted in account mode. Legacy off mode retains its original local JSON storage |
 | `checks` | every Recheck result, newest wins in the view, kept as history. source manual or watcher |
 | `agent_traces` | one row per agent run with all steps as JSON |
+| `extraction_jobs` | persisted queued/running/completed extraction state |
+| `action_transitions` | lifecycle changes supporting undo |
 
-Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. The first real database was migrated v1 to v4 and Google tokens survived (tested on a copy).
+Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. The historical v1-to-v4 migration retained tokens on a database copy.
+
+The separate central database contains `accounts`, `sessions`, `oauth_requests`, `usage` and sanitized `auth_failures`. Accounts are identified by verified Google `sub`. Session tokens are hashed, and only random workspace keys appear in workspace paths. A cached context contains that account's database and Calendar client. Live jobs and requests prevent its eviction.
 
 ## API reference
 
-Base `http://localhost:3000`. JSON everywhere, uploads are multipart. Errors are `{ error, detail?, field? }`.
+Base `http://localhost:3000`. JSON everywhere, uploads are multipart. In account mode, private resource endpoints require a valid session cookie and complete profile. Writes require exact Origin and `X-CSRF-Token`. Errors retain machine-readable `{ error, detail?, field? }` for client decisions and diagnostics. The UI uses approved messages or a general fallback and never displays raw codes or details.
+
+Account endpoints: `GET /auth/session`, `GET /auth/login/google`, `PATCH /api/me` with `{name}`, and `POST /auth/logout`. `/auth/session` returns identity, profile completeness, CSRF token, Calendar email and server-computed credits. Anonymous sessions return 200 with a CSRF bootstrap cookie. OIDC state is browser-bound, single-use and expires after ten minutes. Login and Calendar callbacks share the registered callback by default. Sessions last seven days and survive restarts.
 
 **Health and setup**
 
 | Route | Notes |
 |---|---|
-| `GET /health` | timezone self test result, schema version, Google status |
-| `GET /api/settings`, `PUT /api/settings` | `workStart`, `workEnd` (HH:mm, end may be 24:00), `tz` (IANA), `ignoreAllDay` (boolean). Partial updates. `null` leaves a value unchanged |
+| `GET /health` | Account mode: service and timezone status. Legacy mode also returns workspace schema and Google status |
+| `GET /api/settings`, `PUT /api/settings` | `workStart`, `workEnd` (HH:mm, end may be 24:00), `tz` (IANA), `ignoreAllDay` (boolean). Partial updates. `tz: null` clears the timezone |
 | `GET /api/goals` | each goal is `{ id, name, metrics }`. `metrics` has `importedSaves`, `demoSaves`, `planned`, `markedDone`, `savesWithDoneAction`, `deadlinePassedWithoutCompletion`, `actionRate` (null with no saves), `timeScheduledMin`. Definitions are in `src/stats.js` and returned as `metric_definitions` by `/api/home` |
 | `PUT /api/goals/:id` | rename a goal `{name}` |
 | `GET /api/home` | one read for the Home screen: `now` (server formatted), `google_connected`, `connected_email`, `next_up`, `upcoming`, `needs_attention`, `recent_saves`, `inbox_count` (+ `inbox` breakdown), `alerts_count`, `metric_definitions`. Top level keys are snake_case, items inside use the usual camelCase. Database records only, no model call |
 | `GET /auth/google` | redirect to Google consent (offline access, forced consent) |
-| `GET /auth/google/callback` | redirects to the frontend with `?google=connected`, `partial`, `denied` or `error` |
+| `GET /auth/google/callback` | Dispatches login or Calendar using stored OAuth state. Calendar results redirect to Settings. Mismatched Google identity is rejected before tokens are saved |
 | `GET /auth/status`, `POST /auth/disconnect` | connection state, local disconnect |
 
 **Saves and actions**
@@ -197,8 +207,8 @@ The action view includes: fields, `evidence` (quote, matches, badge, badgeLabel)
 | `POST /api/actions/:id/readback` | none | re-fetch the event and compare |
 | `POST /api/actions/:id/recheck` | none | read only. `{ check, action }` |
 | `GET /api/actions/:id/checks` | `?limit=` | check history, newest first |
-| `POST /api/actions/:id/done` | none | self reported |
-| `POST /api/actions/:id/skip` | `{ removeFromCalendar?: true }` | calendar block removed only if asked |
+| `POST /api/actions/:id/done` | `{ approved: true }` for a booked action | Adds and verifies `Done ·` on the active event, then marks the action done. Unbooked actions need no Calendar write |
+| `POST /api/actions/:id/skip` | `{ removeFromCalendar?: true, approved?: true }` | calendar block removed only if asked |
 | `POST /api/actions/:id/agent-plan` | `{ instruction? }` | the agent step, proposes only |
 | `GET /api/actions/:id/traces`, `GET /api/traces/:id` | | agent runs and one full trace |
 
@@ -263,7 +273,7 @@ Real example, `flyer.png` (French hackathon poster for 6-7 JUIN 2026) with the n
 
 ## Google Calendar
 
-- OAuth web client in Testing mode. Only the owner is a test user, so only one Google account can connect. The app writes to the connected account's primary calendar only. Check which account is connected before a demo: the Google Calendar web UI must be signed in to that same account to see the blocks.
+- OAuth web client in Testing mode. Each account must be listed as a test user. A Calendar connection must match the app login identity. The app writes to the connected account's primary calendar only. Check which account is connected before a demo: the Google Calendar web UI must be signed in to that same account to see the blocks.
 - Scopes: `calendar.events` and `calendar.freebusy`. They are enough for events.list, insert, get, delete and FreeBusy. They are not enough for `calendarList.get` (403), so the account email is read from the calendar title.
 - Tokens are stored in the local SQLite file. Refreshed tokens are persisted without losing the refresh token.
 - Our events: id `sta` plus the 32 hex idempotency key (Google accepts ids of a to v and 0 to 9, verified live), `extendedProperties.private` holds `stApp` and `stIdempotencyKey`, `transparency: opaque`, start and end sent as exact UTC instants plus the `timeZone`.
@@ -279,7 +289,7 @@ Real example, `flyer.png` (French hackathon poster for 6-7 JUIN 2026) with the n
 
 It reads events from the earlier of now and the block start up to the deadline (or 14 days), runs `evaluateBlock`, stores the result in `checks`, and returns it with every time formatted by the server. It never writes to the calendar. Moving to an amber alternative is a separate approved `POST /move`.
 
-The watcher (`watcher.js`) ticks every 5 minutes by default, skips a tick if the previous run is still going, logs failures instead of throwing, and does nothing while Google is not connected. It is on by default. `WATCHER=off` disables it.
+Account mode runs one scheduler over connected workspaces, with three workers, per-workspace timeouts and backoff. It checks every five minutes by default and isolates failures between workspaces. Legacy mode uses `watcher.js`. `WATCHER=off` disables background checking in either mode.
 
 ## The agent step and its trace log
 
@@ -315,14 +325,14 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
 
 ## Tests
 
-`npm test` runs `node --test "test/*.test.js"`. 226 tests, no network, no real Google, no real model. They use:
+`npm test` runs `node --test "test/*.test.js"`. 276 tests, using local HTTP where needed, with no external Google or model calls. They use:
 
 - `test/fakeCalendar.js`: an in memory calendar with Google's behavior where it matters (unique ids with 409, deleted events stay readable as cancelled, events.list hides cancelled, FreeBusy merges, offsets in returned times, all-day events). `sim` switches on failures: wrong offset, shifted instants, changed timezone, stripped tags.
 - A fixed clock (Mon 2 Nov 2026 12:00 UTC in most files) injected into `createApp`.
 - A scripted fake model for the agent (each entry answers one chat call and can read the tool results sent back).
 - `:memory:` SQLite, or a temporary folder under `server/data/` that tests delete.
 
-Coverage by file: `tz` (self test, conversions, display), `slots` (windows, DST, grid, deadlines, latest feasible start, red hints), `conflicts` (own events, stale, all-day, free, declined), `blocks` (keys, attempts, supersede), `evaluate` (states, problem types), `readback`, `calendar` (request shapes, pagination, error mapping), `planning` (propose, approve, replay, drift, crash recovery, move, move back, delete failure, done, skip, all-day setting), `recheck` (all states, history, watcher parity, watcher unit), `agent` (happy path, trace order, invented slot, changed calendar, tool errors, no slot, turn limit, model failure, preconditions, move mode), `saves` (upload, validation, badges, edits, event dates), `normalize`, `extract` (parsing, prompt rules, provider shape, tools), `image`, `db` (migrations v1 to v4 on a real file, constraints), `google` (OAuth URL, state, tokens), `app` (routes, settings).
+Coverage includes `auth` (sessions, profile confirmation, CSRF, OAuth state, account isolation, same-account Calendar binding, encrypted credentials, credits and shared callbacks), `completion` (verified event titles, undo and failure recovery), `tz` (self test, conversions, display), `slots` (windows, DST, grid, deadlines, latest feasible start, red hints), `conflicts` (own events, stale, all-day, free, declined), `blocks` (keys, attempts, supersede), `evaluate` (states, problem types), `readback`, `calendar` (request shapes, pagination, error mapping), `planning` (propose, approve, replay, drift, crash recovery, move, move back, delete failure, done, skip, all-day setting), `recheck` (all states, history, watcher parity, watcher unit), `agent` (happy path, trace order, invented slot, changed calendar, tool errors, no slot, turn limit, model failure, preconditions, move mode), `saves` (upload, validation, badges, edits, event dates), `normalize`, `extract` (parsing, prompt rules, provider shape, tools), `image`, `db` (workspace migrations and constraints), `google` (OAuth URL, state, tokens), `app` (routes, settings).
 
 When you add behavior, add the test in the same change. Keep tests deterministic: inject the clock, calendar and provider.
 
@@ -354,6 +364,9 @@ Verified by running it (Nov 2):
 
 Assumed or not yet verified:
 
+- A full live two-account login, booking and isolation run. Automated auth tests use a fake Google provider.
+- Shared demo, trust-ledger API, full account deletion and legacy owner-data migration are not implemented.
+
 - The background watcher against real Google over real time (tested with fake timers only).
 - The agent in move mode against the real calendar (tested with the fake calendar).
 - How the Google Calendar web UI renders the blocks (the API data is right on all probes).
@@ -372,21 +385,21 @@ Build order from the project brief, with status:
 6. React UI exists in web/. UI fidelity and interaction completion require their own audit.
 7. Stats queries with the exact metric definitions in the project brief: implemented and tested. Home and goals use database records. `scheduledMinutes` sums active, non superseded, non cancelled block minutes.
 8. Test with 2 outside people using their own screenshots, record honest results: not started.
-9. Root README: what it does, honest limits, competitor note, prior work label, "Built with Muse Spark Open" badge, no scraping statement: not started.
+9. Root README and component setup guides: available.
 10. Record the demo, make the repo public, submit: not started.
 
 Current API status and remaining product limits:
 
 - GET /api/actions, GET /api/saves, Home, goal metrics and workspace reads are implemented. The current complete route list is in [API.md](docs/API.md).
-- A way to import demo history (`saves.is_demo`) for the dashboard opening. The schema supports it, no importer exists.
+- `scripts/seed-demo.mjs` and `scripts/demo-reset.mjs` manage the legacy workspace selected by `DB_PATH`. They do not populate signed-in accounts or provide a shared read-only demo.
 - Confirmed whole-workspace deletion is implemented. Individual save discard remains unavailable.
 - Open actions have no fabricated availability state. Request a proposal to evaluate a slot. Recheck covers approved blocks.
 
 Other known limits:
 
-- Single user, local only. The API has no login and binds to 127.0.0.1. Google tokens are plaintext in the local database. Do not expose the port.
-- Primary calendar only. One Google account, because the OAuth client is in Testing mode with one test user.
-- No multi session planning. One contiguous block per action.
+- Account mode supports isolated users on one process with persistent disk and encrypted Calendar tokens. Use an HTTPS reverse proxy for hosting. Horizontal scaling and automatic legacy-data migration are not implemented.
+- Primary calendar only, using the same Google identity as login. Testing-mode access depends on the configured test-user list.
+- One contiguous calendar block per action. App login sessions are independent of planning blocks.
 - Editing confirmed effort or the deadline after planning is allowed. Recheck then reports `effort_changed` or `after_deadline` as amber.
 - Deferred by scope: claim workflow, reading queue, alerts page, MCP server, Meta API provider, model commentary, background watcher UI.
 
