@@ -24,11 +24,13 @@ export const GOAL_COLOR_SLOTS = 6;
 const GOAL_NAME_MAX = 40;
 const GOAL_DESCRIPTION_MAX = 120;
 
+// New workspaces start in US Eastern time so scheduling works at once. Users choose their own in Settings.
+export const DEFAULT_TIMEZONE = "America/New_York";
+
 export const DEFAULT_SETTINGS = Object.freeze({
   work_start: "09:00",
   work_end: "21:00",
-  // No default timezone. Missing means missing: the scheduler refuses to run without one.
-  tz: null,
+  tz: DEFAULT_TIMEZONE,
   // All-day events (conferences, birthdays, "out" markers) do not block time. Read at event level, FreeBusy can't skip them.
   ignore_all_day: "1",
 });
@@ -241,6 +243,11 @@ export const MIGRATIONS = [
   UPDATE goals SET description = 'Freelance, side income, grants' WHERE description = 'Freelance work, side income, grants, prizes';
   UPDATE goals SET description = 'Courses, tutorials, tools to try' WHERE description = 'Courses, tutorials, tools and prompts to try';
   UPDATE goals SET description = 'Hackathons, programs, meetups' WHERE description = 'Hackathons, programs, applications, meetups';
+  `,
+
+  // v9. A default timezone for workspaces that never chose one. A timezone the user set is never changed.
+  `
+  UPDATE settings SET value = 'America/New_York' WHERE key = 'tz' AND (value IS NULL OR value = '');
   `,
 
 ];

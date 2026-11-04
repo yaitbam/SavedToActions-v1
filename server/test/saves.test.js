@@ -39,7 +39,8 @@ function setup({ maxUploadBytes = 1024 * 1024, tz = "Africa/Casablanca" } = {}) 
   fs.mkdirSync(path.join(SERVER_ROOT, "data"), { recursive: true });
   const dir = fs.mkdtempSync(path.join(SERVER_ROOT, "data", "test-"));
   const db = openDb(":memory:");
-  if (tz) saveSettings(db, { workStart: "09:00", workEnd: "21:00", tz });
+  // A workspace starts with a default timezone, so "no timezone" has to be set on purpose.
+  saveSettings(db, { workStart: "09:00", workEnd: "21:00", tz: tz || null });
   const state = { output: flyerOutput, error: null, calls: [] };
   const provider = {
     name: "fake",

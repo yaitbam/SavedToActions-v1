@@ -38,7 +38,8 @@ async function withApp(opts, fn) {
   const tz = "tz" in opts ? opts.tz : "UTC";
   const db = openDb(":memory:");
   // The older tests exercise the FreeBusy path, so the all-day setting is off unless a test asks for it.
-  if (tz) saveSettings(db, { workStart: "09:00", workEnd: "21:00", tz, ignoreAllDay: opts.ignoreAllDay ?? false });
+  // A workspace starts with a default timezone, so "no timezone" has to be set on purpose.
+  saveSettings(db, { workStart: "09:00", workEnd: "21:00", tz: tz || null, ignoreAllDay: opts.ignoreAllDay ?? false });
   const cal = createFakeCalendar();
   const app = createApp({
     db,

@@ -69,7 +69,7 @@ test("GET /api/timezones lists choosable zones with moment-timezone offsets", as
 
 test("settings: defaults, validation, partial update", async () => {
   await withServer(stubGoogle(), async (base) => {
-    assert.deepEqual(await (await fetch(`${base}/api/settings`)).json(), { workStart: "09:00", workEnd: "21:00", tz: null, ignoreAllDay: true });
+    assert.deepEqual(await (await fetch(`${base}/api/settings`)).json(), { workStart: "09:00", workEnd: "21:00", tz: "America/New_York", ignoreAllDay: true });
 
     assert.equal((await put(`${base}/api/settings`, { workStart: "21:00", workEnd: "09:00" })).status, 400);
     assert.equal((await put(`${base}/api/settings`, { workStart: "9am" })).status, 400);

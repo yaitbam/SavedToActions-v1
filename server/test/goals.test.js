@@ -291,3 +291,26 @@ test("goal setup API and editing a goal both mark setup as done", async () => {
     assert.equal((await (await fetch(`${base}/api/goals/setup`)).json()).done, true);
   });
 });
+
+test("migration v9 fills a missing timezone but never changes one the user chose", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tz-migration-"));
+  try {
+    const make = (name, tz) => {
+      const file = path.join(dir, name);
+      const old = new Database(file);
+      for (let i = 0; i < 8; i++) old.exec(MIGRATIONS[i]);
+      old.pragma("user_version = 8");
+      old.prepare("INSERT INTO settings (key, value) VALUES ('tz', ?)").run(tz);
+      old.close();
+      return file;
+    };
+    const unset = openDb(make("unset.sqlite", null));
+    assert.equal(unset.prepare("SELECT value FROM settings WHERE key = 'tz'").get().value, "America/New_York");
+    unset.close();
+    const chosen = openDb(make("chosen.sqlite", "Africa/Casablanca"));
+    assert.equal(chosen.prepare("SELECT value FROM settings WHERE key = 'tz'").get().value, "Africa/Casablanca");
+    chosen.close();
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

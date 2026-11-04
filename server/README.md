@@ -155,14 +155,14 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 | `saves` | screenshot filename, note, `imported_at`, `is_demo` (imported demo history, labeled in the UI) |
 | `actions` | one per save. kind (try, opportunity, other), label (claim, validate, read, someday, label only), title, goal_id (nullable, never defaulted), deadline wall plus tz plus `deadline_tz_source` (model, settings_fallback, user) plus computed `deadline_utc`, deliverables, verbatim items, `event_dates_json`, evidence quote, transcription, warnings, raw model output, `suggested_effort_min` (model) and `confirmed_effort_min` (user), status, `edited_fields_json`, done_at |
 | `blocks` | action_id, `google_event_id`, `idempotency_key` (unique), start_utc, end_utc, tz, `superseded_by`, `cancelled_at`, `event_deleted_at`, read-back status and drift |
-| `settings` | work_start, work_end, tz (null until set), `ignore_all_day` ("1" default) |
+| `settings` | work_start, work_end, tz (defaults to `America/New_York`, migration v9 fills workspaces that had none and never changes a chosen one), `ignore_all_day` ("1" default) |
 | `oauth_tokens` | one row per workspace. AES-256-GCM encrypted in account mode. Legacy off mode retains its original local JSON storage |
 | `checks` | every Recheck result, newest wins in the view, kept as history. source manual or watcher |
 | `agent_traces` | one row per agent run with all steps as JSON |
 | `extraction_jobs` | persisted queued/running/completed extraction state |
 | `action_transitions` | lifecycle changes supporting undo |
 
-Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. The historical v1-to-v4 migration retained tokens on a database copy.
+Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. The historical v1-to-v4 migration retained tokens on a database copy.
 
 The separate central database contains `accounts`, `sessions`, `oauth_requests`, `usage` and sanitized `auth_failures`. Accounts are identified by verified Google `sub`. Session tokens are hashed, and only random workspace keys appear in workspace paths. A cached context contains that account's database and Calendar client. Live jobs and requests prevent its eviction.
 

@@ -34,13 +34,13 @@ function seedAction(db, saveId, extra = {}) {
     .run(...Object.values(cols)).lastInsertRowid;
 }
 
-test("fresh database: schema version, 6 starting goals in order, default settings with no timezone", () => {
+test("fresh database: schema version, 6 starting goals in order, default settings with a US Eastern timezone", () => {
   const db = openDb(":memory:");
   assert.equal(schemaVersion(db), SCHEMA_VERSION);
   assert.deepEqual(listGoals(db).map((g) => g.name), PRESET_GOALS);
   assert.equal(listGoals(db).length, 6);
-  assert.deepEqual(getSettings(db), { workStart: "09:00", workEnd: "21:00", tz: null, ignoreAllDay: true });
-  assert.equal(DEFAULT_SETTINGS.tz, null);
+  assert.deepEqual(getSettings(db), { workStart: "09:00", workEnd: "21:00", tz: "America/New_York", ignoreAllDay: true });
+  assert.equal(DEFAULT_SETTINGS.tz, "America/New_York");
   assert.equal(db.pragma("foreign_keys", { simple: true }), 1);
 });
 
