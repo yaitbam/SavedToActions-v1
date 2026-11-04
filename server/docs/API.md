@@ -28,6 +28,8 @@ Version 1. This describes the implemented backend, replacing the earlier fronten
 | GET | /api/settings | workStart, workEnd, tz, ignoreAllDay |
 | PUT | /api/settings | Partial settings edit, returns settings. Explicit tz:null clears timezone |
 | GET | /api/timezones | `{ zones: [{ id, offset }] }`, canonical IANA names plus UTC, offset at the current time from moment-timezone, sorted by offset. Aliases stay valid in PUT /api/settings but are not listed |
+| GET | /api/timezone/setup | {done,tz}. done is false until the user picks a timezone in the first login step or in Settings |
+| POST | /api/timezone/setup | Body {tz}, an IANA name. Saves it and marks it confirmed. 400 invalid_timezone |
 | GET | /api/goals | Active goals in the user's order, then archived goals. Each is {id,name,description,color,archived,position,metrics} |
 | GET | /api/goals/starters | The eight general starter goals, each {name,description} |
 | GET | /api/goals/setup | {done}. False until the user chooses goals or skips. Workspaces that already have saves report true |

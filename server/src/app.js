@@ -5,7 +5,7 @@ import { registerWorkspaceRoutes } from "./routes/workspace.js";
 import { registerTimelineRoute } from "./routes/timeline.js";
 import { registerCollectionRoutes } from "./routes/collections.js";
 import { createAgent } from "./agent/agent.js";
-import { archiveGoal, createGoal, goalsSetupDone, markGoalsSetupDone, setupGoals, STARTER_GOALS, getSettings, getGoogleEmail, GoalError, listGoals, reorderGoals, restoreGoal, saveSettings, schemaVersion, updateGoal } from "./db.js";
+import { archiveGoal, createGoal, goalsSetupDone, markTimezoneConfirmed, timezoneConfirmed, markGoalsSetupDone, setupGoals, STARTER_GOALS, getSettings, getGoogleEmail, GoalError, listGoals, reorderGoals, restoreGoal, saveSettings, schemaVersion, updateGoal } from "./db.js";
 import { registerPlanningRoutes } from "./routes/planning.js";
 import { registerSaveRoutes } from "./routes/saves.js";
 import { createHomeService } from "./services/home.js";
@@ -84,7 +84,22 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
     if (next.tz != null && !isValidTimezone(next.tz)) {
       return res.status(400).json({ error: "invalid_timezone", detail: "Use an IANA name such as Africa/Casablanca." });
     }
-    res.json(saveSettings(db, next));
+    const saved = saveSettings(db, next);
+    // Choosing a timezone by hand confirms it.
+    if (Object.hasOwn(req.body ?? {}, "tz") && next.tz) markTimezoneConfirmed(db);
+    res.json(saved);
+  });
+
+  // First login: has the user confirmed their timezone. New workspaces start in the default one.
+  app.get("/api/timezone/setup", (_req, res) => res.json({ done: timezoneConfirmed(db), tz: getSettings(db).tz }));
+  app.post("/api/timezone/setup", (req, res) => {
+    const tz = req.body?.tz;
+    if (typeof tz !== "string" || !isValidTimezone(tz)) {
+      return res.status(400).json({ error: "invalid_timezone", detail: "Use an IANA name such as Africa/Casablanca." });
+    }
+    saveSettings(db, { ...getSettings(db), tz });
+    markTimezoneConfirmed(db);
+    res.json({ done: true, tz });
   });
 
   // Goals keep { id, name } and gain metrics from database records, with the definitions in stats.js.

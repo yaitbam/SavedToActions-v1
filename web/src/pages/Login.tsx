@@ -8,7 +8,6 @@ import { Button } from "../ui/Button";
 import { InlineAlert } from "../ui/InlineAlert";
 import { Logo } from "../ui/Logo";
 import { GoogleIcon } from "../ui/PlatformIcons";
-import { ThemeSwitch } from "../ui/ThemeSwitch";
 import "../features/auth/login.css";
 
 const steps = ["Drop a screenshot", "Confirm the effort", "Approve a time"];
@@ -37,7 +36,7 @@ export function Login() {
       <p className="lg-foot">Powered by Muse Spark Open. Nothing reaches your calendar without your approval.</p>
     </aside>
     <div className="lg-main">
-      <div className="lg-top"><Link to="/">← Back to home</Link><ThemeSwitch /></div>
+      <div className="lg-top"><Link to="/">← Back to home</Link></div>
       <main className="lg-card">
         <h2>Sign in</h2>
         <p className="lg-sub">Use your Google account. Signing in shares your name and email. Connecting your calendar is a separate step that you approve.</p>

@@ -120,7 +120,6 @@
 }
 
 :root { color-scheme: light; }
-:root[data-theme="dark"] { color-scheme: dark; --color-bg:#0b0f17; --color-surface:#111827; --color-ink:#f1f5f9; --color-muted:#94a3b8; --color-line:#243044; --color-accent:#3b82f61f; --color-brand:#3b82f6; --color-fits:#6ee7b7; --color-conflict:#fbbf24; --color-nofit:#fca5a5; --color-missing:#a1a1aa; }
 button, a, input, textarea { -webkit-tap-highlight-color:transparent; }
 button:not(:disabled), summary { cursor:pointer; }
 .semantic-pill { border:1px solid color-mix(in srgb,currentColor 25%,transparent); font-family:var(--font-sans); font-size:14px; font-weight:500; letter-spacing:0; }
@@ -153,7 +152,6 @@ button:not(:disabled), summary { cursor:pointer; }
 .chip-li { color:#0a66c2; }
 .chip-tt { color:#0f172a; }
 .chip-ss { color:var(--color-brand); }
-:root[data-theme="dark"] .chip-x,:root[data-theme="dark"] .chip-tt { color:#f1f5f9; }
 @keyframes chip-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
 .dropcard-samples { padding:4px 24px 24px; }
 .dropcard-samples-title { margin-bottom:12px; font:600 15px var(--font-sans); color:var(--color-muted); }

@@ -9,7 +9,6 @@ import { useNewSave } from "../features/newSave/NewSaveContext";
 import { Button } from "../ui/Button";
 import { cx } from "../ui/cx";
 import { Logo } from "../ui/Logo";
-import { ThemeSwitch } from "../ui/ThemeSwitch";
 import { HomeIcon, ProgressIcon, SavesIcon, SettingsIcon } from "./icons";
 import "./shell.css";
 
@@ -78,15 +77,13 @@ export function AppShell() {
           ? <Link to="/app/settings" className="cal-pill on" title="Google Calendar is connected"><i aria-hidden="true" /><span>Calendar connected</span></Link>
           : <Link to="/app/settings" className="cal-pill off"><i aria-hidden="true" /><span>Connect calendar</span></Link>)}
         <ProfileMenu />
-        <ThemeSwitch />
       </div>
     </aside>
     <div className="app-main">
       <header className="app-topbar">
         <NavLink to="/app" aria-label="Overview"><Logo /></NavLink>
         <div className="topbar-right">
-          <ThemeSwitch />
-          {drop("h-10 px-4")}
+            {drop("h-10 px-4")}
           <ProfileMenu />
         </div>
       </header>

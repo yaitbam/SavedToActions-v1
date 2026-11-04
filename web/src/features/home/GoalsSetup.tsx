@@ -71,7 +71,7 @@ export function GoalsSetup({ onDone }: Props) {
   return (
     <section className="gs" aria-labelledby="gs-title">
       <div className="gs-head">
-        <p className="gs-step">Last step</p>
+        <p className="gs-step">Quick setup</p>
         <h2 id="gs-title">What do you save posts for?</h2>
         <p>
           Muse sorts every screenshot into one of your goals, and your goals decide what gets time on your calendar.

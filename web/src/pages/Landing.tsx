@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { SocialPost } from "../features/landing/SocialPosts";
 import { buttonClass } from "../ui/Button";
 import { Logo } from "../ui/Logo";
-import { ThemeSwitch } from "../ui/ThemeSwitch";
 import "../features/landing/landing.css";
 import "../features/landing/landing-page.css";
 
@@ -48,7 +47,7 @@ export function Landing() {
     <header className="landing-nav">
       <div className="landing-header landing-width">
         <Link to="/" aria-label="SavedToAction home"><Logo /></Link>
-        <nav aria-label="Page"><a href="#pain">The problem</a><a href="#how">How it works</a><a href="#value">Value</a><a href="#impact">Impact</a><ThemeSwitch /><Link to="/login" className={buttonClass("secondary", "h-11")}>Open workspace ↗</Link></nav>
+        <nav aria-label="Page"><a href="#pain">The problem</a><a href="#how">How it works</a><a href="#value">Value</a><a href="#impact">Impact</a><Link to="/login" className={buttonClass("secondary", "h-11")}>Open workspace ↗</Link></nav>
       </div>
     </header>
     <main id="main">

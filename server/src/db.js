@@ -250,6 +250,13 @@ export const MIGRATIONS = [
   UPDATE settings SET value = 'America/New_York' WHERE key = 'tz' AND (value IS NULL OR value = '');
   `,
 
+  // v10. Remember whether the user confirmed their timezone, so the default can be checked once.
+  // A zone other than the default can only have been chosen by the user. The default itself is asked about.
+  `
+  INSERT OR IGNORE INTO settings (key, value)
+    SELECT 'tz_confirmed', '1' FROM settings WHERE key = 'tz' AND value IS NOT NULL AND value != '' AND value != 'America/New_York';
+  `,
+
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -309,6 +316,15 @@ export function getSettings(db) {
     tz: out.tz ?? null,
     ignoreAllDay: out.ignore_all_day !== "0",
   };
+}
+
+/** True once the user chose a timezone themselves, in Settings or in the first login step. */
+export function timezoneConfirmed(db) {
+  return db.prepare("SELECT value FROM settings WHERE key = 'tz_confirmed'").get()?.value === "1";
+}
+
+export function markTimezoneConfirmed(db) {
+  db.prepare("INSERT INTO settings (key, value) VALUES ('tz_confirmed', '1') ON CONFLICT(key) DO UPDATE SET value = '1'").run();
 }
 
 export function saveSettings(db, { workStart, workEnd, tz, ignoreAllDay }) {

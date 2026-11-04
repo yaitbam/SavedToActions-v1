@@ -38,7 +38,7 @@ npm run preview
 
 The session provider checks `/auth/session` before mounting private routes. An anonymous visitor goes to login. An incomplete profile goes to confirmation. A failed session request shows the login page with a general message and Retry, keeping private data closed.
 
-Cookies stay on the same origin. The API client includes the session's CSRF token on writes. On a private API `401`, it clears its session state, hides the current page and hard navigates to login. Sign-out revokes the server session and hard navigates too. Account details, screenshots and Google tokens are not persisted in browser storage. Theme preference may be stored locally.
+Cookies stay on the same origin. The API client includes the session's CSRF token on writes. On a private API `401`, it clears its session state, hides the current page and hard navigates to login. Sign-out revokes the server session and hard navigates too. Account details, screenshots and Google tokens are not persisted in browser storage.
 
 Calendar connection is separate from app login and must use the same Google account. Disconnecting Calendar leaves the login active. Login uses the registered Calendar callback by default. See [account setup](../docs/AUTH_SETUP.md) when configuring a different callback.
 
@@ -72,7 +72,7 @@ node web/test/phase6.cjs
 
 `errors.cjs` verifies missing-session recovery and that technical errors are not shown. `new-save.cjs` checks preview lifecycle and upload bytes using intercepted uploads. `phase6.cjs` checks the landing page and image viewers.
 
-`design.cjs` checks that the landing sections exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px in light and dark, and that the theme persists. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
+`design.cjs` checks that the landing sections exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px, and that there is no theme switch. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
 
 `phase5.cjs` expects the seeded legacy database and an isolated `AUTH_MODE=off` backend. Its initial reads use the local API and later write checks are intercepted. It is not an authenticated multiuser end-to-end test.
 

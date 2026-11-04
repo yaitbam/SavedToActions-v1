@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getGoalsSetup } from "../api/goals";
+import { getTimezoneSetup } from "../api/settings";
 import { useAsync } from "../api/useAsync";
 import { useSession } from "../features/auth/SessionContext";
 import { AttentionCard } from "../features/home/AttentionCard";
@@ -10,6 +11,7 @@ import { GoalsSetup } from "../features/home/GoalsSetup";
 import { Inbox } from "../features/home/Inbox";
 import { inboxSaves, pickNextUp } from "../features/home/model";
 import { NextUp } from "../features/home/NextUp";
+import { TimezoneSetup } from "../features/home/TimezoneSetup";
 import { NoPlan, Pulse } from "../features/home/Pulse";
 import { useHomeData } from "../features/home/useHomeData";
 import { WeekStrip } from "../features/home/WeekStrip";
@@ -25,13 +27,16 @@ export function Home() {
   const { home, goals, planned, week, reload, recheck, rechecking } = useHomeData();
   const { session } = useSession();
   const setup = useAsync(getGoalsSetup, []);
+  const tzSetup = useAsync(getTimezoneSetup, []);
   const data = home.data;
   // Coming back from Google, the address still carries the result. The page already shows it, so tidy the address.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("google")) window.history.replaceState(null, "", window.location.pathname);
   }, []);
-  // After the calendar is connected, a new user chooses their goals before anything else.
-  const needsGoals = !!data?.google_connected && session?.kind !== "demo" && setup.data?.done === false;
+  // After the calendar is connected, a new user confirms their timezone, then chooses their goals.
+  const connected = !!data?.google_connected && session?.kind !== "demo";
+  const needsTimezone = connected && tzSetup.data?.done === false;
+  const needsGoals = connected && tzSetup.data?.done === true && setup.data?.done === false;
   const goalName = (id: number | null | undefined) => goals.data?.find((goal) => goal.id === id)?.name;
 
   const attention = data?.needs_attention ?? [];
@@ -56,7 +61,9 @@ export function Home() {
       </header>
 
       {data && !data.google_connected && <ConnectCard />}
-      {needsGoals ? (
+      {needsTimezone ? (
+        <TimezoneSetup current={tzSetup.data?.tz ?? null} onDone={() => void Promise.all([tzSetup.reload(), reload()])} />
+      ) : needsGoals ? (
         <GoalsSetup onDone={() => void Promise.all([setup.reload(), reload()])} />
       ) : (
         <DropZone rich={isEmpty} />
@@ -69,7 +76,7 @@ export function Home() {
           <Skeleton className="cell-next h-56" />
           <Skeleton className="cell-goals h-56" />
         </div>
-      ) : !data.google_connected || isEmpty || needsGoals ? null : (
+      ) : !data.google_connected || isEmpty || needsTimezone || needsGoals ? null : (
         <>
         <Pulse planned={plannedItems.length} attention={attention.length} toConfirm={inboxTotal} />
         <div className="home-bento">

@@ -162,7 +162,7 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 | `extraction_jobs` | persisted queued/running/completed extraction state |
 | `action_transitions` | lifecycle changes supporting undo |
 
-Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. The historical v1-to-v4 migration retained tokens on a database copy.
+Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. v10 records whether the user confirmed their timezone (`tz_confirmed`), trusting only a zone other than the default. The historical v1-to-v4 migration retained tokens on a database copy.
 
 The separate central database contains `accounts`, `sessions`, `oauth_requests`, `usage` and sanitized `auth_failures`. Accounts are identified by verified Google `sub`. Session tokens are hashed, and only random workspace keys appear in workspace paths. A cached context contains that account's database and Calendar client. Live jobs and requests prevent its eviction.
 

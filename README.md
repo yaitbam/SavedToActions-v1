@@ -62,7 +62,7 @@ The 14 images in `fixtures/demo/` are original illustrative posts. Every account
 
 ## Accounts and privacy
 
-Sign in with Google, confirm your name and verified email, then connect Google Calendar using the same Google account. You can upload and review saves before connecting Calendar. After you connect Calendar, Overview asks which goals your saves are for. You pick from general starters or write your own, and you can change them later in Settings. New accounts start in US Eastern time (`America/New_York`), so scheduling works straight away. Choose your own timezone and working hours in Settings.
+Sign in with Google, confirm your name and verified email, then connect Google Calendar using the same Google account. You can upload and review saves before connecting Calendar. After you connect Calendar, Overview asks which goals your saves are for. You pick from general starters or write your own, and you can change them later in Settings. New accounts start in US Eastern time (`America/New_York`), so scheduling works straight away. Right after you connect Calendar, Overview asks you to confirm your timezone, then to choose your goals. Working hours and the timezone can be changed in Settings.
 
 Each account has its own workspace database, screenshots, settings and Calendar credentials. Sessions use HttpOnly cookies and expire after seven days. Calendar tokens are encrypted on the server. Sign-out ends the app session. Disconnecting Calendar leaves your app login active. You can delete your account and data in Settings after typing a confirmation. That asks Google to revoke Calendar access, removes your workspace and sessions, and keeps events already on your Calendar.
 

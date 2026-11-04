@@ -26,3 +26,11 @@
 .gs-foot > p { margin:0; color:var(--color-muted); font-size:15px; }
 .gs-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
 @media(max-width:900px) { .gs { padding:22px; border-radius:22px; } .gs-actions { width:100%; } .gs-actions > button:last-child { flex:1; } }
+
+/* Timezone step uses the same panel. */
+.gs-tz { display:flex; flex-direction:column; gap:8px; max-width:520px; }
+.gs-tz .st-label { display:block; margin-bottom:0; font-size:14px; font-weight:600; }
+.gs-hint { margin:0; color:var(--color-muted); font-size:14px; }
+.gs-suggest { margin:0; color:var(--color-muted); font-size:15px; }
+.gs-suggest b { color:var(--color-ink); }
+.gs-link { padding:0; border:0; background:none; color:var(--color-brand); font:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
