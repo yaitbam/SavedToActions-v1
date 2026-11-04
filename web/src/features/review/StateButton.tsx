@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { Action } from "../../api/types";
 import { Button, buttonClass } from "../../ui/Button";
@@ -12,6 +13,7 @@ export interface StateHandlers {
   keep: () => void;
   unlock: () => void;
   skip: () => void;
+  unplan: () => void;
   otherTime: () => void;
   editDetails: () => void;
 }
@@ -28,6 +30,7 @@ interface Props {
 // One primary button per state, as in the plan table. Never more than one primary.
 export function StateButton({ stage, action, proposal, minutes, busy, on }: Props) {
   const working = busy !== null;
+  const [confirming, setConfirming] = useState(false);
 
   if (stage === "done") {
     return (
@@ -75,6 +78,9 @@ export function StateButton({ stage, action, proposal, minutes, busy, on }: Prop
       secondary = { label: "Recheck now", onClick: on.recheck, loading: busy === "recheck" };
   }
 
+  // A block that is on the calendar can come off it again, in any booked state. The save stays and can be planned later.
+  const canRemove = action.status === "planned" && Boolean(action.block);
+
   return (
     <div className="space-y-2">
       {primary.onClick === on.done && action.block && <p className="text-small text-muted">Also marks the calendar event title Done</p>}
@@ -88,6 +94,17 @@ export function StateButton({ stage, action, proposal, minutes, busy, on }: Prop
           </Button>
         )}
       </div>
+      {canRemove && (
+        confirming ? (
+          <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Remove from calendar">
+            <span className="text-small">Remove it from your calendar? It stays in Saved.</span>
+            <Button variant="secondary" onClick={() => { setConfirming(false); on.unplan(); }} loading={busy === "unplan"} disabled={working && busy !== "unplan"}>Yes, remove</Button>
+            <Button variant="text" onClick={() => setConfirming(false)} disabled={working}>Keep it</Button>
+          </div>
+        ) : (
+          <Button variant="text" onClick={() => setConfirming(true)} disabled={working}>Remove from calendar</Button>
+        )
+      )}
     </div>
   );
 }

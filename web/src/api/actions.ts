@@ -38,6 +38,9 @@ export const listChecks = (id: number, limit?: number) =>
   get<{ checks: Check[] }>(`/api/actions/${id}/checks`, { limit });
 
 export const markDone = (id: number) => post<{ action: Action }>(`/api/actions/${id}/done`, { approved: true });
+// Takes a booked block off the calendar and keeps the save open. The server checks the event is gone first.
+export const unplanAction = (id: number) =>
+  post<{ action: Action; calendar: { hadBlock: boolean; removed: boolean } }>(`/api/actions/${id}/unplan`, { approved: true });
 export const skipAction = (id: number, removeFromCalendar = false) =>
   post<SkipResult>(
     `/api/actions/${id}/skip`,

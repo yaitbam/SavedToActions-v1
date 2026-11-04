@@ -20,6 +20,7 @@ const messages: Record<string, string> = {
   operations_in_progress: "Something is still running. Wait a moment, then try again",
   confirmation_required: "Type the confirmation text exactly to continue",
   daily_limit_reached: "No free credits left today. They reset at 00:00",
+  not_planned: "This save is not on your calendar",
   already_planned: "This save is already on your calendar",
   action_closed: "This save is closed",
   effort_not_confirmed: "Confirm how long this takes first",

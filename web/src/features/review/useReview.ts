@@ -7,6 +7,7 @@ import {
   proposeSlot,
   recheckOne,
   skipAction,
+  unplanAction,
   updateAction,
 } from "../../api/actions";
 import { ApiError } from "../../api/client";
@@ -27,6 +28,7 @@ const failureTitle: Record<string, string> = {
   recheck: "Recheck failed",
   done: "Could not mark this done",
   skip: "Could not skip this save",
+  unplan: "Could not remove it from your calendar",
   patch: "Could not save your change",
   retry: "Extraction failed",
 };
@@ -45,6 +47,8 @@ export function useReview(saveId: number) {
   const [intent, setIntent] = useState<ProposeIntent | null>(null);
   // What the user asked Muse for in their own words, and why the time on screen answers it. It replaces the note chip.
   const [request, setRequest] = useState<{ text: string; reason: string } | null>(null);
+  // True right after a booked block was taken off the calendar, until the next change.
+  const [removed, setRemoved] = useState(false);
   const [needsCalendar, setNeedsCalendar] = useState(false);
   // The minutes a time was last looked up for, so a new proposal only follows a real change.
   const [lookedUp, setLookedUp] = useState<{ id: number; minutes: number } | null>(null);
@@ -150,6 +154,7 @@ export function useReview(saveId: number) {
     setUnlocked(false);
     setKept(false);
     setRequest(null);
+    setRemoved(false);
   };
 
   // Asks Muse for a time that follows a sentence, such as "after 6pm". Uses the minutes on screen and one credit.
@@ -207,6 +212,14 @@ export function useReview(saveId: number) {
   const done = () =>
     run("done", async () => {
       if (action) settle((await markDone(action.id)).action);
+    });
+
+  // Takes the block off the calendar and keeps the save, so it can be planned again later.
+  const unplan = () =>
+    run("unplan", async () => {
+      if (!action) return;
+      settle((await unplanAction(action.id)).action);
+      setRemoved(true);
     });
 
   const skip = () =>
@@ -296,6 +309,8 @@ export function useReview(saveId: number) {
     recheck,
     done,
     skip,
+    unplan,
+    removed,
     patch,
     retryExtract,
     unlock,

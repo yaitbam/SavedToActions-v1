@@ -26,6 +26,8 @@ interface Props {
   onFind: () => void;
   onAsk: (text: string) => void;
   onSkip: () => void;
+  // The block was just taken off the calendar. The save stays open.
+  removed: boolean;
 }
 
 const reasonText: Record<string, string> = {
@@ -35,7 +37,7 @@ const reasonText: Record<string, string> = {
 };
 
 // The whole decision on one card: a time, the minutes, and one button. Everything else stays out of the way.
-export function PlanCard({ action, minutes, proposal, intent, request, busy, needsCalendar, onMinutes, onBook, onAnother, onFind, onAsk, onSkip }: Props) {
+export function PlanCard({ action, minutes, proposal, intent, request, busy, needsCalendar, onMinutes, onBook, onAnother, onFind, onAsk, onSkip, removed }: Props) {
   const [ask, setAsk] = useState("");
   const working = busy !== null;
   const finding = busy === "propose" || busy === "plan";
@@ -71,6 +73,8 @@ export function PlanCard({ action, minutes, proposal, intent, request, busy, nee
           </span>
         )}
       </header>
+
+      {removed && <p className="pc-intent is-met" role="status">Removed from your calendar. It is still in Saved. Plan it again whenever you like.</p>}
 
       <div className="pc-block">
         <p className="pc-step"><span className="rv-n" aria-hidden="true">2</span><span className="pc-label" id="pc-minutes">How long will it take?</span></p>

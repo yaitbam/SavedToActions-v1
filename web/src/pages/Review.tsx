@@ -110,6 +110,7 @@ export function Review() {
                     onFind={r.findNow}
                     onAsk={r.askMuse}
                     onSkip={r.skip}
+                    removed={r.removed}
                   />
                 </>
               ) : (
@@ -135,6 +136,7 @@ export function Review() {
                           keep: r.keep,
                           unlock: r.unlock,
                           skip: r.skip,
+                          unplan: r.unplan,
                           otherTime: r.anotherTime,
                           editDetails: openDetails,
                         }}
