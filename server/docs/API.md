@@ -30,6 +30,8 @@ Version 1. This describes the implemented backend, replacing the earlier fronten
 | GET | /api/timezones | `{ zones: [{ id, offset }] }`, canonical IANA names plus UTC, offset at the current time from moment-timezone, sorted by offset. Aliases stay valid in PUT /api/settings but are not listed |
 | GET | /api/goals | Active goals in the user's order, then archived goals. Each is {id,name,description,color,archived,position,metrics} |
 | GET | /api/goals/starters | The eight general starter goals, each {name,description} |
+| GET | /api/goals/setup | {done}. False until the user chooses goals or skips. Workspaces that already have saves report true |
+| POST | /api/goals/setup | Body {skip:true} or {goals:[{name,description?}]}, 1 to 6. The choice becomes the goal list in that order, and unchosen starting goals are removed. 409 goals_setup_unavailable once saves are linked to goals |
 | POST | /api/goals | Body {name,description?}. Returns 201 and the goal. 409 goal_name_exists, goal_limit_reached |
 | PUT | /api/goals/:id | Body with any of name, description, color (0 to 5). Returns the goal |
 | PUT | /api/goals/order | Body {ids}, every active goal once. Returns the active goals in order |

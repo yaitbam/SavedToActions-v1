@@ -1,0 +1,28 @@
+/* First login goal choice, shown on Overview once the calendar is connected. */
+.gs { display:flex; flex-direction:column; gap:24px; padding:32px; border:1px solid var(--color-line); border-radius:28px; background:var(--color-surface); box-shadow:var(--shadow-lift); }
+.gs-step { margin:0 0 8px; color:var(--color-brand); font-size:14px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.gs-head h2 { margin:0 0 12px; font:800 clamp(26px,3vw,36px)/1.1 var(--font-display); letter-spacing:-.04em; }
+.gs-head p:last-child { max-width:640px; margin:0; color:var(--color-muted); font-size:17px; line-height:1.6; }
+.gs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; margin:0; padding:0; list-style:none; }
+.gs-grid > li { min-width:0; }
+.gs-card { display:flex; align-items:center; gap:14px; width:100%; height:100%; min-height:76px; padding:14px 16px; border:1px solid var(--color-line); border-radius:18px; background:var(--color-bg); color:var(--color-ink); text-align:left; transition:border-color .15s,background-color .15s,box-shadow .15s; }
+.gs-card:hover:not(:disabled) { border-color:var(--color-ink); }
+.gs-card:disabled { opacity:.5; cursor:not-allowed; }
+.gs-card.is-on { border-color:var(--color-brand); background:var(--color-accent); box-shadow:0 0 0 1px var(--color-brand); }
+.gs-check { flex:none; display:grid; place-items:center; width:26px; height:26px; border:2px solid color-mix(in srgb,var(--color-ink) 30%,var(--color-line)); border-radius:8px; font:800 15px var(--font-display); line-height:1; }
+.gs-card.is-on .gs-check { border-color:var(--color-brand); background:var(--color-brand); color:#fff; }
+.gs-new { border-style:dashed; }
+.gs-new .gs-check { border-style:dashed; color:var(--color-muted); font-size:18px; }
+.gs-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.gs-text b { font-size:16px; font-weight:700; overflow-wrap:anywhere; }
+.gs-text span { color:var(--color-muted); font-size:14px; line-height:1.4; overflow-wrap:anywhere; }
+.gs-add { display:flex; flex-direction:column; gap:10px; height:100%; padding:12px; border:1px dashed var(--color-brand); border-radius:18px; background:var(--color-bg); }
+.gs-add .h-12 { height:44px; }
+.gs-add input { height:44px; }
+.gs-add-actions { display:flex; gap:8px; }
+.gs-add-actions button { height:40px; padding:0 16px; }
+.gs-error { margin:0; color:var(--color-nofit); font-size:14px; }
+.gs-foot { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 20px; padding-top:20px; border-top:1px solid var(--color-line); }
+.gs-foot > p { margin:0; color:var(--color-muted); font-size:15px; }
+.gs-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+@media(max-width:900px) { .gs { padding:22px; border-radius:22px; } .gs-actions { width:100%; } .gs-actions > button:last-child { flex:1; } }

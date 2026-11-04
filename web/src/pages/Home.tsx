@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
+import { getGoalsSetup } from "../api/goals";
+import { useAsync } from "../api/useAsync";
+import { useSession } from "../features/auth/SessionContext";
 import { AttentionCard } from "../features/home/AttentionCard";
 import { ConnectCard } from "../features/home/ConnectCard";
 import { GoalRows } from "../features/home/GoalRows";
+import { GoalsSetup } from "../features/home/GoalsSetup";
 import { Inbox } from "../features/home/Inbox";
 import { inboxSaves, pickNextUp } from "../features/home/model";
 import { NextUp } from "../features/home/NextUp";
@@ -18,7 +22,11 @@ const ATTENTION_VISIBLE = 3;
 // A twelve column bento on the full width canvas. Each cell only renders when it has something to say.
 export function Home() {
   const { home, goals, planned, week, reload, recheck, rechecking } = useHomeData();
+  const { session } = useSession();
+  const setup = useAsync(getGoalsSetup, []);
   const data = home.data;
+  // After the calendar is connected, a new user chooses their goals before anything else.
+  const needsGoals = !!data?.google_connected && session?.kind !== "demo" && setup.data?.done === false;
   const goalName = (id: number | null | undefined) => goals.data?.find((goal) => goal.id === id)?.name;
 
   const attention = data?.needs_attention ?? [];
@@ -43,7 +51,11 @@ export function Home() {
       </header>
 
       {data && !data.google_connected && <ConnectCard />}
-      <DropZone rich={isEmpty} />
+      {needsGoals ? (
+        <GoalsSetup onDone={() => void Promise.all([setup.reload(), reload()])} />
+      ) : (
+        <DropZone rich={isEmpty} />
+      )}
 
       {home.error && !data ? (
         <ErrorState error={home.error} title="Could not load your saves" onRetry={() => void home.reload()} />
@@ -52,7 +64,7 @@ export function Home() {
           <Skeleton className="cell-next h-56" />
           <Skeleton className="cell-goals h-56" />
         </div>
-      ) : !data.google_connected || isEmpty ? null : (
+      ) : !data.google_connected || isEmpty || needsGoals ? null : (
         <>
         <Pulse planned={plannedItems.length} attention={attention.length} toConfirm={inboxTotal} />
         <div className="home-bento">

@@ -30,6 +30,10 @@ export function ConnectCard() {
           <span className="hm-state"><i aria-hidden="true" />Next</span>
         </li>
         <li>
+          <div><b>Choose your goals</b><span>Right after you connect</span></div>
+          <span className="hm-state"><i aria-hidden="true" />Soon</span>
+        </li>
+        <li>
           <div><b>Drop a screenshot</b><span>You can do this now, below</span></div>
           <span className="hm-state"><i aria-hidden="true" />Anytime</span>
         </li>

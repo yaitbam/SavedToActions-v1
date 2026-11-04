@@ -7,7 +7,7 @@ import Database from "better-sqlite3";
 import { createApp } from "../src/app.js";
 import {
   GoalError, MAX_ACTIVE_GOALS, MIGRATIONS, STARTER_GOALS, archiveGoal, createGoal, listGoals, openDb,
-  reorderGoals, restoreGoal, updateGoal,
+  goalsSetupDone, reorderGoals, restoreGoal, setupGoals, updateGoal,
 } from "../src/db.js";
 import { buildSystemPrompt } from "../src/extraction/extract.js";
 import { runSelfTest } from "../src/tz.js";
@@ -223,4 +223,56 @@ test("migration v7 gives existing goals colors and descriptions without losing d
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("first login setup replaces the starting goals with the user's choice", () => {
+  const db = openDb(":memory:");
+  assert.equal(goalsSetupDone(db), false);
+  const goals = setupGoals(db, { goals: [
+    { name: "career growth", description: "Jobs, networking" },
+    { name: "Earn more", description: "Freelance, side income, grants" },
+    { name: "Side projects" },
+  ] });
+  assert.deepEqual(goals.map((g) => g.name), ["career growth", "Earn more", "Side projects"]);
+  assert.deepEqual(goals.map((g) => g.color), [0, 1, 2]);
+  assert.equal(goals[2].description, null);
+  assert.equal(goalsSetupDone(db), true);
+  // "Earn more" kept its id, so nothing linked to it would be lost. Unchosen starting goals are gone.
+  assert.equal(db.prepare("SELECT id FROM goals WHERE name = 'Earn more'").get().id, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM goals").get().n, 3);
+});
+
+test("first login setup can be skipped and validates the choice", () => {
+  const db = openDb(":memory:");
+  assert.equal(code(() => setupGoals(db, { goals: [] })), "invalid_goal_setup");
+  assert.equal(code(() => setupGoals(db, { goals: Array.from({ length: 7 }, (_, i) => ({ name: `G${i}` })) })), "invalid_goal_setup");
+  assert.equal(code(() => setupGoals(db, { goals: [{ name: "A" }, { name: "a" }] })), "goal_name_exists");
+  assert.equal(code(() => setupGoals(db, { goals: [{ name: "" }] })), "invalid_goal_or_name");
+  assert.equal(goalsSetupDone(db), false);
+  assert.equal(setupGoals(db, { skip: true }).length, 3);
+  assert.equal(goalsSetupDone(db), true);
+});
+
+test("setup is not asked of a workspace that already has saves, and cannot remove linked goals", () => {
+  const db = openDb(":memory:");
+  const now = "2026-01-01T00:00:00Z";
+  db.prepare("INSERT INTO saves (screenshot_path, imported_at) VALUES ('x.png', ?)").run(now);
+  assert.equal(goalsSetupDone(db), true);
+  db.prepare("INSERT INTO actions (save_id, goal_id, kind, status, created_at, updated_at) VALUES (1, 1, 'other', 'open', ?, ?)").run(now, now);
+  assert.equal(code(() => setupGoals(db, { goals: [{ name: "Other" }] })), "goals_setup_unavailable");
+  assert.equal(listGoals(db).length, 3);
+});
+
+test("goal setup API and editing a goal both mark setup as done", async () => {
+  await withServer(async (base) => {
+    assert.equal((await (await fetch(`${base}/api/goals/setup`)).json()).done, false);
+    const res = await send(`${base}/api/goals/setup`, "POST", { goals: [{ name: "Health and wellbeing", description: "Fitness, nutrition, sleep" }] });
+    assert.equal(res.status, 200);
+    assert.deepEqual((await res.json()).map((g) => g.name), ["Health and wellbeing"]);
+    assert.equal((await (await fetch(`${base}/api/goals/setup`)).json()).done, true);
+  });
+  await withServer(async (base) => {
+    await send(`${base}/api/goals/1`, "PUT", { description: "Mine" });
+    assert.equal((await (await fetch(`${base}/api/goals/setup`)).json()).done, true);
+  });
 });

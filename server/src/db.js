@@ -351,10 +351,15 @@ function cleanText(value) {
   return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
 }
 
-function checkName(db, name, exceptId = null) {
+function cleanName(name) {
   const clean = cleanText(name);
   if (!clean) throw new GoalError(400, "invalid_goal_or_name", "Give the goal a name.");
   if (clean.length > GOAL_NAME_MAX) throw new GoalError(400, "goal_name_too_long", `Use ${GOAL_NAME_MAX} characters or fewer.`);
+  return clean;
+}
+
+function checkName(db, name, exceptId = null) {
+  const clean = cleanName(name);
   const clash = db.prepare("SELECT id, archived_at FROM goals WHERE LOWER(name) = LOWER(?) AND id IS NOT ?").get(clean, exceptId);
   if (clash) {
     throw new GoalError(409, "goal_name_exists", clash.archived_at ? "An archived goal has this name. Restore it instead." : "You already have a goal with this name.");
@@ -448,6 +453,60 @@ export function reorderGoals(db, ids) {
   if (!valid) throw new GoalError(400, "invalid_goal_order", "Send every active goal once.");
   const set = db.prepare("UPDATE goals SET position = ? WHERE id = ?");
   db.transaction(() => ids.forEach((id, position) => set.run(position, id)))();
+  return listGoals(db);
+}
+
+const SETUP_KEY = "goals_setup_done";
+
+/** True once the user chose their goals, skipped the step, or already has saves. Existing workspaces are not asked. */
+export function goalsSetupDone(db) {
+  if (db.prepare("SELECT value FROM settings WHERE key = ?").get(SETUP_KEY)?.value === "1") return true;
+  return db.prepare("SELECT 1 FROM saves LIMIT 1").get() !== undefined;
+}
+
+export function markGoalsSetupDone(db) {
+  db.prepare("INSERT INTO settings (key, value) VALUES (?, '1') ON CONFLICT(key) DO UPDATE SET value = '1'").run(SETUP_KEY);
+}
+
+/**
+ * First login choice. { skip: true } keeps the starting goals. { goals: [{ name, description }] } makes the
+ * user's choice the goal list, in that order. Starting goals that were not chosen are removed, which is only
+ * allowed while no save is linked to any goal.
+ */
+export function setupGoals(db, input = {}) {
+  if (input.skip === true) {
+    markGoalsSetupDone(db);
+    return listGoals(db);
+  }
+  const chosen = input.goals;
+  if (!Array.isArray(chosen) || chosen.length < 1 || chosen.length > MAX_ACTIVE_GOALS) {
+    throw new GoalError(400, "invalid_goal_setup", `Choose 1 to ${MAX_ACTIVE_GOALS} goals.`);
+  }
+  const wanted = chosen.map((goal) => ({ name: cleanName(goal?.name), description: checkDescription(goal?.description) }));
+  if (new Set(wanted.map((goal) => goal.name.toLowerCase())).size !== wanted.length) {
+    throw new GoalError(400, "goal_name_exists", "Each goal needs a different name.");
+  }
+  if (db.prepare("SELECT 1 FROM actions WHERE goal_id IS NOT NULL LIMIT 1").get()) {
+    throw new GoalError(409, "goals_setup_unavailable", "You already have saves. Manage goals in Settings.");
+  }
+  db.transaction(() => {
+    const existing = db.prepare("SELECT id, name FROM goals").all();
+    const keep = new Set();
+    wanted.forEach((goal, position) => {
+      const match = existing.find((row) => row.name.toLowerCase() === goal.name.toLowerCase());
+      if (match) {
+        db.prepare("UPDATE goals SET name = ?, description = ?, color = ?, position = ?, archived_at = NULL WHERE id = ?")
+          .run(goal.name, goal.description, position % GOAL_COLOR_SLOTS, position, match.id);
+        keep.add(match.id);
+      } else {
+        const res = db.prepare("INSERT INTO goals (name, description, color, position) VALUES (?, ?, ?, ?)")
+          .run(goal.name, goal.description, position % GOAL_COLOR_SLOTS, position);
+        keep.add(Number(res.lastInsertRowid));
+      }
+    });
+    for (const row of existing) if (!keep.has(row.id)) db.prepare("DELETE FROM goals WHERE id = ?").run(row.id);
+    markGoalsSetupDone(db);
+  })();
   return listGoals(db);
 }
 

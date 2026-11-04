@@ -28,6 +28,8 @@ const messages: Record<string, string> = {
   goal_description_too_long: "Use 120 characters or fewer for the description",
   goal_limit_reached: "You can have 6 active goals. Archive one to add another",
   goal_in_use: "Move this goal's saves to another goal before archiving it",
+  invalid_goal_setup: "Choose between 1 and 6 goals",
+  goals_setup_unavailable: "You already have saves. Manage your goals in Settings",
   last_active_goal: "Keep at least one active goal",
   invalid_goal_color: "Choose one of the colors",
   invalid_goal_order: "Could not reorder the goals. Reload and try again",

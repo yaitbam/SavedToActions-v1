@@ -155,6 +155,9 @@ test('login can use the registered Calendar callback without an existing session
 test('goals can be added, archived and restored through the signed-in app', () => withApp(async ({ browser, login }) => {
   const client = browser(), session = await login(client), csrf = session.csrf_token;
   await client.request('/api/me', { method: 'PATCH', body: { name: 'User' }, csrf });
+  const first = await (await client.request('/api/goals')).json();
+  assert.ok(first.every(g => g.description && g.archived === false), 'a new account starts with described goals');
+  assert.equal((await (await client.request('/api/goals/setup')).json()).done, false);
   const starters = await (await client.request('/api/goals/starters')).json();
   assert.equal(starters.length, 8);
   const created = await client.request('/api/goals', { method: 'POST', body: { name: 'Health and wellbeing', description: 'Fitness, nutrition, sleep' }, csrf });

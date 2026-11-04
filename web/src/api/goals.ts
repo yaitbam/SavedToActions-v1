@@ -25,3 +25,7 @@ export const updateGoal = (id: number, input: Partial<GoalInput>) => put<GoalBas
 export const archiveGoal = (id: number) => post<GoalBase>(`/api/goals/${id}/archive`);
 export const restoreGoal = (id: number) => post<GoalBase>(`/api/goals/${id}/restore`);
 export const reorderGoals = (ids: number[]) => put<GoalBase[]>("/api/goals/order", { ids });
+
+export const getGoalsSetup = () => get<{ done: boolean }>("/api/goals/setup");
+// Either the goals the user chose, in order, or { skip: true } to keep the starting goals.
+export const setupGoals = (input: { skip: true } | { goals: StarterGoal[] }) => post<GoalBase[]>("/api/goals/setup", input);
