@@ -203,7 +203,6 @@ export function Landing() {
     <footer className="landing-footer landing-width"><Logo /><span>Make room for what matters.</span><Link to="/privacy">Privacy</Link><span>© 2026 SavedToAction</span></footer>
     <div className="landing-credit landing-width">
       <span className="built-badge"><b>Built with</b><i>Muse Spark Open</i></span>
-      <small>Built with Muse Spark Open. Example posts are illustrative.</small>
     </div>
   </div>;
 }
