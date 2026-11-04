@@ -34,3 +34,11 @@ export function saveStatus(save: SaveListItem): StatusKey {
   if (action.status === "open") return "review";
   return action.status;
 }
+
+// Only a save that is not booked yet says "Review & schedule". A booked one opens its booking.
+export function saveCtaLabel(save: SaveListItem): string {
+  const status = save.action?.status;
+  if (status === "planned") return "View booking";
+  if (status === "done" || status === "skipped") return "Open";
+  return "Review & schedule";
+}

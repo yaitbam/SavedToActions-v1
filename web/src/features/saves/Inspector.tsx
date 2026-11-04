@@ -4,7 +4,7 @@ import type { SaveListItem } from "../../api/types";
 import { Chip } from "../../ui/Chip";
 import { GoalChip } from "../../ui/GoalChip";
 import { StatusChip } from "../../ui/StatusChip";
-import { saveStatus } from "./model";
+import { saveCtaLabel, saveStatus } from "./model";
 import { DeadlineBadge, EffortPill } from "./TriageCard";
 
 interface InspectorProps {
@@ -60,8 +60,8 @@ export function Inspector({ save, goalName, onClose }: InspectorProps) {
         </p>
       </section>
       <footer className="drawer-foot">
-        <Link to={`/app/saves/${save.saveId}`} className="drawer-cta">Review &amp; schedule <span aria-hidden="true">→</span></Link>
-        <p>You confirm minutes and approve the slot on the next screen.</p>
+        <Link to={`/app/saves/${save.saveId}`} className="drawer-cta">{saveCtaLabel(save)} <span aria-hidden="true">→</span></Link>
+        {saveCtaLabel(save) === "Review & schedule" && <p>You confirm minutes and approve the slot on the next screen.</p>}
       </footer>
     </aside>
   );

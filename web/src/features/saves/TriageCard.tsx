@@ -5,7 +5,7 @@ import { cx } from "../../ui/cx";
 import { shortDeadline } from "../../ui/DeadlineChip";
 import { GoalChip } from "../../ui/GoalChip";
 import { StatusChip } from "../../ui/StatusChip";
-import { saveStatus } from "./model";
+import { saveCtaLabel, saveStatus } from "./model";
 
 const PREVIEW_MAX = 280;
 
@@ -65,7 +65,7 @@ export function TriageCard({ save, goalName, selected, onSelect }: TriageCardPro
         </span>
       </button>
       <div className="tcard-actions">
-        <Link to={`/app/saves/${save.saveId}`} className="tcard-cta">Review &amp; schedule <span aria-hidden="true">→</span></Link>
+        <Link to={`/app/saves/${save.saveId}`} className="tcard-cta">{saveCtaLabel(save)} <span aria-hidden="true">→</span></Link>
       </div>
     </article>
   );
