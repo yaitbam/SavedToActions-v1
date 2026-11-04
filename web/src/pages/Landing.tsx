@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { SocialPost } from "../features/landing/SocialPosts";
+import { UNKNOWN_MODEL, providerSentence, useModelInfo, type ModelInfo } from "../api/model";
 import { GOOGLE_REVIEW_PENDING } from "../links";
 import { buttonClass } from "../ui/Button";
 import { Logo } from "../ui/Logo";
@@ -7,9 +8,10 @@ import "../features/landing/landing.css";
 import "../features/landing/landing-page.css";
 
 // Only facts about the product. There are no customer logos or reviews to show yet, so none are made up.
-const facts = [
+const facts = (model: ModelInfo | null, label: string) => [
   { title: "Google Calendar", body: "Blocks go on your own calendar" },
-  { title: "Muse Spark Open", body: "An open weights model" },
+  // The model name and what is said about it come from the server, so they match the provider in use.
+  { title: label, body: model?.openWeights ? "An open weights model" : model?.provider === "meta" ? "Through the Meta Model API" : "Reads your screenshot" },
   { title: "You approve", body: "Every write, every time" },
   { title: "Checked after", body: "Read back and rechecked" },
 ];
@@ -49,17 +51,19 @@ const never = [
   { lead: "No after hours.", body: "Blocks stay inside your working hours." },
 ];
 
-const faqs = [
+const faqs = (model: ModelInfo | null, label: string) => [
   { q: "Do I need Google Calendar?", a: "To book time, yes. You can upload and review saves before you connect it." },
   { q: "Does Muse read my social accounts?", a: "No. It reads only the screenshot, note and link text you give it. We never open the post link." },
   { q: "What is the note for?", a: "To tell Muse when and for how long. It reads only those two things and ignores the rest." },
   { q: "Can Muse book without me?", a: "No. Muse only reads your calendar. A write happens after you approve, then it is read back to check." },
   { q: "Is it free?", a: "Yes. A free account gets 20 Muse reads a day. There are no paid plans." },
   { q: "Can anyone sign in?", a: `Yes, with a Google account.${GOOGLE_REVIEW_PENDING ? " Google may show an unverified app screen while our review is in progress. Choose Advanced, then continue." : ""}` },
-  { q: "What is Muse Spark Open?", a: "An open weights model, called through Baseten. It reads and proposes. Code checks every fact and every write." },
+  { q: `What is ${label}?`, a: `${model?.openWeights ? "An open weights model" : "The model behind Muse"}, ${providerSentence(model)}. It reads and proposes. Code checks every fact and every write.` },
 ];
 
 export function Landing() {
+  const model = useModelInfo();
+  const label = model?.label ?? UNKNOWN_MODEL;
   return <div className="landing">
     <a href="#main" className="landing-skip">Skip to content</a>
     <header className="landing-nav">
@@ -96,7 +100,7 @@ export function Landing() {
 
       <section className="lp-facts lp-w" aria-label="What it is built on">
         <ul>
-          {facts.map((f) => <li key={f.title}><b>{f.title}</b><span>{f.body}</span></li>)}
+          {facts(model, label).map((f) => <li key={f.title}><b>{f.title}</b><span>{f.body}</span></li>)}
         </ul>
       </section>
 
@@ -190,7 +194,7 @@ export function Landing() {
           <h2 id="faq-title">Before you try it.</h2>
         </header>
         <div className="faq-list">
-          {faqs.map((f) => <details key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}
+          {faqs(model, label).map((f) => <details key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>)}
         </div>
       </section>
 
@@ -202,7 +206,7 @@ export function Landing() {
     </main>
     <footer className="landing-footer landing-width"><Logo /><span>Make room for what matters.</span><Link to="/privacy">Privacy</Link><span>© 2026 SavedToAction</span></footer>
     <div className="landing-credit landing-width">
-      <span className="built-badge"><b>Built with</b><i>Muse Spark Open</i></span>
+      <span className="built-badge"><b>Built with</b><i>{label}</i></span>
     </div>
   </div>;
 }

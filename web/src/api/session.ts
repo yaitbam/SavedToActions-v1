@@ -1,4 +1,5 @@
 import { del, get, patch, post } from "./client";
+import type { ModelInfo } from "./model";
 
 export interface Session {
   authenticated: boolean;
@@ -10,6 +11,7 @@ export interface Session {
   name: string | null;
   email: string | null;
   csrf_token: string | null;
+  model?: ModelInfo | null;
 }
 
 export const getSession = () => get<Session>("/auth/session");

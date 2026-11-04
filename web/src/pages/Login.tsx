@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { useModelLabel } from "../api/model";
 import { enterDemo } from "../api/session";
 import { errorText } from "../api/errors";
 import { useSession } from "../features/auth/SessionContext";
@@ -13,6 +14,7 @@ import "../features/auth/login.css";
 const steps = ["Drop a screenshot", "Confirm the effort", "Approve a time"];
 
 export function Login() {
+  const label = useModelLabel();
   const { session, error: sessionError, reload } = useSession();
   const [query] = useSearchParams();
   const [busy, setBusy] = useState(false);
@@ -33,7 +35,7 @@ export function Login() {
         <p className="lg-lede">Turn a screenshot of a post you saved into protected time on your calendar.</p>
         <ol className="lg-steps">{steps.map((s, i) => <li key={s}><b aria-hidden="true">{i + 1}</b>{s}</li>)}</ol>
       </div>
-      <p className="lg-foot">Powered by Muse Spark Open. Nothing reaches your calendar without your approval.</p>
+      <p className="lg-foot">Powered by {label}. Nothing reaches your calendar without your approval.</p>
     </aside>
     <div className="lg-main">
       <div className="lg-top"><Link to="/">← Back to home</Link></div>

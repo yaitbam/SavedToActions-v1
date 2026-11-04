@@ -146,7 +146,7 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "
 
         {(action.model || tzText) && (
           <div className="rv-chips">
-            {action.model && <ModelChip ms={action.extractionLatencyMs} />}
+            {action.model && <ModelChip ms={action.extractionLatencyMs} model={action.model} />}
             {tzText && <Chip tone="neutral">{tzText}</Chip>}
           </div>
         )}
