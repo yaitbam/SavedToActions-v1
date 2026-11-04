@@ -52,6 +52,7 @@
 .ns-foot { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 20px; padding-top:18px; border-top:1px solid var(--color-line); }
 .ns-fine { max-width:400px; margin:0; color:var(--color-muted); font-size:14px; line-height:1.5; }
 .ns-actions { display:flex; align-items:center; gap:8px; }
+.ns-cost { color:var(--color-muted); font-size:14px; white-space:nowrap; }
 
 @media(max-width:700px) {
  .ns-dialog { width:100vw; max-width:none; max-height:94vh; margin:auto 0 0; border-radius:26px 26px 0 0; }

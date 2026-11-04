@@ -243,7 +243,10 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
               {!file && retrySaveId.current === null ? (
                 <Button onClick={() => input.current?.click()}>Choose a screenshot</Button>
               ) : (
-                <Button onClick={extract} loading={working}>{phase === "error" ? "Retry" : "Extract"}</Button>
+                <>
+                  <span className="ns-cost">Uses 1 credit</span>
+                  <Button onClick={extract} loading={working}>{phase === "error" ? "Retry" : "Extract"}</Button>
+                </>
               )}
             </div>
           </footer>
