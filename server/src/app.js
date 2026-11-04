@@ -100,6 +100,7 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
     res.json(goal);
   });
 
+  if (config.authMode === "off") app.get('/auth/session', (_req, res) => res.json({ authenticated: true, kind: 'owner', profile_complete: true, name: null, email: null, csrf_token: null, credits: null, calendar_email: null }));
   // Google OAuth.
   app.get("/auth/status", (_req, res) => res.json(googleAuth.status()));
 
@@ -129,6 +130,7 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
   registerTimelineRoute(app, { db, calendar, clock });
   const jobs=registerSaveRoutes(app, { db, config, provider, clock, locks });
   registerAccountDataRoutes(app,{db,config,clock,jobs,locks});
+  app.locals.workspaceBusy = () => jobs.isBusy() || locks.isBusy();
   const planning = createPlanningService({ db, calendar, clock });
   const agent = createAgent({ db, provider, planning, clock });
   registerPlanningRoutes(app, { planning, recheck, agent, locks });
@@ -150,7 +152,7 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
     if (err.name === "MulterError") return res.status(400).json({ error: "bad_upload", detail: err.message });
     const status = err.status ?? 500;
     if(err.type==='entity.parse.failed')return res.status(400).json({error:'invalid_json'});
-    if (status >= 500) console.error(err);
+    if (status >= 500) console.error("Request failed", { name: err.name, code: err.code, status });
     res.status(status).json({ error: status >= 500 ? "server_error" : (err.publicCode??"bad_request"), ...(status<500&&err.publicCode?{detail:err.message}:{}) });
   });
 

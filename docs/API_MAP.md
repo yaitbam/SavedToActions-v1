@@ -114,3 +114,21 @@ Phase 1 is done (Nov 3). Notes for the web:
 4. No endpoint returns only our blocks for the week strip. Filter GET /api/week chips on kind "prep", or build from `next_up` and `upcoming` blocks. Week chips have `startDisplay` only, no relative strings.
 5. There is no server side "recheck all". The web sends the planned ids to POST /api/actions/recheck.
 6. `fixtures/demo/` exists with 14 PNGs (01 to 14), `manifest.json`, `README.md` and `flyer.png`. `docs/demo-posts/` is a separate older set of 16 files.
+
+
+## Account sessions (Nov 4)
+
+AUTH_MODE=on is the default for the server entry point. All resource routes require a complete profile and a browser session. AUTH_MODE=off is restricted to local development. Existing resource envelopes are unchanged, but IDs are scoped to the authenticated workspace.
+
+| Method, path | Body | Response |
+|---|---|---|
+| GET /auth/session | none | `{ authenticated, kind: owner/user/demo/null, profile_complete, name, email, csrf_token, credits: {remaining,max,display} or null, calendar_email: string or null, demo_available?: false }`. Anonymous returns 200 and a CSRF bootstrap cookie |
+| GET /auth/login/google | none | Google OIDC redirect with browser-bound state, nonce and PKCE |
+| GET /auth/login/google/callback | query | Verified login redirects to /app or /complete-profile. Failure to /login?error=signin_failed |
+| PATCH /api/me | `{name}` trimmed 1 to 80 chars | `{name,email}`. Email cannot be changed. Marks profile complete |
+| POST /auth/logout | `{}` | `{signed_out:true}` and expires session cookie |
+| POST /auth/demo | `{}` | 503 demo_unavailable until a safe demo seed is configured. The live login hides this button |
+| GET /auth/google | none | Requires complete profile. Calendar consent bound to signed-in account |
+| GET /auth/google/callback | query | Mismatched identity rejected before storing any tokens. Redirects to /app/settings?google=wrong_account/connected/error |
+
+State-changing requests require exact Origin and X-CSRF-Token from GET /auth/session. Cookie sta_session is HttpOnly and SameSite=Lax. Sessions expire after seven days. API errors retain stable machine codes for logs and application decisions. UI must never display raw code or detail fields. Credits reset in GMT and are charged once per extraction/planning operation on the first successful model response. Failed model requests refund their reservation. A crash during an in-flight response may leave a reserved credit charged. Demo, ledger and account deletion are not implemented in this phase.

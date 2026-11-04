@@ -21,6 +21,13 @@ function reasoningEffortFromEnv(value) {
 }
 
 export const config = {
+  authMode: process.env.AUTH_MODE || "on",
+  dataDir: process.env.DATA_DIR || path.join(REPO_ROOT, "data"),
+  loginRedirectUri: process.env.GOOGLE_LOGIN_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/auth/google/callback",
+  ownerEmail: process.env.OWNER_EMAIL || "",
+  cookieSecure: process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production",
+  tokenEncKey: process.env.TOKEN_ENC_KEY || "",
+  freeDailyCredits: Number(process.env.FREE_DAILY_CREDITS || 20),
   port: Number(process.env.PORT || 3000),
   frontendOrigin: process.env.FRONTEND_ORIGIN || "http://localhost:5173",
   dbPath: process.env.DB_PATH || path.join(SERVER_ROOT, "data", "savedtoaction.db"),

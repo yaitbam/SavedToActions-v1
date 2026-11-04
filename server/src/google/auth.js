@@ -5,8 +5,10 @@ import { clearGoogleEmail, clearTokens, loadTokens, storeTokens } from "../db.js
 
 const STATE_TTL_MS = 10 * 60 * 1000;
 
-export function createGoogleAuth({ db, config }) {
+export function createGoogleAuth({ db, config, vault }) {
   const { clientId, clientSecret, redirectUri, scopes } = config.google;
+  const readStored = () => { const raw = loadTokens(db); return raw && vault ? vault.open(raw) : raw; };
+  const writeStored = value => storeTokens(db, vault ? vault.seal(value) : value);
   const pendingStates = new Map();
 
   const configured = () => Boolean(clientId && clientSecret);
@@ -33,27 +35,27 @@ export function createGoogleAuth({ db, config }) {
     if (!issuedAt || Date.now() - issuedAt > STATE_TTL_MS) throw new Error("invalid_state");
     if (!code) throw new Error("missing_code");
     const { tokens } = await newClient().getToken(code);
-    const previous = loadTokens(db) ?? {};
-    storeTokens(db, { ...previous, ...tokens, refresh_token: tokens.refresh_token ?? previous.refresh_token });
+    const previous = readStored() ?? {};
+    writeStored({ ...previous, ...tokens, refresh_token: tokens.refresh_token ?? previous.refresh_token });
     clearGoogleEmail(db); // a different account may have signed in
     return status();
   }
 
   /** OAuth client with stored credentials. Refreshed tokens are persisted automatically. Null if not connected. */
   function authorizedClient() {
-    const tokens = loadTokens(db);
+    const tokens = readStored();
     if (!tokens || !configured()) return null;
     const client = newClient();
     client.setCredentials(tokens);
     client.on("tokens", (fresh) => {
-      const current = loadTokens(db) ?? {};
-      storeTokens(db, { ...current, ...fresh, refresh_token: fresh.refresh_token ?? current.refresh_token });
+      const current = readStored() ?? {};
+      writeStored({ ...current, ...fresh, refresh_token: fresh.refresh_token ?? current.refresh_token });
     });
     return client;
   }
 
   function status() {
-    const tokens = loadTokens(db);
+    const tokens = readStored();
     // Google lets users untick individual scopes on the consent screen, so check what was granted.
     const granted = new Set((tokens?.scope ?? "").split(" ").filter(Boolean));
     const missingScopes = tokens ? scopes.filter((s) => !granted.has(s)) : [];
@@ -72,5 +74,9 @@ export function createGoogleAuth({ db, config }) {
     return status();
   }
 
-  return { configured, authUrl, handleCallback, authorizedClient, status, disconnect };
+  function saveVerifiedTokens(tokens) {
+    const previous = readStored() ?? {};
+    writeStored({ ...previous, ...tokens, refresh_token: tokens.refresh_token ?? previous.refresh_token });
+  }
+  return { saveVerifiedTokens, configured, authUrl, handleCallback, authorizedClient, status, disconnect };
 }
