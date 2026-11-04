@@ -4,7 +4,7 @@ Backend for SavedToAction, built for the Meta Global AI Developer Hackathon (Ind
 
 This file is the single hand-over document for the server. If you are new to the project, read it top to bottom once. Scope and product rules come from the project brief kept by the owner, and the brief wins if the two ever disagree.
 
-Status on Nov 4 2026: Google login, persistent sessions, profile confirmation and private workspaces are enabled by default. Calendar connections are bound to the signed-in Google account. The backend also provides scheduling, extraction, metrics, lifecycle undo, completion titles and usage limits. Account deletion, the shared demo, trust ledger and legacy owner-data migration remain unavailable. Historical live-calendar evidence below predates the multiuser auth layer. See [account setup](../docs/AUTH_SETUP.md) and the [core API reference](docs/API.md).
+Status on Nov 4 2026: Google login, persistent sessions, profile confirmation and private workspaces are enabled by default. Calendar connections are bound to the signed-in Google account. The backend also provides scheduling, extraction, metrics, lifecycle undo, completion titles and usage limits. The trust ledger and legacy owner-data migration remain unavailable. The shared read only demo is filled by `scripts/load-demo.mjs`. Historical live-calendar evidence below predates the multiuser auth layer. See the [core API reference](docs/API.md).
 
 Project reporting times are GMT+0. Scheduling uses each workspace's configured IANA timezone. The startup self-test requires Africa/Casablanca to be +00:00 at 2026-11-05T10:00Z.
 
@@ -385,7 +385,8 @@ Verified by running it (Nov 2):
 Assumed or not yet verified:
 
 - A full live two-account login, booking and isolation run. Automated auth tests use a fake Google provider.
-- Shared demo, trust-ledger API and legacy owner-data migration are not implemented.
+- The trust-ledger API and legacy owner-data migration are not implemented.
+- The shared demo: `POST /auth/demo` opens a read only session for the demo account, which exists once `scripts/load-demo.mjs` has loaded it (`server/src/demo/loadDemo.js`). The loader imports the screenshots through the normal `POST /api/saves`, either with a live model call or by replaying answers recorded in `fixtures/demo/extracted.json`. Every write by the demo answers 403 `demo_readonly` (including renaming it), its credit limit is 0, and it has no calendar.
 
 - The background watcher against real Google over real time (tested with fake timers only).
 - The agent in move mode against the real calendar (tested with the fake calendar).

@@ -40,7 +40,7 @@ The session provider checks `/auth/session` before mounting private routes. An a
 
 Cookies stay on the same origin. The API client includes the session's CSRF token on writes. On a private API `401`, it clears its session state, hides the current page and hard navigates to login. Sign-out revokes the server session and hard navigates too. Only the first session check replaces the page with a loader. Later reloads, such as saving a name, refresh in the background so the page keeps its state. A signed out visitor's requested `/app/...` page is remembered in session storage for 10 minutes, so signing in returns them there and not to Overview. Account details, screenshots and Google tokens are not persisted in browser storage.
 
-Calendar connection is separate from app login and must use the same Google account. Disconnecting Calendar leaves the login active. Login uses the registered Calendar callback by default. See [account setup](../docs/AUTH_SETUP.md) when configuring a different callback.
+Calendar connection is separate from app login and must use the same Google account. Disconnecting Calendar leaves the login active. Login uses the registered Calendar callback by default. See the [server guide](../server/README.md) when configuring a different callback.
 
 ## UI behavior
 
@@ -84,4 +84,4 @@ node web/test/phase6.cjs
 
 ## Current limits
 
-The shared demo is unavailable on the live backend. Account deletion is in Settings and asks for a typed confirmation. The trust-ledger API is absent, and legacy data is not automatically migrated into new accounts. Two real Google accounts completing login and one booking each still need separate manual verification. Full account configuration and deployment limits are documented in [account setup](../docs/AUTH_SETUP.md).
+The shared demo opens from the login page once `node scripts/load-demo.mjs` has loaded it, and it is read only. Account deletion is in Settings and asks for a typed confirmation. The trust-ledger API is absent, and legacy data is not automatically migrated into new accounts. Two real Google accounts completing login and one booking each still need separate manual verification. Full account configuration and deployment limits are in the [server guide](../server/README.md).

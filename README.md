@@ -55,7 +55,8 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 ## Honest limits
 
 - Google login and private workspaces are implemented. Google OAuth remains in Testing mode, so accounts must be added as test users. Public Google approval is a separate release step.
-- Hosting targets one server process with persistent disk. The shared demo, trust ledger and migration of legacy local data are not implemented.
+- Hosting targets one server process with persistent disk. The trust ledger and migration of legacy local data are not implemented.
+- The demo workspace is read only and shows one recorded model run. Opening it never calls the model or a calendar.
 - Goal assignment is the weakest part of extraction. In the demo seed, with the three original goals and no descriptions, the model returned no goal for 2 of 14 posts, and results varied between runs. Goal descriptions and the six general goals are meant to help, but that has not been measured yet. You can always pick the goal yourself.
 - Posts that give a date but no time get a deadline at the end of that day (23:59). It is always labeled as assumed on the save, and you can set the real time. A date is never turned into a different day.
 - The model takes about 7 s per screenshot, so the app shows a loading state while it reads. Extraction is not yet in the background.
@@ -131,6 +132,21 @@ Environment variables. Everything else is optional, and `.env.example` lists eve
 Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data.
 
 For HTTPS production, configure the public origin and callback URLs, set `COOKIE_SECURE=true`, and supply a secret `TOKEN_ENC_KEY` containing 64 hexadecimal characters. Keep the key and persistent data backed up outside Git. Local development creates a private token key when this variable is absent. See the [server guide](server/README.md) for configuration and current limits.
+
+## Try the demo without Google
+
+The login page has an **Explore the demo** button. It opens a shared, read only workspace with the demo screenshots from `fixtures/demo/` already saved. It needs no Google account, cannot book anything and uses no credits.
+
+The workspace is empty until you load it once. Run this from the repository root, with the same `.env` as the backend, so both use the same `DATA_DIR`:
+
+```sh
+node scripts/load-demo.mjs
+```
+
+- If `fixtures/demo/extracted.json` exists, the script replays the model answers recorded in it. It needs no key, no credits and no network.
+- If it does not, the script reads the screenshots with the model you configured (`BASETEN_API_KEY`, or `MODEL_PROVIDER=meta` with `META_API_KEY`), which takes a few seconds per screenshot, and saves the answers to that file for next time.
+- Running it again adds nothing. `node scripts/load-demo.mjs reset` removes the demo account and its saves, and `node scripts/load-demo.mjs live` reads the screenshots with the model again and records fresh answers (run reset first).
+- The script never touches Google Calendar. It works with the server running or stopped. Then open the login page and choose **Explore the demo**.
 
 ## Checks and component guides
 
