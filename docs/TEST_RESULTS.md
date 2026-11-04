@@ -7,8 +7,8 @@ Real numbers only. Where a result is not backed by saved output in this repo, it
 | Result | Value |
 |---|---|
 | Command | `cd server && npm test` |
-| Tests | 263 |
-| Passed | 263 |
+| Tests | 319 |
+| Passed | 319 |
 | Failed | 0 |
 
 The suite uses an in-memory database, a fake calendar and a scripted fake model. It makes no network calls, no Google calls and no model calls.

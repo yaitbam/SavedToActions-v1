@@ -94,15 +94,16 @@ src/
   auth/                 Account HTTP boundary, OIDC, sessions, workspace registry, encrypted credentials and usage budgets.
   app.js                Workspace Express app factory. CORS, health, settings, goals, auth routes, error handler. Dependencies are injected.
   config.js             Loads ../.env, exports config and APP_ID.
-  db.js                 SQLite schema as append-only migrations (PRAGMA user_version), settings and token helpers.
+  db.js                 SQLite schema as append-only migrations (PRAGMA user_version), settings, token helpers and goal management (starter goals, add, edit, reorder, archive, first login setup).
   tz.js                 The ONLY place for wall time <-> UTC and offsets (moment-timezone). Self test.
+  postLink.js           The link to the original post, kept as a reference: checks it, removes tracking, names the platform. Never fetches it.
   actions.js            Saves and actions: create from extraction, API view (badges, labels), validated PATCH.
   blockStore.js         Block and check persistence, block and check views, shared slot formatter (decorateSlot).
   stats.js              Goal metrics with the exact definitions (importedSaves, planned, markedDone, action rate, time scheduled...).
   watcher.js            Interval scheduler for the background recheck. Never overlaps, never throws.
   extraction/
     extract.js          Prompt, model call, JSON parsing, failure codes.
-    normalize.js        Raw model JSON to trusted fields: badges, deadline rules, event dates, warnings.
+    normalize.js        Raw model JSON to trusted fields: badges, deadline rules, event dates, the note's intent, warnings.
     image.js            Downscale to 1280 px for the model call. Original is never touched.
   model/provider.js     Provider switch (baseten). Chat with optional tools. Error codes.
   google/
@@ -115,6 +116,7 @@ src/
     blocks.js           Idempotency keys, event ids, tags, active/superseded rules, planMove.
     evaluate.js         evaluateBlock (green/amber/red), proposeSlot, working hours check.
     readback.js         compareReadback (start, end, tz, offset, tags).
+    intent.js           What the note asked for (when, how long): cleaning, labels, and the search window code builds from it.
     index.js            Re-exports.
   services/
     planning.js         propose, approve, move, readback, done, skip, plus read only agent helpers.
@@ -122,7 +124,7 @@ src/
     home.js             GET /api/home: next up, upcoming, needs attention, recent saves, inbox and alert counts, connected email.
   agent/agent.js        The agent step: read only tools, validation, trace log.
   routes/
-    saves.js            Upload and extract, screenshot, action get and patch.
+    saves.js            Upload (note and post link) and extract, screenshot, action get and patch.
     planning.js         Propose, approve, move, recheck, agent, readback, done, skip, traces.
 test/                   node:test. fakeCalendar.js is an in memory Google stand in.
 ../scripts/             Manual tools: live checks and experiments. See Scripts.
@@ -136,8 +138,10 @@ Rule of thumb: pure logic goes in `scheduler/`, orchestration in `services/`, HT
 screenshot + note
   POST /api/saves                    store original, downscale copy, call model, normalize, create action (status open)
   PATCH /api/actions/:id             edit any field, confirm effort (confirmedEffortMin)
-  POST /api/actions/:id/propose      read only: earliest valid slot, or why none (red) and what would change it
-  POST /api/actions/:id/approve      approved:true -> fresh check, write event, read back, block saved, status planned
+  POST /api/actions/:id/propose      read only: earliest valid slot, or why none (red) and what would change it. Takes the minutes on screen
+                                     (effortMin, never saved) and tries the time the note asked for first
+  POST /api/actions/:id/approve      approved:true (+ effortMin) -> approving confirms those minutes, fresh check, write event, read back,
+                                     block saved, status planned
   POST /api/actions/:id/recheck      read only: green / amber / red against the real calendar (same code as the watcher)
   POST /api/actions/:id/move         approved:true -> new event, old block superseded, old event deleted and verified
   POST /api/actions/:id/done         approved:true for a booked task -> verified Done prefix, self-reported status done
@@ -147,12 +151,12 @@ Action status: `open` -> `planned` (an active block exists) -> `done` or `skippe
 
 ## Data model
 
-SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAGMA user_version` is the workspace schema version (currently 6). Table rebuilds run with foreign keys off, then `foreign_key_check` must be empty.
+SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAGMA user_version` is the workspace schema version (currently 12). Table rebuilds run with foreign keys off, then `foreign_key_check` must be empty.
 
 | Table | Purpose |
 |---|---|
 | `goals` | `name`, `description` (sent to the model with the name), `color` slot 0 to 5, `archived_at`, `position`. A new workspace starts with 6 general goals (Earn more, Learn a skill, Events and opportunities, Career growth, Health and wellbeing, Create and build). Users add, edit, reorder and archive up to 6 active goals. Two more general starters are offered (Travel and experiences, Home and family) |
-| `saves` | screenshot filename, note, `imported_at`, `is_demo` (imported demo history, labeled in the UI) |
+| `saves` | screenshot filename, note (at most 160 characters), `source_url` (the post link, a reference only), `imported_at`, `is_demo` (imported demo history, labeled in the UI) |
 | `actions` | one per save. kind (try, opportunity, other), label (claim, validate, read, someday, label only), title, goal_id (nullable, never defaulted), deadline wall plus tz plus `deadline_tz_source` (model, settings_fallback, user) plus computed `deadline_utc`, deliverables, verbatim items, `event_dates_json`, evidence quote, transcription, warnings, raw model output, `suggested_effort_min` (model) and `confirmed_effort_min` (user), status, `edited_fields_json`, done_at |
 | `blocks` | action_id, `google_event_id`, `idempotency_key` (unique), start_utc, end_utc, tz, `superseded_by`, `cancelled_at`, `event_deleted_at`, read-back status and drift |
 | `settings` | work_start, work_end, tz (defaults to `America/New_York`, migration v9 fills workspaces that had none and never changes a chosen one), `ignore_all_day` ("1" default) |
@@ -162,7 +166,9 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 | `extraction_jobs` | persisted queued/running/completed extraction state |
 | `action_transitions` | lifecycle changes supporting undo |
 
-Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. v10 records whether the user confirmed their timezone (`tz_confirmed`), trusting only a zone other than the default. v11 adds `deadline_time_assumed` for deadlines given as a date with no time. The historical v1-to-v4 migration retained tokens on a database copy.
+Also on `actions`: `intent_json` (what the note asked for, kept only if its words are in the note) and `deadline_time_assumed` (a date given with no time, so the deadline runs to 23:59 and is flagged).
+
+Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. v10 records whether the user confirmed their timezone (`tz_confirmed`), trusting only a zone other than the default. v11 adds `deadline_time_assumed` for deadlines given as a date with no time. v12 adds `saves.source_url` and `actions.intent_json`. The historical v1-to-v4 migration retained tokens on a database copy.
 
 The separate central database contains `accounts`, `sessions`, `oauth_requests`, `usage` and sanitized `auth_failures`. Accounts are identified by verified Google `sub`. Session tokens are hashed, and only random workspace keys appear in workspace paths. A cached context contains that account's database and Calendar client. Live jobs and requests prevent its eviction.
 
@@ -178,23 +184,27 @@ Account endpoints: `GET /auth/session`, `GET /auth/login/google`, `PATCH /api/me
 |---|---|
 | `GET /health` | Account mode: service and timezone status. Legacy mode also returns workspace schema and Google status |
 | `GET /api/timezones` | `{ zones: [{ id, offset }] }`. Canonical IANA names plus UTC with the current offset, computed by moment-timezone. Settings uses it for the timezone list. Aliases such as `US/Eastern` are not listed but stay valid in `PUT /api/settings` |
+| `GET /api/timezone/setup`, `POST /api/timezone/setup` | `{ done, tz }`: whether the user confirmed their timezone. The POST takes `{ tz }`, saves it and marks it confirmed. Choosing a timezone with `PUT /api/settings` confirms it too |
 | `GET /api/settings`, `PUT /api/settings` | `workStart`, `workEnd` (HH:mm, end may be 24:00), `tz` (IANA), `ignoreAllDay` (boolean). Partial updates. `tz: null` clears the timezone |
-| `GET /api/goals` | each goal is `{ id, name, metrics }`. `metrics` has `importedSaves`, `demoSaves`, `planned`, `markedDone`, `savesWithDoneAction`, `deadlinePassedWithoutCompletion`, `actionRate` (null with no saves), `timeScheduledMin`. Definitions are in `src/stats.js` and returned as `metric_definitions` by `/api/home` |
+| `GET /api/goals` | active goals in the user's order, then archived ones. Each goal is `{ id, name, description, color, archived, position, metrics }`. `metrics` has `importedSaves`, `demoSaves`, `planned`, `markedDone`, `savesWithDoneAction`, `deadlinePassedWithoutCompletion`, `actionRate` (null with no saves), `timeScheduledMin`. Definitions are in `src/stats.js` and returned as `metric_definitions` by `/api/home` |
 | `GET /api/goals/starters`, `GET /api/goals/setup`, `POST /api/goals/setup`, `POST /api/goals`, `PUT /api/goals/:id`, `PUT /api/goals/order`, `POST /api/goals/:id/archive`, `POST /api/goals/:id/restore` | goal management, see [API.md](docs/API.md) |
 | `GET /api/home` | one read for the Home screen: `now` (server formatted), `google_connected`, `connected_email`, `next_up`, `upcoming`, `needs_attention`, `recent_saves`, `inbox_count` (+ `inbox` breakdown), `alerts_count`, `metric_definitions`. Top level keys are snake_case, items inside use the usual camelCase. Database records only, no model call |
 | `GET /auth/google` | redirect to Google consent (offline access, forced consent) |
-| `GET /auth/google/callback` | Dispatches login or Calendar using stored OAuth state. Calendar results redirect to Settings. Mismatched Google identity is rejected before tokens are saved |
+| `GET /auth/google/callback` | Dispatches login or Calendar using stored OAuth state. A successful Calendar connection redirects to Overview, so the first login steps show, and failures redirect to Settings. Mismatched Google identity is rejected before tokens are saved |
 | `GET /auth/status`, `POST /auth/disconnect` | connection state, local disconnect |
 
 **Saves and actions**
 
 | Route | Notes |
 |---|---|
-| `POST /api/saves` | multipart: `image` (PNG, JPEG or WebP, checked by bytes, max 8 MB), `note` (max 5000 chars, optional). Returns `{ saveId, action, extraction: { ms, usage, image } }`. On a model failure: 502 and the save is kept |
+| `POST /api/saves` | multipart: `image` (PNG, JPEG or WebP, checked by bytes, max 8 MB), `note` (max 160 chars, optional), `link` (the post link, optional, 400 `invalid_link` if it is not a web address). Returns `{ saveId, action, extraction: { ms, usage, image } }`. On a model failure: 502 and the save is kept |
 | `POST /api/saves/:id/extract` | retry extraction for a save that has no action (409 if it already has one) |
 | `GET /api/saves/:id/screenshot` | the stored original |
+| `PATCH /api/saves/:id` | `{ note }` and/or `{ link }` (null or empty removes the link). Returns `{ saveId, note, link, action }`. Blocked during extraction |
 | `GET /api/actions/:id` | full view, see below |
 | `PATCH /api/actions/:id` | any of: `title`, `goalId`, `kind`, `label`, `deliverables`, `verbatimItems`, `eventDates`, `evidenceQuote`, `deadline` (`{wall, tz?, label?}` or `null`), `confirmedEffortMin` (1 to 1440 or null). 409 once done or skipped |
+
+The action view also carries `link` (`{ url, host, platform }` or null), `intent` (`{ when, minutes, minutesQuote, label }` or null), `effort.statedMin` (minutes written in the note) and, on `deadline`, `short` (the date alone, such as `22 Nov`) and `timeAssumed`.
 
 The action view includes: fields, `evidence` (quote, matches, badge, badgeLabel), `effort` (suggestedMin, confirmedMin, label "Model estimate" or "Your estimate", scheduledMin = confirmed only), `deadline` (wall, tz, tzSource, utc, display formatted by the server), `eventDates` with badges, `verbatimItems` with badges, `edited` (field names the user changed), `warnings` (hidden for fields the user has edited), `block` (active block with server formatted times and read-back), `check` (latest Recheck of the active block), `screenshotUrl`, `isDemo`.
 
@@ -202,8 +212,8 @@ The action view includes: fields, `evidence` (quote, matches, badge, badgeLabel)
 
 | Route | Body | Notes |
 |---|---|---|
-| `POST /api/actions/:id/propose` | none | read only. `{ found, mode: new or move, source: freebusy or events, slot }` or `{ found: false, reason, explanation[], hints }` |
-| `POST /api/actions/:id/approve` | `{ startUtc, endUtc, approved: true }` | 201 with `{ action, block }`. Same slot again returns 200 `replayed: true` |
+| `POST /api/actions/:id/propose` | `{ effortMin?, notBeforeUtc? }` | read only. `effortMin` is the minutes on screen, used for this search only. `notBeforeUtc` asks for another time. If the note asked for a time it is tried first and `intent: { applied, label, reason? }` says whether it was met. `{ found, mode: new or move, source: freebusy or events, slot }` or `{ found: false, reason, explanation[], hints }` |
+| `POST /api/actions/:id/approve` | `{ startUtc, endUtc, approved: true, effortMin? }` | `effortMin` is the minutes shown with the time and approving confirms them, and the block must be exactly that long. 201 with `{ action, block }`. The event description holds a link to the original post. Same slot again returns 200 `replayed: true` |
 | `POST /api/actions/:id/move` | same | replaces the active block. `previous: { eventDeleted, deleteError }` |
 | `POST /api/actions/:id/readback` | none | re-fetch the event and compare |
 | `POST /api/actions/:id/recheck` | none | read only. `{ check, action }` |
@@ -258,7 +268,9 @@ Wording is fixed: "latest feasible start, given your current availability and co
 
 `POST /api/saves`: original saved, a copy downscaled to 1280 px on the longest edge (JPEG, EXIF applied, small images untouched), prompt built, model called, answer parsed and normalized, action stored. Raw model output is kept for audit.
 
-The model returns: transcription, title, goal_id, kind, label, deadline (`wall` YYYY-MM-DDTHH:mm, `tz` IANA or null, `quote`, `label`, `year_assumed`), event_dates (verbatim `text`, `start`, `end`), deliverables, verbatim_items (prompt, link, keyword), evidence_quote, suggested_effort_min.
+The model returns: transcription, title, goal_id, kind, label, deadline (`wall` YYYY-MM-DDTHH:mm, `tz` IANA or null, `quote`, `label`, `year_assumed`), event_dates (verbatim `text`, `start`, `end`), deliverables, verbatim_items (prompt, link, keyword), evidence_quote, suggested_effort_min, and `intent` (what the note asked for: `when` as a day, a date or a part of the day with the exact words, and `minutes` with the exact words).
+
+The goal list sent to the model is `id: name (description)` for the active goals only. The system prompt tells the model that a description only helps it choose.
 
 Normalization rules (`extraction/normalize.js`):
 
@@ -267,6 +279,7 @@ Normalization rules (`extraction/normalize.js`):
 - A deadline already in the past at import is dropped with a warning (almost always a past edition). A date with no time becomes a deadline at 23:59 of that day, flagged `timeAssumed` and warned as `deadline_time_assumed`, and a user edit clears the flag. The action view also gives `deadline.short`, the date alone (`22 Nov`, with the year when it is not this year) in the deadline's zone, for chips. Missing year is assumed only with a warning.
 - The timezone is used only if stated. If not, the settings timezone is used and labeled `settings_fallback`. With no settings timezone it stays null.
 - `event_dates` are the event's own dates, separate from the deadline. If every supported date is before today the warning `event_already_happened` is raised. Date only comparison.
+- The note is read for two things only, when and how long, and each is kept only if its quote is found in the note itself, never in the image. The date must be real and not in the past, minutes must be 1 to 1440, and anything else is dropped. `scheduler/intent.js` then turns it into a search window (not before, not after, and the hours of the day) inside the user's own working hours. The prompt tells the model to ignore other requests in the note.
 - Goal is never defaulted. If the model gives none, `goal_not_chosen` and the user picks.
 - Warning codes: `goal_not_chosen`, `kind_defaulted`, `verbatim_unmatched`, `evidence_unmatched`, `deadline_unsupported`, `deadline_in_past`, `deadline_time_assumed`, `deadline_invalid`, `deadline_timezone_fallback`, `deadline_timezone_missing`, `deadline_timezone_invalid`, `deadline_offset_ignored`, `deadline_year_assumed`, `event_already_happened`.
 
@@ -326,14 +339,14 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
 
 ## Tests
 
-`npm test` runs `node --test "test/*.test.js"`. 280 tests, using local HTTP where needed, with no external Google or model calls. They use:
+`npm test` runs `node --test "test/*.test.js"`. 319 tests, using local HTTP where needed, with no external Google or model calls. They use:
 
 - `test/fakeCalendar.js`: an in memory calendar with Google's behavior where it matters (unique ids with 409, deleted events stay readable as cancelled, events.list hides cancelled, FreeBusy merges, offsets in returned times, all-day events). `sim` switches on failures: wrong offset, shifted instants, changed timezone, stripped tags.
 - A fixed clock (Mon 2 Nov 2026 12:00 UTC in most files) injected into `createApp`.
 - A scripted fake model for the agent (each entry answers one chat call and can read the tool results sent back).
 - `:memory:` SQLite, or a temporary folder under `server/data/` that tests delete.
 
-Coverage includes `auth` (sessions, profile confirmation, CSRF, OAuth state, account isolation, same-account Calendar binding, encrypted credentials, credits and shared callbacks), `completion` (verified event titles, undo and failure recovery), `tz` (self test, conversions, display), `slots` (windows, DST, grid, deadlines, latest feasible start, red hints), `conflicts` (own events, stale, all-day, free, declined), `blocks` (keys, attempts, supersede), `evaluate` (states, problem types), `readback`, `calendar` (request shapes, pagination, error mapping), `planning` (propose, approve, replay, drift, crash recovery, move, move back, delete failure, done, skip, all-day setting), `recheck` (all states, history, watcher parity, watcher unit), `agent` (happy path, trace order, invented slot, changed calendar, tool errors, no slot, turn limit, model failure, preconditions, move mode), `saves` (upload, validation, badges, edits, event dates), `normalize`, `extract` (parsing, prompt rules, provider shape, tools), `image`, `db` (workspace migrations and constraints), `google` (OAuth URL, state, tokens), `app` (routes, settings).
+Coverage includes `auth` (sessions, profile confirmation, CSRF, OAuth state, account isolation, same-account Calendar binding, encrypted credentials, credits and shared callbacks), `completion` (verified event titles, undo and failure recovery), `tz` (self test, conversions, display), `slots` (windows, DST, grid, deadlines, latest feasible start, red hints), `conflicts` (own events, stale, all-day, free, declined), `blocks` (keys, attempts, supersede), `evaluate` (states, problem types), `readback`, `calendar` (request shapes, pagination, error mapping), `planning` (propose, approve, replay, drift, crash recovery, move, move back, delete failure, done, skip, all-day setting), `recheck` (all states, history, watcher parity, watcher unit), `agent` (happy path, trace order, invented slot, changed calendar, tool errors, no slot, turn limit, model failure, preconditions, move mode), `saves` (upload, validation, badges, edits, event dates), `normalize`, `extract` (parsing, prompt rules, provider shape, tools), `image`, `db` (workspace migrations and constraints), `google` (OAuth URL, state, tokens), `app` (routes, settings). Newer files: `goals` (starter goals, limits, archive rules, the first login setup, migrations), `timezone-setup` (the default timezone and its confirmation), and `intent-note` (the post link, what the note asked for, proposing and approving with the minutes on screen). The signed-in app test covers goal management through the real routes.
 
 When you add behavior, add the test in the same change. Keep tests deterministic: inject the clock, calendar and provider.
 
@@ -393,7 +406,7 @@ Current API status and remaining product limits:
 
 - GET /api/actions, GET /api/saves, Home, goal metrics and workspace reads are implemented. The current complete route list is in [API.md](docs/API.md).
 - `scripts/seed-demo.mjs` and `scripts/demo-reset.mjs` manage the legacy workspace selected by `DB_PATH`. They do not populate signed-in accounts or provide a shared read-only demo.
-- Confirmed whole-workspace deletion is implemented. Individual save discard remains unavailable.
+- Confirmed whole-workspace deletion and deleting a single save (with an option to remove its calendar block) are implemented.
 - Open actions have no fabricated availability state. Request a proposal to evaluate a slot. Recheck covers approved blocks.
 
 Other known limits:
@@ -402,6 +415,8 @@ Other known limits:
 - Primary calendar only, using the same Google identity as login. Testing-mode access depends on the configured test-user list.
 - One contiguous calendar block per action. App login sessions are independent of planning blocks.
 - Editing confirmed effort or the deadline after planning is allowed. Recheck then reports `effort_changed` or `after_deadline` as amber.
+- Not built yet: Muse suggesting a new goal when a screenshot fits none of the user's goals, extraction in the background with a quick Book, Later or Skip triage, and a phone share target. How often the note's when and how long are read correctly is not measured.
+- A new workspace starts in `America/New_York`. Someone who never confirms their timezone and works elsewhere gets blocks in Eastern time.
 - Deferred by scope: claim workflow, reading queue, alerts page, MCP server, Meta API provider, model commentary, background watcher UI.
 
 ## Design decisions and why

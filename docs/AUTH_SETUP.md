@@ -8,7 +8,7 @@ The server entry point now enables Google account login by default. The browser 
 4. Set `COOKIE_SECURE=true` in HTTPS production. Set `TOKEN_ENC_KEY` to 32 random bytes encoded as 64 hexadecimal characters. Keep it secret and back it up. Local development without this variable creates a private `data/token.key` file. Do not replace the encryption key while stored tokens still use it.
 5. `FREE_DAILY_CREDITS` defaults to 20. Owner accounts get 100. Set `OWNER_EMAIL` before the first owner login. Only Google's verified identity can bind that account. Existing local saves remain in the legacy database until an explicit migration.
 
-Restart the backend after configuring these values. A user signs in with Google, confirms their name and verified email, then separately connects Calendar using the same Google account. No passwords or Google tokens are stored in browser storage. Sessions survive server restarts.
+Restart the backend after configuring these values. A user signs in with Google, confirms their name and verified email, then separately connects Calendar using the same Google account. Back on Overview, a new user confirms their timezone and chooses their goals before the first screenshot. No passwords or Google tokens are stored in browser storage. Sessions survive server restarts.
 
 `AUTH_MODE=off` keeps the legacy local workspace for development and old tests. It is refused with `NODE_ENV=production`. Do not expose off mode through a public proxy.
 

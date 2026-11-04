@@ -16,10 +16,16 @@ IDs are positive integers. Other routes exist (export, delete data, trace stream
 | GET /auth/google | none | 302 to Google. 503 `google_not_configured` |
 | GET /auth/google/callback | query | 302 to `{frontend}/?google=connected\|partial\|denied\|error` |
 | POST /auth/disconnect | `{}` | same shape as auth status |
-| GET /api/settings | none | `{ workStart "HH:mm", workEnd "HH:mm" or "24:00", tz IANA or null, ignoreAllDay bool }` |
+| GET /api/settings | none | `{ workStart "HH:mm", workEnd "HH:mm" or "24:00", tz IANA or null (new workspaces start with America/New_York), ignoreAllDay bool }` |
 | PUT /api/settings | any of the four keys | the saved settings. 400 `invalid_working_hours`, `invalid_timezone`, `invalid_ignore_all_day` |
-| GET /api/goals | none | `[{ id, name, metrics }]` |
-| PUT /api/goals/:id | `{ name }` | `{ id, name }`. 400 `invalid_goal_or_name` |
+| GET /api/goals | none | Active goals in order, then archived: `[{ id, name, description, color 0 to 5, archived, position, metrics }]` |
+| GET /api/goals/starters | none | The eight general starter goals `[{ name, description }]` |
+| GET /api/goals/setup, POST /api/goals/setup | `{ skip: true }` or `{ goals: [{ name, description? }] }` | First login choice. GET gives `{ done }`. POST replaces the starting goals with the user's choice (1 to 6), or keeps them |
+| POST /api/goals | `{ name, description? }` | 201 the goal. 409 `goal_name_exists`, `goal_limit_reached`. At most six active goals |
+| PUT /api/goals/order | `{ ids }` | every active goal once, in the new order |
+| POST /api/goals/:id/archive, POST /api/goals/:id/restore | none | Archive only a goal with no saves (409 `goal_in_use`) and never the last active one (409 `last_active_goal`) |
+| GET /api/timezone/setup, POST /api/timezone/setup | `{ tz }` | `{ done, tz }`. Confirms the user's timezone. Choosing one with PUT /api/settings confirms it too |
+| PUT /api/goals/:id | any of `{ name, description, color }` | the goal. 400 `invalid_goal_or_name`, `goal_name_too_long`, `goal_description_too_long`, `invalid_goal_color`. 409 `goal_name_exists` |
 
 Goal `metrics`: `{ importedSaves, demoSaves, planned, markedDone, savesWithDoneAction, deadlinePassedWithoutCompletion, actionRate (0 to 1 or null), timeScheduledMin }`. Definitions are in `metric_definitions` of GET /api/home and `definitions` of GET /api/insights.
 Goal presets for a fresh database: "Earn more", "Learn a skill", "Events and opportunities" (ids 1 to 3). An existing database keeps the names it has. Extraction receives the current goal list (id and name) and `goalId` is one of those ids or null.
@@ -39,12 +45,12 @@ Saves missing a goal or effort are not in needs_attention. They show in `recent_
 
 | Method, path | Request | Response |
 |---|---|---|
-| POST /api/saves | multipart: `image` (png, jpeg, webp), `note` optional. Header `Idempotency-Key` optional. `?async=true` optional | 201 `{ saveId, action (Action), extraction{ ms, usage, image{...} } }`. Async: 202 `{ saveId, jobId, extractionStatus, statusUrl }`. Errors: 400 `image_required` `note_too_long`, 415 `unsupported_image`, 422 `image_unreadable`, 502 extraction error code with `saveId`, 409 `extraction_in_progress` |
+| POST /api/saves | multipart: `image` (png, jpeg, webp), `note` optional (at most 160 characters, else 400 `note_too_long`), `link` optional (the post link, else 400 `invalid_link`). Header `Idempotency-Key` optional. `?async=true` optional | 201 `{ saveId, action (Action), extraction{ ms, usage, image{...} } }`. Async: 202 `{ saveId, jobId, extractionStatus, statusUrl }`. Errors: 400 `image_required` `note_too_long`, 415 `unsupported_image`, 422 `image_unreadable`, 502 extraction error code with `saveId`, 409 `extraction_in_progress` |
 | GET /api/extractions/:id | none | job `{ id, state "queued\|running\|done\|failed", ... }`. Other job fields: unclear |
 | POST /api/saves/:id/extract | `{}` | same as POST /api/saves. Retry after 502. 409 `already_extracted`. `/retry` is an identical alias |
 | GET /api/saves | query `status` (review, input, reviewed, queued, running, failed, done), `limit` (max 100), `offset` | `{ items[{ saveId, note, importedAt, importedAtDisplay, screenshotUrl, isDemo, extraction, jobId, action Action or null }], total, offset, limit }` |
-| GET /api/saves/:id | none | `{ saveId, note, importedAt, importedAtDisplay, isDemo, screenshotUrl, extractionStatus, job, action or null }` |
-| PATCH /api/saves/:id | `{ note }` | `{ saveId, note, action }`. 409 while extracting |
+| GET /api/saves/:id | none | `{ saveId, note, link { url, host, platform } or null, importedAt, importedAtDisplay, isDemo, screenshotUrl, extractionStatus, job, action or null }` |
+| PATCH /api/saves/:id | `{ note }` and/or `{ link }` (null or empty removes it) | `{ saveId, note, link, action }`. 400 `invalid_note`, `invalid_link`. 409 while extracting |
 | GET /api/saves/:id/screenshot | none | image bytes. Use as `<img src>` through the proxy |
 | GET /api/actions | query `q`, `goal`, `kind`, `status`, `has_deadline`, `saved` (all, risk, later, week), `sort`, `limit`, `offset` | `{ items[Action], total, offset, limit, countsByView{all,risk,later} }`. `status` accepts open, planned, done, skipped, fits, conflict, doesnt_fit, needs_input, error, event_passed |
 
@@ -53,14 +59,14 @@ Saves missing a goal or effort are not in needs_attention. They show in `recent_
 GET /api/actions/:id returns Action:
 ```
 { id, saveId, status "open|planned|done|skipped", goalId|null, kind "try|opportunity|other", label "claim|validate|read|someday"|null,
-  title, note, transcription, screenshotUrl, isDemo,
+  title, note, link { url, host, platform } or null, intent { when, minutes, minutesQuote, label } or null, transcription, screenshotUrl, isDemo,
   block: Block|null, check: Check|null, doneAt, doneAtDisplay, doneAtRelative,
-  deadline: { wall, tz, tzSource, tzSourceLabel, utc, display, relative, label, quote, yearAssumed } | null,
+  deadline: { wall, tz, tzSource, tzSourceLabel, utc, display, relative, short (the date alone, such as 22 Nov), label, quote, yearAssumed, timeAssumed (a date with no time, so 23:59 is used) } | null,
   eventDates[{ text, start, end, matches, badge, badgeLabel }],
   deliverables[string],
   verbatimItems[{ type "prompt|link|keyword", text, matches, badge, badgeLabel }],
   evidence{ quote, matches{note,transcription}, badge, badgeLabel },
-  effort{ suggestedMin|null, confirmedMin|null, confirmed bool, label "Model estimate"|"Your estimate"|null, scheduledMin },
+  effort{ suggestedMin|null, statedMin|null (minutes written in the note), confirmedMin|null, confirmed bool, label "Model estimate"|"Your estimate"|null, scheduledMin },
   edited[fieldNames], warnings[{ code, field?, proposed?, ... }], model (model name string), extractionLatencyMs (int|null),
   hasTimezoneCorrection (bool), createdAt }
 ```
@@ -83,9 +89,9 @@ Failures return `{ error, detail?, ... }`. Common: 404 `not_found`, 409 `action_
 
 | Method, path | Body | Response |
 |---|---|---|
-| POST /api/actions/:id/propose | `{}` | Read only. Found: `{ mode "new\|move", found true, slot Slot, source "events\|freebusy", latestFeasibleStart Slot+label\|null }`. Not found: `{ mode, found false, reason, hints, explanation[], source }`. Both are 200 |
+| POST /api/actions/:id/propose | `{ effortMin?, notBeforeUtc? }` | Read only. `effortMin` is the minutes on screen and is not saved. `notBeforeUtc` asks for another time. If the note asked for a time it is tried first and the answer adds `intent { applied, label, reason? }`. Found: `{ mode "new\|move", found true, slot Slot, source "events\|freebusy", latestFeasibleStart Slot+label\|null }`. Not found: `{ mode, found false, reason, hints, explanation[], source }`. Both are 200 |
 | POST /api/actions/:id/agent-plan | `{ instruction }` | Read only. Success: `{ traceId, outcome "proposed\|rejected\|no_slot\|max_turns", mode, proposal Slot\|null, rationale, rejected[], fallback Slot\|null, noSlot{reason,explanation}\|null, failure, usage, turns, approveWith{ endpoint "approve\|move", startUtc, endUtc }\|null, note }`. Failure: 502 `model_failed` with `traceId`, `fallback`. Takes seconds. Max instruction length and `rationale` type: unclear |
-| POST /api/actions/:id/approve | `{ approved: true, startUtc, endUtc }` | 201 `{ replayed false, action Action, block Block }`. Replay of the same slot: 200 `replayed true`. Errors: 400 `approval_required` `invalid_slot`, 409 `already_planned` `slot_no_longer_available` (with `conflicts`), 422 `slot_length_mismatch` `slot_in_past` `outside_working_hours` `after_deadline`. The server derives the idempotency key |
+| POST /api/actions/:id/approve | `{ approved: true, startUtc, endUtc, effortMin? }` | Approving with `effortMin` confirms those minutes and the block must be exactly that long. 201 `{ replayed false, action Action, block Block }`. Replay of the same slot: 200 `replayed true`. Errors: 400 `approval_required` `invalid_slot`, 409 `already_planned` `slot_no_longer_available` (with `conflicts`), 422 `slot_length_mismatch` `slot_in_past` `outside_working_hours` `after_deadline`. The server derives the idempotency key |
 | POST /api/actions/:id/move | `{ approved: true, startUtc, endUtc }` | 201 `{ action, block (new), previous{ id, eventDeleted, deleteError } }`. Old block becomes superseded. Extra errors 409 `not_planned`, `same_slot` |
 | POST /api/actions/:id/recheck | `{}` | `{ check Check, action Action }`. Reads the calendar, never writes. 409 `not_planned`. A failure may carry `check` |
 | POST /api/actions/recheck | `{ ids: [int] }` max 100 | `{ results[{ actionId, ok, status, check?, action?, error? }], calendarUnchanged: true }`. Used for "Recheck now" on Home. Non planned ids return `not_planned` or `action_closed` |

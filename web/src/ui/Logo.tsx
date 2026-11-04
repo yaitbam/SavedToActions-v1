@@ -12,7 +12,7 @@ export function Logo({ wordmark = true, className }: LogoProps) {
         <rect width="24" height="24" rx="6" fill="var(--color-brand)" />
         <path d="M7 4.5h10v15l-5-3.5-5 3.5z" fill="white" />
       </svg>
-      {wordmark && <span className="font-display text-xl font-semibold tracking-tight text-ink">SavedToAction</span>}
+      {wordmark && <span className="font-display text-xl font-bold tracking-tight text-ink">SavedToAction</span>}
     </span>
   );
 }
