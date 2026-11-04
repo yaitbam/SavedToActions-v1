@@ -25,15 +25,15 @@ npm run preview
 
 | Route | Purpose |
 |---|---|
-| `/` | Public landing page. Try it opens login |
-| `/login` | Google sign-in. The demo button is hidden when the server reports it unavailable |
+| `/` | Public landing page. It explains the problem, what SavedToAction does, the value and the impact. No interactive demos |
+| `/login` | Google sign-in with the Google button. The demo button is hidden when the server reports it unavailable |
 | `/complete-profile` | Confirm name and the read-only verified Google email |
 | `/privacy` | Public privacy information |
-| `/app` | Home and saves needing attention |
-| `/app/saves` | Search and filter saves. Each card links to Review |
-| `/app/saves/:id` | Review, confirm effort, approve booking or move, and mark done |
+| `/app` | Overview. Before Calendar is connected, a setup panel with a three step tracker and the drop zone. After, summary tiles (planned, need you, to confirm), next up, goals, saves needing attention and the week |
+| `/app/saves` | Saved. A grid of save cards, an inspector drawer for the selected save, and links to Review |
+| `/app/saves/:id` | Review in three steps: what we read, how long it takes, then find, approve or move a time and mark done |
 | `/app/progress` | Metrics computed from workspace records |
-| `/app/settings` | Account, Calendar connection, hours, timezone, goals and credits |
+| `/app/settings` | Account and account deletion, Calendar connection, working hours, a searchable timezone list, goal names and credits |
 | `/app/ui` | Internal component check page, behind the workspace guard |
 
 The session provider checks `/auth/session` before mounting private routes. An anonymous visitor goes to login. An incomplete profile goes to confirmation. A failed session request shows the login page with a general message and Retry, keeping private data closed.
@@ -46,12 +46,14 @@ Calendar connection is separate from app login and must use the same Google acco
 
 - Drag-and-drop, paste and file selection open a screenshot preview. Creating a save requires clicking Extract. Preview URLs are released on replacement or close.
 - Only confirmed effort is scheduled. Calendar writes need approval and show readback results. Marking a booked task done also marks its Calendar event title.
-- Dates and time labels come from the server. The browser does not convert scheduling times.
+- Dates and time labels come from the server. The browser does not convert scheduling times. The timezone list and its offsets come from `GET /api/timezones`, which uses moment-timezone. If the list cannot load, Settings falls back to a text field and the server still validates the name.
+- Private pages use a left sidebar on desktop. On phones it becomes a slim top bar and a bottom navigation. Status is shown with a word and a shape, never color alone, and cards do not use edge-colored borders.
+- Deleting an account needs the typed confirmation `DELETE MY ACCOUNT`. Events already on Google Calendar are kept.
 - Credits display the server's string. The browser does not calculate balances or reset times.
 - Known validation errors use approved messages. Unknown errors use a general fallback. Raw API codes, details and stack traces are never rendered as user error messages.
 - Failed actions use the shared alert provider. Page and form errors stay next to the relevant controls. Read-only demo sessions block client writes, but the backend must enforce isolation and permissions.
 
-The client uses React Router, Tailwind, Bricolage Grotesque, Inter and JetBrains Mono. Shared controls live in `src/ui/`, pages compose feature components, and API modules live in `src/api/`. No additional UI component library is used.
+The client uses React Router, Tailwind, Manrope and IBM Plex Mono. Shared controls live in `src/ui/`, pages compose feature components, and API modules live in `src/api/`. No additional UI component library is used.
 
 ## Browser checks
 
@@ -70,8 +72,10 @@ node web/test/phase6.cjs
 
 `errors.cjs` verifies missing-session recovery and that technical errors are not shown. `new-save.cjs` checks preview lifecycle and upload bytes using intercepted uploads. `phase6.cjs` checks the landing page and image viewers.
 
+`design.cjs` checks that the landing sections exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px in light and dark, and that the theme persists. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
+
 `phase5.cjs` expects the seeded legacy database and an isolated `AUTH_MODE=off` backend. Its initial reads use the local API and later write checks are intercepted. It is not an authenticated multiuser end-to-end test.
 
 ## Current limits
 
-The shared demo is unavailable on the live backend. The account deletion button remains disabled, the trust-ledger API is absent, and legacy data is not automatically migrated into new accounts. Two real Google accounts completing login and one booking each still need separate manual verification. Full account configuration and deployment limits are documented in [account setup](../docs/AUTH_SETUP.md).
+The shared demo is unavailable on the live backend. Account deletion is in Settings and asks for a typed confirmation. The trust-ledger API is absent, and legacy data is not automatically migrated into new accounts. Two real Google accounts completing login and one booking each still need separate manual verification. Full account configuration and deployment limits are documented in [account setup](../docs/AUTH_SETUP.md).

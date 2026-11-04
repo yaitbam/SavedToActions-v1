@@ -13,6 +13,8 @@ const messages: Record<string, string> = {
   operation_in_progress: "Another change is running. Try again in a moment",
   model_failed: "Something went wrong. Please try again",
   demo_readonly: "Sign in to do this",
+  operations_in_progress: "Something is still running. Wait a moment, then try again",
+  confirmation_required: "Type the confirmation text exactly to continue",
   daily_limit_reached: "No free credits left today. They reset at 00:00",
   already_planned: "This save is already on your calendar",
   action_closed: "This save is closed",
@@ -21,6 +23,10 @@ const messages: Record<string, string> = {
   invalid_timezone: "Use a valid IANA timezone, such as Africa/Casablanca",
   invalid_ignore_all_day: "Could not save the all-day event preference. Try again",
   invalid_goal_or_name: "Give each goal a valid name",
+  calendar_remove_failed: "Google Calendar did not confirm the removal. Nothing was deleted",
+  google_not_connected: "Google Calendar is not connected. Nothing was deleted",
+  google_unavailable: "Google Calendar is not answering. Nothing was deleted",
+  extraction_in_progress: "Wait for the extraction to finish, then delete this save",
 };
 
 export function errorText(error: unknown, fallback = "Something went wrong. Please try again"): string {

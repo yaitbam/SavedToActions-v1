@@ -1,0 +1,90 @@
+/* Overview: setup panel before the calendar is connected, summary row and empty states after. */
+.hm-setup { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr); gap:32px; padding:32px; border:1px solid var(--color-line); border-radius:28px; background:var(--color-surface); box-shadow:var(--shadow-lift); }
+.hm-setup h2 { margin:0 0 12px; font:800 clamp(28px,3vw,40px)/1.05 var(--font-display); letter-spacing:-.04em; }
+.hm-setup p { margin:0; color:var(--color-muted); font-size:17px; line-height:1.6; }
+.hm-setup .google-btn { max-width:340px; margin-top:24px; }
+.hm-trust { display:flex; flex-direction:column; gap:8px; margin:20px 0 0; padding:0; list-style:none; color:var(--color-muted); font-size:15px; }
+.hm-trust li { position:relative; padding-left:20px; }
+.hm-trust li::before { content:""; position:absolute; left:0; top:.6em; width:10px; height:3px; border-radius:2px; background:var(--color-brand); }
+
+.hm-steps { display:flex; flex-direction:column; gap:12px; margin:0; padding:0; list-style:none; counter-reset:step; }
+.hm-steps li { counter-increment:step; display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; gap:12px; padding:14px; border:1px solid var(--color-line); border-radius:16px; }
+.hm-steps li::before { content:counter(step); display:grid; place-items:center; width:36px; height:36px; border-radius:12px; background:color-mix(in srgb,var(--color-ink) 8%,transparent); color:var(--color-muted); font:800 16px var(--font-display); }
+.hm-steps b { display:block; font-size:16px; }
+.hm-steps li > div > span { display:block; margin-top:2px; color:var(--color-muted); font-size:14px; overflow-wrap:anywhere; }
+.hm-state { display:inline-flex; align-items:center; gap:7px; padding:3px 11px; border-radius:999px; background:var(--color-missing-bg); color:var(--color-missing); font-size:14px; font-weight:600; white-space:nowrap; }
+.hm-state i { width:8px; height:8px; border-radius:50%; background:currentColor; }
+.hm-steps .is-done .hm-state { background:var(--color-fits-bg); color:var(--color-fits); }
+.hm-steps .is-now { border-color:var(--color-brand); box-shadow:0 0 0 1px var(--color-brand); }
+.hm-steps .is-now::before { background:var(--color-brand); color:#fff; }
+.hm-steps .is-now .hm-state { background:var(--color-accent); color:var(--color-brand); }
+.hm-steps .is-now .hm-state i { background:transparent; border:2px solid currentColor; }
+
+.hm-pulse { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.hm-tile { display:flex; flex-direction:column; gap:4px; padding:20px 22px; border:1px solid var(--color-line); border-radius:20px; background:var(--color-surface); box-shadow:var(--shadow-card); transition:box-shadow .15s,transform .15s; }
+a.hm-tile:hover { box-shadow:var(--shadow-lift); transform:translateY(-1px); }
+.hm-tile-label { display:flex; align-items:center; gap:8px; color:var(--color-muted); font-size:15px; font-weight:600; }
+.hm-tile-label i { width:9px; height:9px; border-radius:50%; background:var(--color-brand); }
+.hm-tile.is-attn .hm-tile-label i { border-radius:0; width:0; height:0; background:transparent; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:9px solid #f59e0b; }
+.hm-tile.is-todo .hm-tile-label i { background:transparent; border:2px solid var(--color-muted); }
+.hm-tile.is-planned .hm-tile-label i { background:#10b981; }
+.hm-tile b { font:800 44px/1 var(--font-display); letter-spacing:-.04em; }
+.hm-tile small { color:var(--color-muted); font-size:14px; line-height:1.4; }
+
+.hm-empty { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:24px; border:1px dashed color-mix(in srgb,var(--color-ink) 28%,var(--color-line)); border-radius:20px; background:var(--color-surface); }
+.hm-empty h2 { margin:0; font:700 20px/1.2 var(--font-display); letter-spacing:-.02em; }
+.hm-empty p { margin:0; max-width:46ch; color:var(--color-muted); font-size:16px; line-height:1.6; }
+
+/* Shared card for the Overview sections. */
+.hm-card { display:flex; flex-direction:column; gap:18px; min-width:0; padding:22px; border:1px solid var(--color-line); border-radius:22px; background:var(--color-surface); box-shadow:var(--shadow-card); }
+.hm-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.hm-head h2 { display:flex; align-items:center; gap:10px; margin:0; font:700 19px/1.2 var(--font-display); letter-spacing:-.02em; }
+.hm-count { padding:1px 10px; border-radius:999px; background:color-mix(in srgb,var(--color-ink) 9%,transparent); color:var(--color-muted); font:600 14px var(--font-mono); }
+.hm-link { color:var(--color-muted); font-size:15px; font-weight:600; text-decoration:underline; text-underline-offset:4px; }
+.hm-link:hover { color:var(--color-ink); }
+.hm-sub { color:var(--color-muted); font-size:14px; }
+
+.hm-goals { display:flex; flex-direction:column; gap:18px; margin:0; padding:0; list-style:none; }
+.hm-goal-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px; }
+.hm-goal-name { display:flex; align-items:center; gap:10px; min-width:0; font-size:16px; font-weight:600; }
+.hm-goal-name span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.hm-goal-num { flex:none; color:var(--color-muted); font-size:14px; white-space:nowrap; }
+.hm-goal-num b { color:var(--color-ink); font:800 20px var(--font-display); letter-spacing:-.02em; }
+.hm-bar { height:8px; border-radius:999px; background:color-mix(in srgb,var(--color-ink) 9%,transparent); overflow:hidden; }
+.hm-bar > div { height:100%; min-width:0; border-radius:999px; transition:width .3s; }
+
+.hm-next { display:flex; gap:18px; padding:14px; border:1px solid var(--color-line); border-radius:16px; background:var(--color-bg); transition:box-shadow .15s,transform .15s; }
+.hm-next:hover { box-shadow:var(--shadow-lift); transform:translateY(-1px); }
+.hm-next-time { margin:0 0 8px; font:800 22px/1.15 var(--font-display); letter-spacing:-.03em; }
+
+.hm-rows { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:12px; margin:0; padding:0; list-style:none; }
+.hm-row { display:flex; align-items:center; gap:14px; height:100%; padding:12px; border:1px solid var(--color-line); border-radius:16px; background:var(--color-bg); transition:border-color .15s,box-shadow .15s; }
+.hm-row:hover { border-color:var(--color-ink); box-shadow:var(--shadow-card); }
+.hm-row-thumb { flex:none; width:64px; }
+/* Wide screenshots would shrink to a thin strip, so rows crop every thumbnail to a square from the top. */
+.hm-row-thumb > div { aspect-ratio:1; background:var(--color-missing-bg); }
+.hm-row-thumb img { object-fit:cover; object-position:top left; }
+/* Cards in the same row of the grid share one height. */
+.home-page .home-bento { align-items:stretch; }
+.home-bento > * > .hm-card,.home-bento > * > .hm-empty { height:100%; }
+.hm-row-body { flex:1; min-width:0; }
+.hm-row-go { flex:none; color:var(--color-muted); font-size:14px; font-weight:600; }
+.hm-row:hover .hm-row-go { color:var(--color-ink); }
+
+.hm-attn { display:flex; gap:16px; padding:18px; border:1px solid color-mix(in srgb,#f59e0b 45%,var(--color-line)); border-radius:20px; background:color-mix(in srgb,#f59e0b 5%,var(--color-surface)); box-shadow:var(--shadow-card); }
+
+.hm-days { display:flex; flex-direction:column; gap:8px; margin:0; padding:0; list-style:none; }
+.hm-day { display:grid; grid-template-columns:4.5rem minmax(0,1fr); align-items:center; gap:10px; }
+.hm-day-label { width:fit-content; padding:2px 10px; border-radius:999px; color:var(--color-muted); font-size:14px; font-weight:600; white-space:nowrap; }
+.hm-day.is-today .hm-day-label { background:var(--color-brand); color:#fff; }
+.hm-track { position:relative; height:30px; border-radius:10px; background:color-mix(in srgb,var(--color-ink) 6%,transparent); }
+.hm-ends { display:flex; justify-content:space-between; padding-left:5.5rem; color:var(--color-muted); font-size:14px; }
+
+@media(max-width:900px) {
+ .hm-rows { grid-template-columns:minmax(0,1fr); }
+ .hm-setup { grid-template-columns:minmax(0,1fr); padding:22px; gap:24px; border-radius:22px; }
+ .hm-pulse { grid-template-columns:minmax(0,1fr); gap:12px; }
+ .hm-tile { flex-direction:row; align-items:center; justify-content:space-between; }
+ .hm-tile b { order:2; font-size:36px; }
+ .hm-tile small { display:none; }
+}

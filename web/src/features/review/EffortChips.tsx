@@ -10,7 +10,7 @@ interface Props {
 }
 
 const chip =
-  "inline-flex h-10 items-center rounded-full border px-4 font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-12 items-center rounded-full border px-5 text-base font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function EffortChips({ minutes, disabled, onChange }: Props) {
   const [custom, setCustom] = useState(false);

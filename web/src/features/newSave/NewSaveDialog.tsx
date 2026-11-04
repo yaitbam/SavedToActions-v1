@@ -1,3 +1,4 @@
+import { ExtractionTelemetry } from "../../ui/ExtractionTelemetry";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Credits } from "../auth/Credits";
@@ -6,7 +7,6 @@ import { errorText } from "../../api/errors";
 import { createSave, retryExtraction } from "../../api/saves";
 import { Button } from "../../ui/Button";
 import { InlineAlert } from "../../ui/InlineAlert";
-import { Skeleton } from "../../ui/Skeleton";
 import { fieldClass } from "../../ui/cx";
 import { isSupportedImage } from "./NewSaveContext";
 
@@ -87,22 +87,18 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
       onCancel={(event) => working && event.preventDefault()}
       onClick={(event) => event.target === dialog.current && !working && onClose()}
       aria-label="New save"
-      className="m-auto w-[min(34rem,92vw)] rounded-card border-[1.5px] border-ink bg-surface p-6 shadow-hard backdrop:bg-ink/60"
+      className="m-auto w-[min(44rem,94vw)] rounded-card border border-line bg-surface p-6 shadow-hard backdrop:bg-ink/60"
     >
       <div className="space-y-4">
         <h2 className="text-title">New save</h2>
         <Credits />
 
         {preview ? (
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <img src={preview} alt="Your screenshot" className="h-48 w-40 shrink-0 rounded-thumb border border-line object-cover object-top" />
             <div className="min-w-0 flex-1 space-y-3">
               {working ? (
-                <div role="status" className="space-y-3">
-                  <p className="font-semibold">Muse Spark Open is reading your screenshot</p>
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-2/3" />
-                </div>
+                <ExtractionTelemetry />
               ) : (
                 <textarea
                   value={note}

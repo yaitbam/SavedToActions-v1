@@ -1,6 +1,7 @@
-import { get, patch, post, postForm } from "./client";
+import { del, get, patch, post, postForm } from "./client";
 import type {
   Action,
+  DeleteSaveResult,
   ExtractionJob,
   Page,
   SaveCreated,
@@ -32,3 +33,7 @@ export const saveNote = (saveId: number, note: string) =>
   patch<{ saveId: number; note: string; action: Action | null }>(`/api/saves/${saveId}`, { note });
 export const confirmEffort = (saveId: number, confirmedEffortMin: number) =>
   post<Action>(`/api/saves/${saveId}/confirm`, { confirmedEffortMin });
+
+// Permanent. removeFromCalendar also deletes the booked calendar block. The server checks that it is gone first.
+export const deleteSave = (saveId: number, removeFromCalendar: boolean) =>
+  del<DeleteSaveResult>(`/api/saves/${saveId}`, { approved: true, removeFromCalendar });

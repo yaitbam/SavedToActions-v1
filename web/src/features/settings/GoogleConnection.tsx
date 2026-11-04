@@ -7,10 +7,14 @@ import { useAsync } from "../../api/useAsync";
 import { useAlert } from "../../ui/AlertProvider";
 import { InlineAlert } from "../../ui/InlineAlert";
 import { Button, buttonClass } from "../../ui/Button";
-import { Card } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
 import { ErrorState } from "../../ui/ErrorState";
+import { GoogleIcon } from "../../ui/PlatformIcons";
 import { Skeleton } from "../../ui/Skeleton";
+import { SettingsSection } from "./SettingsSection";
+
+const TITLE = "Google Calendar";
+const ABOUT = "Used to find free time and to place the blocks you approve.";
 
 export function GoogleConnection() {
   const { session } = useSession();
@@ -31,34 +35,34 @@ export function GoogleConnection() {
     }
   }
 
-  if (session?.kind === "demo") return <Card className="space-y-3"><h2 className="text-base">Google Calendar</h2><p className="text-small text-muted">Sign in to do this</p></Card>;
-  if (auth.error) return <ErrorState title="Could not load Google connection" error={auth.error} onRetry={() => void auth.reload()} />;
-  if (!status) return <Skeleton className="h-48" />;
+  if (session?.kind === "demo") return <SettingsSection title={TITLE} description={ABOUT}><p className="st-note">Sign in to do this</p></SettingsSection>;
+  if (auth.error) return <div className="border-t border-line py-8"><ErrorState title="Could not load Google connection" error={auth.error} onRetry={() => void auth.reload()} /></div>;
+  if (!status) return <div className="border-t border-line py-8"><Skeleton className="h-48" /></div>;
 
   const calendarResult = new URLSearchParams(window.location.search).get("google");
   const partial = status.missingScopes.length > 0;
   return (
-    <Card className="space-y-4">
-      <h2 className="text-base">Google Calendar</h2>
+    <SettingsSection title={TITLE} description={ABOUT}>
       {calendarResult === "wrong_account" && <InlineAlert>Connect the Google account you signed in with</InlineAlert>}
       {calendarResult === "error" && <InlineAlert>Something went wrong. Please try again</InlineAlert>}
-      <div role="status">
+      <div role="status" className="st-status">
         <Chip tone={partial ? "conflict" : status.connected ? "fits" : "missing"}>
           {partial ? "Permissions needed" : status.connected ? session?.calendar_email ? `Connected as ${session.calendar_email}` : "Connected" : "Not connected"}
         </Chip>
       </div>
-      <p className="text-small text-muted">
+      <p className="st-note">
         {!status.configured ? "Google Calendar connection is not configured on the server"
           : partial ? "Reconnect to grant the calendar permissions needed for booking"
           : "You approve every calendar booking and move"}
       </p>
-      <div className="flex flex-wrap gap-3">
+      <div className="st-actions">
         {status.configured && (!status.connected || partial) && (
-          <a href={googleConnectUrl} className={buttonClass("secondary")}>{partial ? "Reconnect Google Calendar" : "Connect Google Calendar"}</a>
+          <a href={googleConnectUrl} className={buttonClass("secondary")}><GoogleIcon width={20} height={20} />{partial ? "Reconnect Google Calendar" : "Connect Google Calendar"}</a>
         )}
         {(status.connected || status.hasRefreshToken) && (
           <Button variant="secondary" loading={busy} onClick={() => void disconnect()}>Disconnect Google Calendar</Button>
         )}
-      </div>    </Card>
+      </div>
+    </SettingsSection>
   );
 }

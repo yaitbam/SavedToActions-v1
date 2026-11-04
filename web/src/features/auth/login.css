@@ -1,0 +1,50 @@
+/* Login: split screen. Dark story panel on the left, sign in on the right. */
+.lg { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); min-height:100vh; background:var(--color-bg); }
+
+.lg-side { --color-bg:#09090b; --color-surface:#111114; --color-ink:#f4f4f5; --color-muted:#a1a1aa; --color-line:#27272a; --color-brand:#60a5fa; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; gap:48px; padding:40px clamp(28px,5vw,72px); color-scheme:dark; background:#09090b; color:#f4f4f5; }
+.lg-side::before { content:""; position:absolute; inset:-10% -20% auto; height:520px; background:radial-gradient(ellipse at 40% 0,rgb(59 130 246 / .32),transparent 65%); pointer-events:none; }
+.lg-side > * { position:relative; }
+.lg-side h1 { margin:0 0 16px; font-family:var(--font-display); font-weight:800; font-size:clamp(44px,5.2vw,84px); line-height:.94; letter-spacing:-.055em; }
+.lg-side h1 em { color:#60a5fa; font-style:normal; }
+.lg-lede { max-width:440px; margin:0; color:var(--color-muted); font-size:18px; line-height:1.55; }
+.lg-steps { display:flex; flex-direction:column; gap:14px; margin:36px 0 0; padding:0; list-style:none; }
+.lg-steps li { display:flex; align-items:center; gap:14px; font-size:17px; font-weight:600; letter-spacing:-.01em; }
+.lg-steps b { display:grid; place-items:center; flex:none; width:34px; height:34px; border-radius:11px; background:#60a5fa; color:#09090b; font:800 16px var(--font-display); }
+.lg-foot { max-width:440px; margin:0; color:var(--color-muted); font-size:14px; line-height:1.55; }
+
+.lg-main { display:flex; flex-direction:column; padding:28px clamp(20px,5vw,72px) 28px; }
+.lg-top { display:flex; align-items:center; justify-content:space-between; gap:16px; font-size:15px; }
+.lg-top a { color:var(--color-muted); font-weight:500; }
+.lg-top a:hover { color:var(--color-ink); }
+.lg-card { width:100%; max-width:420px; margin:auto; padding:48px 0; }
+.lg-card h2 { margin:0 0 10px; font-family:var(--font-display); font-weight:800; font-size:clamp(32px,3.4vw,44px); line-height:1.05; letter-spacing:-.04em; }
+.lg-sub { margin:0 0 28px; color:var(--color-muted); font-size:16px; line-height:1.6; }
+.lg-actions { display:flex; flex-direction:column; gap:12px; }
+
+/* Google sign in button. White with a thin grey border in light mode, dark grey in dark mode. */
+.google-btn { display:inline-flex; align-items:center; justify-content:center; gap:12px; width:100%; height:52px; padding:0 20px; border:1px solid #747775; border-radius:999px; background:#fff; color:#1f1f1f; font:600 16px var(--font-sans); letter-spacing:.01em; transition:background-color .15s,box-shadow .15s,transform .15s; }
+.google-btn svg { width:22px; height:22px; flex:none; }
+.google-btn:hover { background:#f6f8fe; box-shadow:0 1px 3px rgb(60 64 67 / .3),0 2px 8px 2px rgb(60 64 67 / .15); }
+.google-btn:active { transform:scale(.99); }
+.google-btn:focus-visible { outline:3px solid var(--color-brand); outline-offset:3px; }
+.google-btn:disabled,.google-btn[aria-disabled="true"] { cursor:not-allowed; opacity:.5; box-shadow:none; background:#fff; }
+:root[data-theme="dark"] .google-btn { background:#131314; border-color:#8e918f; color:#e3e3e3; }
+:root[data-theme="dark"] .google-btn:hover { background:#1e1f20; }
+:root[data-theme="dark"] .google-btn:disabled,:root[data-theme="dark"] .google-btn[aria-disabled="true"] { background:#131314; }
+
+.lg-demo { width:100%; height:52px; border-radius:999px; }
+.lg-or { display:flex; align-items:center; gap:14px; margin:4px 0; color:var(--color-muted); font-size:14px; }
+.lg-or::before,.lg-or::after { content:""; flex:1; height:1px; background:var(--color-line); }
+.lg-alerts { display:flex; flex-direction:column; gap:12px; margin-top:20px; }
+.lg-privacy { margin:32px 0 0; padding-top:20px; border-top:1px solid var(--color-line); color:var(--color-muted); font-size:14px; line-height:1.65; }
+.lg-privacy b { color:var(--color-ink); font-weight:600; }
+.lg-privacy a { text-decoration:underline; text-underline-offset:3px; }
+.lg-legal { display:flex; justify-content:space-between; gap:16px; color:var(--color-muted); font-size:14px; }
+
+@media(max-width:900px) {
+ .lg { grid-template-columns:minmax(0,1fr); min-height:0; }
+ .lg-side { gap:28px; padding:28px 20px 36px; }
+ .lg-side h1 { font-size:44px; }
+ .lg-steps { display:none; }
+ .lg-card { padding:32px 0 24px; }
+}

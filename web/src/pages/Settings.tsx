@@ -1,12 +1,12 @@
 import { Credits } from "../features/auth/Credits";
 import { Account } from "../features/settings/Account";
 import { useSession } from "../features/auth/SessionContext";
-import { Card } from "../ui/Card";
 import { getGoals } from "../api/goals";
 import { getSettings } from "../api/settings";
 import { useAsync } from "../api/useAsync";
 import { GoogleConnection } from "../features/settings/GoogleConnection";
 import { SettingsForm } from "../features/settings/SettingsForm";
+import { SettingsSection } from "../features/settings/SettingsSection";
 import { ErrorState } from "../ui/ErrorState";
 import { Skeleton } from "../ui/Skeleton";
 
@@ -18,19 +18,19 @@ export function Settings() {
   }, []);
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="st">
       <h1 className="text-title">Settings</h1>
+      <p className="st-intro">Your account, your calendar and the hours your time blocks can use.</p>
       <Account />
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        {data.error ? (
-          <ErrorState title="Could not load settings" error={data.error} onRetry={() => void data.reload()} />
-        ) : data.data ? (
-          <fieldset disabled={session?.kind === "demo"}><SettingsForm settings={data.data.settings} goals={data.data.goals} /></fieldset>
-        ) : <Skeleton className="h-96" />}
-        <div className="space-y-6"><GoogleConnection />
-          <Card className="space-y-2"><h2 className="text-base">Credits</h2><Credits /></Card>
-        </div>
-      </div>
+      <GoogleConnection />
+      {data.error ? (
+        <div className="border-t border-line py-8"><ErrorState title="Could not load settings" error={data.error} onRetry={() => void data.reload()} /></div>
+      ) : data.data ? (
+        <fieldset disabled={session?.kind === "demo"} className="m-0 min-w-0 border-0 p-0"><SettingsForm settings={data.data.settings} goals={data.data.goals} /></fieldset>
+      ) : <div className="border-t border-line py-8"><Skeleton className="h-96" /></div>}
+      <SettingsSection title="Credits" description="Credits reset every day at 00:00 GMT.">
+        <Credits />
+      </SettingsSection>
     </div>
   );
 }

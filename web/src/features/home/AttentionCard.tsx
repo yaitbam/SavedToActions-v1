@@ -6,7 +6,6 @@ import type { HomeAttention } from "../../api/types";
 import { useAsync } from "../../api/useAsync";
 import { useAlert } from "../../ui/AlertProvider";
 import { Button, buttonClass } from "../../ui/Button";
-import { Card } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
 import { Skeleton } from "../../ui/Skeleton";
 import { StatusChip } from "../../ui/StatusChip";
@@ -63,7 +62,7 @@ export function AttentionCard({ item, onChanged }: Props) {
   }
 
   return (
-    <Card note pad="p-4" className="flex gap-4">
+    <article className="hm-attn">
       <Link to={review} className="block w-20 shrink-0 self-start" aria-label="Open this save">
         <Thumb src={summary.screenshotUrl} alt={`Screenshot of ${summary.title ?? "a saved post"}`} />
       </Link>
@@ -108,6 +107,6 @@ export function AttentionCard({ item, onChanged }: Props) {
           )}
         </div>
       </div>
-    </Card>
+    </article>
   );
 }

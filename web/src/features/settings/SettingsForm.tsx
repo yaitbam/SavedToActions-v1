@@ -6,9 +6,10 @@ import type { Goal, Settings } from "../../api/types";
 import { useAlert } from "../../ui/AlertProvider";
 import { InlineAlert } from "../../ui/InlineAlert";
 import { Button } from "../../ui/Button";
-import { Card } from "../../ui/Card";
-import { fieldClass } from "../../ui/cx";
+import { cx, fieldClass } from "../../ui/cx";
 import { goalDotClass } from "../../ui/GoalChip";
+import { SettingsSection } from "./SettingsSection";
+import { TimezonePicker } from "./TimezonePicker";
 
 export function SettingsForm({ settings, goals }: { settings: Settings; goals: Goal[] }) {
   const [baseline, setBaseline] = useState(settings);
@@ -30,12 +31,23 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
     setError(null);
   }
 
+  function discard() {
+    setDraft(baseline);
+    setNames(Object.fromEntries(savedGoals.map((goal) => [goal.id, goal.name])));
+    setMessage(null);
+    setError(null);
+  }
+
   async function save(event: FormEvent) {
     event.preventDefault();
     setError(null);
     setMessage(null);
     if (draft.workStart >= draft.workEnd) {
       setError("Working hours must end after they start");
+      return;
+    }
+    if (!draft.tz?.trim()) {
+      setError("Choose your timezone");
       return;
     }
     if (savedGoals.some((goal) => !names[goal.id].trim())) {
@@ -66,56 +78,58 @@ export function SettingsForm({ settings, goals }: { settings: Settings; goals: G
   }
 
   return (
-    <form onSubmit={(event) => void save(event)} className="space-y-6">
-      <fieldset disabled={busy} className="space-y-6">
-        <Card className="space-y-4">
-          <h2 className="text-base">Working hours</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-2">
-              <span className="block text-small font-medium">Start</span>
+    <form onSubmit={(event) => void save(event)}>
+      <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
+        <SettingsSection title="Working hours" description="Time blocks are only placed inside these hours.">
+          <div className="st-grid">
+            <label>
+              <span className="st-label">Start</span>
               <input required type="time" value={draft.workStart} onChange={(event) => update("workStart", event.target.value)} className={fieldClass} />
             </label>
-            <label className="space-y-2">
-              <span className="block text-small font-medium">End</span>
+            <label>
+              <span className="st-label">End</span>
               <input required type="text" inputMode="text" pattern="([01][0-9]|2[0-3]):[0-5][0-9]|24:00" title="HH:mm, up to 24:00"
                 value={draft.workEnd} onChange={(event) => update("workEnd", event.target.value)} className={fieldClass} />
             </label>
           </div>
-          <p className="text-small text-muted">Use 24 hour time, with 24:00 for the end of the day</p>
-        </Card>
-        <Card className="space-y-4">
-          <h2 className="text-base">Timezone and availability</h2>
-          <label className="block space-y-2">
-            <span className="block text-small font-medium">Timezone</span>
-            <input required type="text" value={draft.tz ?? ""} placeholder="Missing" spellCheck={false}
-              onChange={(event) => update("tz", event.target.value)} className={fieldClass} aria-describedby="timezone-hint" />
+          <p className="st-hint" style={{ marginTop: 0 }}>Use 24 hour time, with 24:00 for the end of the day</p>
+        </SettingsSection>
+        <SettingsSection title="Timezone" description="Your working hours and every time shown in the app use this zone.">
+          <div>
+            <span className="st-label" aria-hidden="true">Timezone</span>
+            <TimezonePicker value={draft.tz} onChange={(tz) => update("tz", tz)} describedBy="timezone-hint" />
+            <p id="timezone-hint" className="st-hint">Choose from the list or type to search</p>
+          </div>
+          <label className="st-toggle">
+            <div><b>Ignore all-day events</b><span>All-day events do not block time when looking for a slot</span></div>
+            <input type="checkbox" role="switch" className="st-switch" checked={draft.ignoreAllDay} onChange={(event) => update("ignoreAllDay", event.target.checked)} />
           </label>
-          <p id="timezone-hint" className="text-small text-muted">Use an IANA timezone, such as Africa/Casablanca</p>
-          <label className="flex items-center gap-3 text-small font-medium">
-            <input type="checkbox" checked={draft.ignoreAllDay} onChange={(event) => update("ignoreAllDay", event.target.checked)}
-              className="size-5 accent-ink" />
-            Ignore all-day events
-          </label>
-        </Card>
-        <Card className="space-y-4">
-          <h2 className="text-base">Goal names</h2>
-          {savedGoals.map((goal) => (
-            <label key={goal.id} className="flex items-center gap-3">
-              <span aria-hidden className={`size-3 shrink-0 rounded-full ${goalDotClass(goal.id)}`} />
-              <span className="sr-only">Goal {goal.id} name</span>
-              <input required value={names[goal.id]} onChange={(event) => {
-                setNames((current) => ({ ...current, [goal.id]: event.target.value }));
-                setMessage(null);
-                setError(null);
-              }} className={fieldClass} />
-            </label>
-          ))}
-        </Card>
+        </SettingsSection>
+        <SettingsSection title="Goal names" description="Rename the goals your saves are sorted into.">
+          <div className="st-goals">
+            {savedGoals.map((goal) => (
+              <label key={goal.id} className="st-goal">
+                <span aria-hidden className={`size-3 shrink-0 rounded-full ${goalDotClass(goal.id)}`} />
+                <span className="sr-only">Goal {goal.id} name</span>
+                <input required value={names[goal.id]} onChange={(event) => {
+                  setNames((current) => ({ ...current, [goal.id]: event.target.value }));
+                  setMessage(null);
+                  setError(null);
+                }} className={fieldClass} />
+              </label>
+            ))}
+          </div>
+        </SettingsSection>
       </fieldset>
-      <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" loading={busy} disabled={!dirty}>Save settings</Button>
-        {message && <p role="status" className="text-small text-fits">{message}</p>}
-        {error && <InlineAlert className="w-full">{error}</InlineAlert>}
+      {error && <InlineAlert className="mt-2">{error}</InlineAlert>}
+      <div className="st-savebar">
+        <p role="status" className={cx("st-savebar-state", dirty ? "dirty" : message && "saved")}>
+          <i aria-hidden="true" />{dirty ? "Unsaved changes" : message ?? "No changes"}
+        </p>
+        <div className="st-savebar-buttons">
+          {dirty && <Button type="button" variant="secondary" onClick={discard} disabled={busy}>Discard</Button>}
+          <Button type="submit" loading={busy} disabled={!dirty}>Save settings</Button>
+        </div>
       </div>
     </form>
   );

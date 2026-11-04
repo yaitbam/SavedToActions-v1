@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { enterDemo } from "../api/session";
 import { errorText } from "../api/errors";
-import { AuthLayout } from "../features/auth/AuthLayout";
 import { useSession } from "../features/auth/SessionContext";
 import { useAlert } from "../ui/AlertProvider";
-import { Button, buttonClass } from "../ui/Button";
-import { Card } from "../ui/Card";
+import { Button } from "../ui/Button";
 import { InlineAlert } from "../ui/InlineAlert";
+import { Logo } from "../ui/Logo";
+import { GoogleIcon } from "../ui/PlatformIcons";
+import { ThemeSwitch } from "../ui/ThemeSwitch";
+import "../features/auth/login.css";
+
+const steps = ["Drop a screenshot", "Confirm the effort", "Approve a time"];
 
 export function Login() {
   const { session, error: sessionError, reload } = useSession();
@@ -22,21 +26,40 @@ export function Login() {
     catch (cause) { alert.error(errorText(cause, "Could not open the demo. Try again")); }
     finally { setBusy(false); }
   }
-  return <AuthLayout><div className="space-y-8">
-    <div className="space-y-4"><p className="text-small text-muted">A place for what you saved</p>
-      <h1 className="font-display text-4xl md:text-5xl">Saved is not done. Sign in to start</h1>
-      <p className="text-muted">Your saves, your confirmed effort, your calendar.</p></div>
-    <div className="flex flex-col gap-3">
-      {sessionError ? <Button disabled>Continue with Google</Button> : <a href="/auth/login/google" className={buttonClass("primary")}>Continue with Google</a>}
-      {session?.demo_available !== false && <Button variant="secondary" disabled={!!sessionError} onClick={() => void demo()} loading={busy}>Explore the demo</Button>}
+  return <div className="lg">
+    <aside className="lg-side">
+      <Link to="/" aria-label="SavedToAction home"><Logo /></Link>
+      <div>
+        <h1>Saved is<br /><em>not done.</em></h1>
+        <p className="lg-lede">Turn a screenshot of a post you saved into protected time on your calendar.</p>
+        <ol className="lg-steps">{steps.map((s, i) => <li key={s}><b aria-hidden="true">{i + 1}</b>{s}</li>)}</ol>
+      </div>
+      <p className="lg-foot">Powered by Muse Spark Open. Nothing reaches your calendar without your approval.</p>
+    </aside>
+    <div className="lg-main">
+      <div className="lg-top"><Link to="/">← Back to home</Link><ThemeSwitch /></div>
+      <main className="lg-card">
+        <h2>Sign in</h2>
+        <p className="lg-sub">Use your Google account. Signing in shares your name and email. Connecting your calendar is a separate step that you approve.</p>
+        <div className="lg-actions">
+          {sessionError
+            ? <button type="button" className="google-btn" disabled><GoogleIcon />Continue with Google</button>
+            : <a href="/auth/login/google" className="google-btn"><GoogleIcon />Continue with Google</a>}
+          {session?.demo_available !== false && <>
+            <p className="lg-or" aria-hidden="true">or</p>
+            <Button variant="secondary" className="lg-demo" disabled={!!sessionError} onClick={() => void demo()} loading={busy}>Explore the demo</Button>
+          </>}
+        </div>
+        {query.has("deleted") && <p role="status" className="lg-privacy">
+          <b>Your account and data were deleted.</b>{query.get("deleted") === "2" && " Google did not confirm that access was revoked. You can remove SavedToAction under Third-party access in your Google Account."} Events already on your Google Calendar were kept.
+        </p>}
+        {(!!sessionError || query.has("error")) && <div className="lg-alerts">
+          {!!sessionError && <InlineAlert action={<Button variant="secondary" onClick={() => void reload()}>Retry</Button>}>Something went wrong. Please try again</InlineAlert>}
+          {query.has("error") && <InlineAlert>Sign-in did not complete. Please try again</InlineAlert>}
+        </div>}
+        <p className="lg-privacy"><b>Your privacy.</b> We store your name, email, uploaded screenshots and the calendar blocks we create. No scraping. You choose what to upload. <Link to="/privacy">Read more</Link></p>
+      </main>
+      <div className="lg-legal"><span>© 2026 SavedToAction</span><Link to="/privacy">Privacy</Link></div>
     </div>
-    {!!sessionError && <InlineAlert action={<Button variant="secondary" onClick={() => void reload()}>Retry</Button>}>Something went wrong. Please try again</InlineAlert>}
-    {query.has("error") && <InlineAlert>Sign-in did not complete. Please try again</InlineAlert>}
-    <Card className="space-y-3 text-small" pad="p-5">
-      <h2 className="text-base">Your privacy</h2>
-      <p>We store your name, email, uploaded screenshots and calendar blocks we create.</p>
-      <p>No scraping. We check calendar availability to find and protect your time.</p>
-      <p className="text-muted">You choose what to upload. Calendar changes need your approval.</p>
-    </Card>
-  </div></AuthLayout>;
+  </div>;
 }

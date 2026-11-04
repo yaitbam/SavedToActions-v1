@@ -1,10 +1,10 @@
 import type { Action, Goal } from "../../api/types";
-import { Card } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
 import { GoalChip, goalDotClass } from "../../ui/GoalChip";
 import { ModelChip } from "../../ui/ModelChip";
 import { SourceChip } from "../../ui/SourceChip";
 import { cx } from "../../ui/cx";
+import { Step } from "./Step";
 
 interface Props {
   action: Action;
@@ -25,67 +25,77 @@ function timezoneChipText(action: Action): string | null {
   return `Model wrote ${info.modelOffset} for ${city}. Corrected to ${info.computedOffset}`;
 }
 
+// The title, then step 1: what the model read, with where each field came from. Missing stays Missing.
 export function ReviewHeader({ action, goals, busy, onGoal }: Props) {
   const goal = goals.find((item) => item.id === action.goalId);
   const tzText = timezoneChipText(action);
   const kind = kindLabel[action.kind];
 
   return (
-    <Card className="space-y-4">
-      {action.isDemo && <p className="text-small text-muted">Imported demo data</p>}
-
-      {action.title ? (
-        <h1 className="text-title">{action.title}</h1>
-      ) : (
-        <div className="flex items-center gap-3">
-          <h1 className="text-title">Title</h1>
-          <Chip tone="missing">Missing</Chip>
-        </div>
-      )}
-
-      {action.goalId === null ? (
-        <div className="space-y-2">
-          <p className="font-semibold">Which goal is this for?</p>
-          <div className="flex flex-wrap gap-2">
-            {goals.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                disabled={busy}
-                onClick={() => onGoal(item.id)}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-surface px-4 text-small font-medium hover:border-ink disabled:opacity-60"
-              >
-                <span aria-hidden="true" className={cx("size-2 rounded-full", goalDotClass(item.id))} />
-                {item.name}
-              </button>
-            ))}
+    <>
+      <div className="rv-title">
+        {action.isDemo && <p className="text-small text-muted">Imported demo data</p>}
+        {action.title ? (
+          <h1 className="text-title">{action.title}</h1>
+        ) : (
+          <div className="flex items-center gap-3">
+            <h1 className="text-title">Title</h1>
+            <Chip tone="missing">Missing</Chip>
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <GoalChip goalId={action.goalId} name={goal?.name} />
-          {kind && <Chip>{kind}</Chip>}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 text-small text-muted">
-        <span>Deadline</span>
-        {action.deadline ? <Chip>{action.deadline.relative}</Chip> : <Chip tone="missing">Missing</Chip>}
+        )}
+        {kind && <div className="rv-chips"><Chip>{kind}</Chip></div>}
       </div>
 
-      {action.evidence.quote && (
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-small text-muted" title={action.evidence.quote}>
-            “{action.evidence.quote}”
-          </p>
-          <SourceChip badge={action.evidence.badge} badgeLabel={action.evidence.badgeLabel} />
-        </div>
-      )}
+      <Step n={1} title="What we read" hint="Check these against your screenshot" current={action.goalId === null}>
+        <dl className="rv-fields">
+          <div>
+            <dt>Goal</dt>
+            <dd>
+              {action.goalId === null ? (
+                <span className="rv-ask w-full">
+                  <b>Which goal is this for?</b>
+                  <span className="rv-chips">
+                    {goals.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => onGoal(item.id)}
+                        className="inline-flex h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-small font-medium hover:border-ink disabled:opacity-60"
+                      >
+                        <span aria-hidden="true" className={cx("size-2 rounded-full", goalDotClass(item.id))} />
+                        {item.name}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+              ) : (
+                <GoalChip goalId={action.goalId} name={goal?.name} />
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>Deadline</dt>
+            <dd>{action.deadline ? <Chip>{action.deadline.relative}</Chip> : <Chip tone="missing">Missing</Chip>}</dd>
+          </div>
+        </dl>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {action.model && <ModelChip ms={action.extractionLatencyMs} />}
-        {tzText && <Chip tone="conflict">{tzText}</Chip>}
-      </div>
-    </Card>
+        {action.evidence.quote && (
+          <div>
+            <blockquote className="rv-quote" title={action.evidence.quote}>“{action.evidence.quote}”</blockquote>
+            <div className="rv-quote-foot">
+              <SourceChip badge={action.evidence.badge} badgeLabel={action.evidence.badgeLabel} />
+            </div>
+          </div>
+        )}
+
+        {(action.model || tzText) && (
+          <div className="rv-chips">
+            {action.model && <ModelChip ms={action.extractionLatencyMs} />}
+            {tzText && <Chip tone="neutral">{tzText}</Chip>}
+          </div>
+        )}
+      </Step>
+    </>
   );
 }

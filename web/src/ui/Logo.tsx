@@ -20,7 +20,7 @@ export function Logo({ wordmark = true, className }: LogoProps) {
           strokeLinejoin="round"
         />
       </svg>
-      {wordmark && <span className="font-display text-xl font-extrabold tracking-tight text-ink">SavedToAction</span>}
+      {wordmark && <span className="font-display text-xl font-semibold tracking-tight text-ink">SavedToAction</span>}
     </span>
   );
 }

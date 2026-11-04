@@ -1,0 +1,49 @@
+/* App shell: sticky left sidebar on desktop, slim top bar plus bottom nav on phones. */
+.app-shell { display:grid; grid-template-columns:268px minmax(0,1fr); min-height:100vh; }
+.app-main { min-width:0; }
+.app-canvas { width:min(1400px,100%); margin-inline:auto; padding:36px 40px 80px; min-width:0; }
+
+.sidebar { position:sticky; top:0; align-self:start; z-index:40; display:flex; flex-direction:column; gap:22px; height:100vh; padding:22px 16px 18px; border-right:1px solid var(--color-line); background:var(--color-surface); }
+.sidebar-logo { display:block; padding:0 8px; }
+.sidebar .side-drop { width:100%; height:48px; white-space:nowrap; }
+.sidenav { display:flex; flex-direction:column; gap:4px; }
+.sidenav a { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; font-size:16px; font-weight:600; color:var(--color-muted); transition:background-color .15s,color .15s; white-space:nowrap; }
+.sidenav a svg { width:22px; height:22px; flex:none; }
+.sidenav a:hover { background:color-mix(in srgb,var(--color-ink) 6%,transparent); color:var(--color-ink); }
+.sidenav a.active { background:var(--color-ink); color:var(--color-surface); }
+.sidenav .label { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sidenav .count { padding:1px 9px; border-radius:999px; background:color-mix(in srgb,currentColor 14%,transparent); font:500 14px var(--font-mono); }
+
+.side-foot { display:flex; flex-direction:column; gap:12px; margin-top:auto; }
+.sidebar .side-foot > button[aria-label^="Use"] { width:100%; height:40px; padding:0 12px; }
+.sidebar .profile-menu { width:100%; }
+.sidebar .profile-trigger { width:100%; max-width:none; padding:8px 14px 8px 8px; border-radius:14px; }
+.sidebar .profile-trigger-name { flex:1; text-align:left; font-weight:600; }
+.sidebar .profile-panel { top:auto; bottom:calc(100% + 8px); left:0; right:0; width:auto; z-index:60; gap:2px; padding:14px; border-radius:16px; }
+.sidebar .profile-actions { flex-direction:column; align-items:stretch; gap:8px; margin-top:10px; padding-top:12px; }
+.sidebar .profile-actions a { display:flex; align-items:center; justify-content:center; height:40px; border:1px solid var(--color-line); border-radius:12px; text-decoration:none; }
+.sidebar .profile-actions a:hover { background:var(--color-accent); }
+.sidebar .profile-actions button { width:100%; }
+
+.cal-pill { display:inline-flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--color-line); border-radius:14px; background:var(--color-surface); font-size:14px; font-weight:500; white-space:nowrap; color:var(--color-muted); }
+.cal-pill i { flex:none; width:8px; height:8px; border-radius:50%; background:#94a3b8; }
+.cal-pill.on { color:var(--color-fits); border-color:color-mix(in srgb,var(--color-fits) 30%,var(--color-line)); }
+.cal-pill.on i { background:#10b981; box-shadow:0 0 0 3px #10b98126; }
+.cal-pill.off { color:var(--color-brand); }
+.cal-pill.off i { background:var(--color-brand); }
+
+.app-topbar,.app-mobile-nav { display:none; }
+
+@media(max-width:900px) {
+ .app-shell { display:block; }
+ .sidebar { display:none; }
+ .app-topbar { position:sticky; top:0; z-index:40; display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:60px; padding:8px 16px; background:color-mix(in srgb,var(--color-surface) 80%,transparent); backdrop-filter:blur(14px) saturate(1.4); -webkit-backdrop-filter:blur(14px) saturate(1.4); border-bottom:1px solid color-mix(in srgb,var(--color-line) 80%,transparent); }
+ .topbar-right { display:flex; align-items:center; gap:10px; min-width:0; }
+ .app-canvas { padding:24px 16px 110px; }
+ .app-mobile-nav { position:fixed; bottom:0; inset-inline:0; z-index:40; display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--color-line); background:color-mix(in srgb,var(--color-surface) 90%,transparent); backdrop-filter:blur(14px); padding:6px 8px calc(6px + env(safe-area-inset-bottom)); }
+ .app-mobile-nav a { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px; border-radius:10px; color:var(--color-muted); font-size:14px; }
+ .app-mobile-nav a svg { width:18px; height:18px; }
+ .app-mobile-nav a.active { color:var(--color-brand); background:var(--color-accent); }
+}
+@media(max-width:560px) { .app-topbar .new-save-label { display:none; } }
+.app-topbar .profile-panel { max-width:calc(100vw - 32px); }

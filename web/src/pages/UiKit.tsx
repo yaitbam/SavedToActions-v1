@@ -20,7 +20,7 @@ import { Thumb } from "../ui/Thumb";
 const sample =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="#FFD84D"/><rect x="32" y="48" width="336" height="28" rx="14" fill="#14110F"/><rect x="32" y="104" width="260" height="20" rx="10" fill="#14110F"/><rect x="32" y="140" width="300" height="20" rx="10" fill="#6B645C"/><rect x="32" y="176" width="200" height="20" rx="10" fill="#6B645C"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><rect width="400" height="500" fill="#DBE7FD"/><rect x="32" y="48" width="336" height="28" rx="14" fill="#14110F"/><rect x="32" y="104" width="260" height="20" rx="10" fill="#14110F"/><rect x="32" y="140" width="300" height="20" rx="10" fill="#6B645C"/><rect x="32" y="176" width="200" height="20" rx="10" fill="#6B645C"/></svg>`,
   );
 
 const statuses: StatusKey[] = ["fits", "conflict", "nofit", "done", "planned", "needs_input", "error", "drift", "missing"];

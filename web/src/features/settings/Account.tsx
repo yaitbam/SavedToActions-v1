@@ -1,18 +1,20 @@
 import { useState, type FormEvent } from "react";
-import { logout, saveProfile } from "../../api/session";
-import { clearSession } from "../../api/client";
+import { saveProfile } from "../../api/session";
 import { errorText } from "../../api/errors";
 import { useSession } from "../auth/SessionContext";
+import { useSignOut } from "../auth/useSignOut";
 import { useAlert } from "../../ui/AlertProvider";
-import { Card } from "../../ui/Card";
 import { Button } from "../../ui/Button";
 import { fieldClass } from "../../ui/cx";
+import { DeleteAccount } from "./DeleteAccount";
+import { SettingsSection } from "./SettingsSection";
 
 export function Account() {
   const { session, reload } = useSession();
   const [name, setName] = useState(session?.name ?? "");
   const [busy, setBusy] = useState(false);
   const alert = useAlert();
+  const { signOut, signingOut } = useSignOut();
   const demo = session?.kind === "demo";
   async function save(event: FormEvent) {
     event.preventDefault(); setBusy(true);
@@ -20,18 +22,17 @@ export function Account() {
     catch (cause) { alert.error(errorText(cause), { title: "Could not save your name" }); }
     finally { setBusy(false); }
   }
-  async function signOut() {
-    setBusy(true);
-    try { await logout(); clearSession(); window.location.replace("/login"); }
-    catch (cause) { alert.error(errorText(cause, "Could not sign out. Try again")); setBusy(false); }
-  }
-  return <Card className="space-y-4">
-    <h2 className="text-base">Account</h2>
+  return <SettingsSection title="Account" description="Your name is shown in the app. Your email comes from Google and cannot be changed here.">
     <form onSubmit={event => void save(event)} className="space-y-4">
-      <label className="block space-y-2"><span className="text-small">Name</span><input required maxLength={80} disabled={demo || busy} value={name} onChange={event => setName(event.target.value)} className={fieldClass} /></label>
-      <label className="block space-y-2"><span className="text-small">Email (from Google)</span><input readOnly value={session?.email ?? ""} className={`${fieldClass} bg-bg`} /></label>
+      <div className="st-grid">
+        <label><span className="st-label">Name</span><input required maxLength={80} disabled={demo || busy} value={name} onChange={event => setName(event.target.value)} className={fieldClass} /></label>
+        <label><span className="st-label">Email (from Google)</span><input readOnly value={session?.email ?? ""} className={`${fieldClass} bg-bg`} /></label>
+      </div>
       {!demo && <Button type="submit" variant="secondary" disabled={busy || !name.trim() || name.trim() === session?.name}>Save name</Button>}
     </form>
-    <div className="flex flex-wrap gap-3"><Button variant="secondary" loading={busy} onClick={() => void signOut()}>Sign out</Button>
-      <Button variant="text" disabled title="Account deletion is not connected yet">Delete my account and data</Button></div>  </Card>;
+    <div className="st-actions border-t border-line pt-5">
+      <Button variant="secondary" loading={signingOut} onClick={() => void signOut()}>Sign out</Button>
+      <DeleteAccount disabled={demo} />
+    </div>
+  </SettingsSection>;
 }

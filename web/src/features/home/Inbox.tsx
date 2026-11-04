@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { HomeRecentSave } from "../../api/types";
 import { SaveSummary } from "../../ui/SaveSummary";
 import { Thumb } from "../../ui/Thumb";
+import "./home.css";
 
 interface Props {
   saves: HomeRecentSave[];
@@ -9,31 +10,29 @@ interface Props {
   goalName: (goalId: number | null | undefined) => string | undefined;
 }
 
-const VISIBLE = 3;
+const VISIBLE = 6;
 
-// Saves that still need a goal or minutes. Compact rows, so the page stays on one screen.
+// Saves that still need a goal or minutes. Each row opens the save to finish it.
 export function Inbox({ saves, total, goalName }: Props) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-base">
-        Needs a goal or minutes <span className="text-small font-medium text-muted">{total}</span>
-      </h2>
-      <ul className="space-y-2">
+    <section className="hm-card" aria-labelledby="inbox-title">
+      <div className="hm-head">
+        <h2 id="inbox-title">Needs a goal or minutes <span className="hm-count">{total}</span></h2>
+        {total > VISIBLE && <Link to="/app/saves" className="hm-link">See all {total}</Link>}
+      </div>
+      <ul className="hm-rows">
         {saves.slice(0, VISIBLE).map((save) => {
           const action = save.action;
           if (!action) return null;
           return (
             <li key={save.saveId}>
-              <Link
-                to={`/app/saves/${save.saveId}`}
-                className="flex items-center gap-3 rounded-card border border-line bg-surface p-2 transition-colors duration-150 hover:border-ink"
-              >
-                <div className="w-10 shrink-0">
+              <Link to={`/app/saves/${save.saveId}`} className="hm-row">
+                <div className="hm-row-thumb">
                   <Thumb src={save.screenshotUrl} alt={`Screenshot of ${action.title ?? "a saved post"}`} />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="hm-row-body">
                   <SaveSummary
-                    lines={1}
+                    lines={2}
                     title={action.title}
                     goalId={action.goalId}
                     goalName={goalName(action.goalId)}
@@ -41,16 +40,12 @@ export function Inbox({ saves, total, goalName }: Props) {
                     isDemo={save.isDemo}
                   />
                 </div>
+                <span className="hm-row-go" aria-hidden="true">Review ›</span>
               </Link>
             </li>
           );
         })}
       </ul>
-      {total > VISIBLE && (
-        <Link to="/app/saves" className="inline-block text-small font-medium underline underline-offset-4">
-          See all {total}
-        </Link>
-      )}
     </section>
   );
 }

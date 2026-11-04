@@ -1,10 +1,9 @@
 import type { Action, Week } from "../../api/types";
-import { Card } from "../../ui/Card";
 import { ErrorState } from "../../ui/ErrorState";
-import { goalDotClass } from "../../ui/GoalChip";
 import { Skeleton } from "../../ui/Skeleton";
 import { cx } from "../../ui/cx";
 import { weekRows } from "./model";
+import "./home.css";
 
 interface Props {
   week: Week | null;
@@ -25,35 +24,25 @@ export function WeekStrip({ week, planned, error, onRetry }: Props) {
   const hours = week.days[0];
 
   return (
-    <Card className="space-y-3" pad="p-5">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-base">This week</h2>
-        <span className="text-small text-muted">{week.weekLabel}</span>
+    <section className="hm-card" aria-labelledby="week-title">
+      <div className="hm-head">
+        <h2 id="week-title">This week</h2>
+        <span className="hm-sub">{week.weekLabel}</span>
       </div>
-      <div className="flex justify-between pl-20 text-small text-muted" aria-hidden="true">
+      <div className="hm-ends" aria-hidden="true">
         <span>{hours.startDisplay}</span>
         <span>{hours.endDisplay}</span>
       </div>
-      <ul className="space-y-1.5">
+      <ul className="hm-days">
         {rows.map(({ day, today, blocks }) => (
-          <li key={day.date} className="grid grid-cols-[4.5rem_1fr] items-center gap-2">
-            <span
-              className={cx(
-                "w-fit whitespace-nowrap text-small",
-                today ? "rounded-full bg-accent px-2 font-semibold text-ink" : "text-muted",
-              )}
-            >
-              {day.label}
-            </span>
-            <div className="relative h-6 rounded-md bg-bg">
-              {blocks.map(({ chip, goalId, title }) => (
+          <li key={day.date} className={cx("hm-day", today && "is-today")}>
+            <span className="hm-day-label">{day.label}</span>
+            <div className="hm-track">
+              {blocks.map(({ chip, title }) => (
                 <span
                   key={chip.startDisplay}
                   title={`${title} · ${chip.startDisplay}`}
-                  className={cx(
-                    "absolute inset-y-0.5 animate-slide-onto rounded border border-ink",
-                    goalId === null ? "bg-line" : goalDotClass(goalId),
-                  )}
+                  className="absolute inset-y-1 animate-slide-onto rounded-md border border-brand bg-accent"
                   style={{ left: `${chip.left}%`, width: `${Math.max(chip.width, 1.5)}%` }}
                 >
                   <span className="sr-only">
@@ -65,6 +54,6 @@ export function WeekStrip({ week, planned, error, onRetry }: Props) {
           </li>
         ))}
       </ul>
-    </Card>
+    </section>
   );
 }

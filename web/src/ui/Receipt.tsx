@@ -8,17 +8,17 @@ interface ReceiptProps {
   moved?: boolean;
 }
 
+// The calendar read back after a write. A word and a shape say what happened, color only supports it.
 export function Receipt({ range, readback, moved = false }: ReceiptProps) {
   const status = readback?.status ?? null;
   const drift = status === "drift";
-  const failed = status === "failed";
-  const tone = drift ? "bg-conflict-bg text-conflict" : failed ? "bg-nofit-bg text-nofit" : "bg-fits-bg text-fits";
+  const failed = status === "failed" || status === null;
 
   return (
-    <div role="status" className={cx("animate-enter rounded-card p-6", tone)}>
-      {(drift || failed) && <p className="font-semibold">{drift ? "Calendar changed" : "Not checked"}</p>}
+    <div role="status" className={cx("rv-note animate-enter", drift ? "is-conflict" : failed ? "is-nofit" : "is-verified")}>
+      <span className="rv-note-label"><i aria-hidden="true" />{drift ? "Calendar changed" : failed ? "Not checked" : moved ? "Moved and checked" : "Booked and checked"}</span>
       {drift ? (
-        <ul className="mt-1 space-y-1">
+        <ul className="space-y-1">
           {readback?.driftDisplay.map((item) => (
             <li key={item.field}>
               Calendar shows {item.field} as {item.actualDisplay}. We expected {item.expectedDisplay}
@@ -26,9 +26,12 @@ export function Receipt({ range, readback, moved = false }: ReceiptProps) {
           ))}
         </ul>
       ) : failed ? (
-        <p className="mt-1">Could not read the calendar back. Try Recheck now</p>
+        <p>Could not read the calendar back. Try Recheck now</p>
       ) : (
-        <p className="mt-1">{moved ? "Moved to" : "Booked"} {range}. Calendar matched start, end and timezone</p>
+        <>
+          <p className="rv-time">{range}</p>
+          <p>Calendar matched start, end and timezone</p>
+        </>
       )}
     </div>
   );

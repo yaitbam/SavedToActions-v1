@@ -322,6 +322,11 @@ export interface RecheckAllResult {
   calendarUnchanged: true;
 }
 
+export interface DeleteSaveResult {
+  deleted: true;
+  calendar: { blocks: number; removed: number; kept: number };
+}
+
 export interface SkipResult {
   action: Action;
   calendar: { hadBlock: boolean; removed: boolean; removeError: Nullable<string> };

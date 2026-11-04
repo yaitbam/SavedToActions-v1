@@ -14,12 +14,12 @@ export function Trace({ actionId }: { actionId: number }) {
   if (!trace || steps.length === 0) return null;
 
   return (
-    <section className="space-y-2">
+    <section className="rounded-card border border-line bg-bg p-5">
       <h3 className="font-display text-base">How Muse Spark Open planned this</h3>
       {trace.instruction && <p className="text-small text-muted">“{trace.instruction}”</p>}
-      <ol className="space-y-1 text-small">
+      <ol className="mt-4 space-y-3 font-mono text-[14px]">
         {steps.map((step) => (
-          <li key={step.n} className="flex gap-3">
+          <li key={step.n} className="flex gap-3 border-t border-line pt-3">
             <span className="w-5 shrink-0 text-muted">{step.n}</span>
             <span className="min-w-0 flex-1">{step.type === "error" ? "Something went wrong while planning. Please try again" : step.label}</span>
             {step.ms != null && <span className="shrink-0 text-muted">{step.ms} ms</span>}

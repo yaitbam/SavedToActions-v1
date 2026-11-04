@@ -86,6 +86,10 @@ export function patch<T>(path: string, body: unknown): Promise<T> {
   return send<T>("PATCH", path, { headers: json, body: JSON.stringify(body) });
 }
 
+export function del<T>(path: string, body: unknown = {}): Promise<T> {
+  return send<T>("DELETE", path, { headers: json, body: JSON.stringify(body) });
+}
+
 export function postForm<T>(path: string, form: FormData, idempotencyKey?: string): Promise<T> {
   const headers: Record<string, string> = {};
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
