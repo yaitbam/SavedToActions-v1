@@ -61,6 +61,15 @@ export function registerSaveRoutes(app, { db, config, provider, clock, locks }) 
     } catch (err) {
       if (!(err instanceof ExtractionError)) throw err;
       console.error(`Extraction failed for save ${saveId}: ${err.code}`);
+      if (err.code === "not_a_post") {
+        // Nothing to keep: no action was made and the credit was given back. Remove the save and its screenshot.
+        db.transaction(() => {
+          db.prepare("DELETE FROM extraction_jobs WHERE save_id = ?").run(saveId);
+          db.prepare("DELETE FROM saves WHERE id = ? AND NOT EXISTS (SELECT 1 FROM actions WHERE save_id = ?)").run(saveId, saveId);
+        })();
+        if (!getSave(db, saveId)) fs.rmSync(file, { force: true });
+        return res.status(422).json({ error: "not_a_post", detail: err.message });
+      }
       // The save is kept so the user can retry without uploading again.
       return res.status(502).json({ error: err.code, detail: err.message, saveId });
     }

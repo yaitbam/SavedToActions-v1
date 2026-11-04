@@ -175,3 +175,20 @@ test('goals can be added, archived and restored through the signed-in app', () =
   assert.deepEqual(list.map(g => g.name), ['Earn more', 'Learn a skill', 'Events and opportunities', 'Career growth', 'Health and wellbeing', 'Side projects', 'Create and build']);
   assert.equal(list.at(-1).archived, true);
 }));
+
+test('refund gives back the credit of a read that produced nothing, only once', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sta-usage-'));
+  const db = openAccounts(dir);
+  try {
+    const account = upsertAccount(db, { sub: 'refund-user', email: 'refund@example.test', name: 'R' }, '', Date.parse('2026-11-04T10:00:00Z'));
+    const usage = createUsage({ db, config: { freeDailyCredits: 20 }, provider: { chat: async () => ({}), name: 'fake' }, clock: () => Date.parse('2026-11-04T10:00:00Z') });
+    const left = () => usage.credits(account).remaining;
+    await usage.run(account, async () => { await usage.provider.chat(); assert.equal(left(), 19); usage.provider.refund(); usage.provider.refund(); });
+    assert.equal(left(), 20);
+    // A read that is kept still costs one credit, and refund outside any read does nothing.
+    await usage.run(account, async () => { await usage.provider.chat(); });
+    assert.equal(left(), 19);
+    usage.provider.refund();
+    assert.equal(left(), 19);
+  } finally { db.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});

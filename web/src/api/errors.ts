@@ -2,6 +2,7 @@ const messages: Record<string, string> = {
   network_error: "Something went wrong. Please try again",
   unsupported_image: "Use a PNG, JPEG or WebP image",
   image_unreadable: "That image could not be read",
+  not_a_post: "This doesn't look like a saved post",
   image_required: "Add a screenshot first",
   note_too_long: "Keep the note under 160 characters",
   invalid_note: "Keep the note under 160 characters",

@@ -41,11 +41,12 @@ function setup({ maxUploadBytes = 1024 * 1024, tz = "Africa/Casablanca" } = {}) 
   const db = openDb(":memory:");
   // A workspace starts with a default timezone, so "no timezone" has to be set on purpose.
   saveSettings(db, { workStart: "09:00", workEnd: "21:00", tz: tz || null });
-  const state = { output: flyerOutput, error: null, calls: [] };
+  const state = { output: flyerOutput, error: null, calls: [], refunds: 0 };
   const provider = {
     name: "fake",
     model: "fake-model",
     configured: () => true,
+    refund: () => { state.refunds += 1; },
     chat: async (req) => {
       state.calls.push(req);
       if (state.error) throw state.error;
@@ -439,5 +440,24 @@ test("what the note asked for is read from the note only, kept, and shown with m
     const second = await (await upload(base, { note: "tonight, 30 min" })).json();
     assert.equal(second.action.intent, null);
     assert.equal(second.action.effort.statedMin, null);
+  });
+});
+
+test("a screenshot that is not a saved post is refused, refunded and not kept", async () => {
+  await withServer({}, async ({ base, state, db, config }) => {
+    state.output = { ...flyerOutput, saved_post: false, title: "Try SavedToAction to make time for saved items" };
+    const response = await upload(base, { image: SMALL_PNG });
+    assert.equal(response.status, 422);
+    const body = await response.json();
+    assert.equal(body.error, "not_a_post");
+    assert.match(body.detail, /doesn't look like a saved post/);
+    assert.equal(body.saveId, undefined);
+    assert.equal(state.refunds, 1);
+    for (const table of ["saves", "actions", "extraction_jobs"]) assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get().n, 0, table);
+    assert.deepEqual(fs.existsSync(config.screenshotDir) ? fs.readdirSync(config.screenshotDir) : [], []);
+    // The same file can be sent again, and a real post is not refunded.
+    state.output = flyerOutput;
+    assert.equal((await upload(base, { image: SMALL_PNG })).status, 201);
+    assert.equal(state.refunds, 1);
   });
 });

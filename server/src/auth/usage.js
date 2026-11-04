@@ -11,7 +11,15 @@ export function createUsage({ db, provider, config, clock }) {
   return {
     credits,
     run: (account, next) => scope.run({ account, charged: false, successful: false }, next),
-    provider: { ...provider, async chat(...args) {
+    provider: { ...provider,
+      // Gives back the credit of the current operation, for a read that produced nothing the user can use.
+      refund() {
+        const operation = scope.getStore();
+        if (!operation?.charged || !operation.successful || operation.refunded) return;
+        db.prepare("UPDATE usage SET muse_calls=max(0,muse_calls-1) WHERE account_id=? AND day=?").run(operation.account.id, operation.day);
+        operation.refunded = true;
+      },
+      async chat(...args) {
       const operation = scope.getStore();
       if (!operation) throw new Error("Missing usage context");
       const { account } = operation;
