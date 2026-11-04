@@ -1,23 +1,26 @@
 import { Link } from "react-router-dom";
 import type { HomeSummary } from "../../api/types";
-import { Card } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
 import { StatusChip, statusFromCheck } from "../../ui/StatusChip";
+import "../home/home.css";
+import "./progress.css";
 
 export function UpcomingDeadlines({ actions }: { actions: HomeSummary[] }) {
   const deadlines = actions.filter((action) => action.deadline !== null);
   return (
-    <Card className="space-y-3" pad="p-5">
-      <h2 className="text-base">Upcoming deadlines</h2>
+    <section className="hm-card" aria-labelledby="deadlines-title">
+      <div className="hm-head">
+        <h2 id="deadlines-title">Upcoming deadlines <span className="hm-count">{deadlines.length}</span></h2>
+      </div>
       {deadlines.length ? (
-        <ul className="divide-y divide-line">
+        <ul className="pg-list">
           {deadlines.map((action) => (
             <li key={action.id}>
-              <Link to={`/app/saves/${action.saveId}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl py-3">
-                <div className="min-w-0 flex-1 space-y-1">
-                  {action.title ? <p className="font-medium">{action.title}</p> : <Chip tone="missing">Missing</Chip>}
-                  <p className="text-small text-muted">{action.deadline?.relative ?? action.deadline?.display}</p>
-                  {action.isDemo && <p className="text-small text-muted">Imported demo data</p>}
+              <Link to={`/app/saves/${action.saveId}`} className="hm-row">
+                <div className="hm-row-body">
+                  {action.title ? <b>{action.title}</b> : <Chip tone="missing">Missing</Chip>}
+                  <span className="hm-sub">{action.deadline?.relative ?? action.deadline?.display}</span>
+                  {action.isDemo && <span className="hm-sub">Imported demo data</span>}
                 </div>
                 <StatusChip status={action.status === "planned"
                   ? action.check ? statusFromCheck(action.check.state) : "planned"
@@ -26,7 +29,7 @@ export function UpcomingDeadlines({ actions }: { actions: HomeSummary[] }) {
             </li>
           ))}
         </ul>
-      ) : <p className="text-small text-muted">No upcoming deadlines</p>}
-    </Card>
+      ) : <p className="pg-empty">No upcoming deadlines</p>}
+    </section>
   );
 }

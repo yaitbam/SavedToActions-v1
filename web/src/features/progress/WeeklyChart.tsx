@@ -1,6 +1,7 @@
 import { useId } from "react";
 import type { Insights } from "../../api/types";
-import { Card } from "../../ui/Card";
+import "../home/home.css";
+import "./progress.css";
 
 export function WeeklyChart({ weekly: history, note }: { weekly: Insights["weekly"]; note: string | null }) {
   const titleId = useId();
@@ -12,17 +13,17 @@ export function WeeklyChart({ weekly: history, note }: { weekly: Insights["weekl
   const points = (key: "importedSaves" | "doneSaves") => weekly.map((week, i) => `${x(i)},${y(week[key])}`).join(" ");
 
   return (
-    <Card className="space-y-3" pad="p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base">Saves into action, by week</h2>
-        <div className="flex gap-4 text-small">
-          <span className="flex items-center gap-2"><span aria-hidden className="h-0.5 w-5 bg-ink" />Imported saves</span>
-          <span className="flex items-center gap-2"><span aria-hidden className="h-0.5 w-5 bg-fits" />Saves marked done</span>
-        </div>
+    <section className="hm-card" aria-labelledby="weekly-title">
+      <div className="hm-head">
+        <h2 id="weekly-title">Saves into action, by week</h2>
+      </div>
+      <div className="pg-legend">
+        <span><i aria-hidden="true" />Imported saves</span>
+        <span><i className="done" aria-hidden="true" />Saves marked done</span>
       </div>
       {weekly.length ? (
         <>
-          <svg viewBox="0 0 728 192" role="img" aria-labelledby={titleId} className="w-full text-small">
+          <svg viewBox="0 0 728 192" role="img" aria-labelledby={titleId} className="pg-chart">
             <title id={titleId}>Cumulative imported saves and saves marked done by week. Values follow in a table.</title>
             {[0, max / 2, max].filter((tick) => Number.isInteger(tick)).map((tick) => (
               <g key={tick}>
@@ -48,8 +49,8 @@ export function WeeklyChart({ weekly: history, note }: { weekly: Insights["weekl
             ))}</tbody>
           </table>
         </>
-      ) : <p className="text-small text-muted">Weekly records will appear here after your first save</p>}
-      {note && <p className="text-small text-muted">{note}</p>}
-    </Card>
+      ) : <p className="pg-empty">Weekly records will appear here after your first save</p>}
+      {note && <p className="hm-sub">{note}</p>}
+    </section>
   );
 }

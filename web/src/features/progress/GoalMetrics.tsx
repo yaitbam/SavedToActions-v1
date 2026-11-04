@@ -1,31 +1,41 @@
 import type { Goal } from "../../api/types";
-import { Card } from "../../ui/Card";
 import { Chip } from "../../ui/Chip";
-import { GoalChip } from "../../ui/GoalChip";
+import { goalDotClass } from "../../ui/GoalChip";
+import { cx } from "../../ui/cx";
+import "../home/home.css";
+import "./progress.css";
 
+// One card per goal. The bar and the rate come from database records: saves with a done action over saves imported.
 export function GoalMetrics({ goal }: { goal: Goal }) {
   const m = goal.metrics;
-  const metrics = [
-    ["Imported saves", m.importedSaves],
-    ["Planned", m.planned],
-    ["Marked done", m.markedDone],
-    ["Deadline passed without completion", m.deadlinePassedWithoutCompletion],
-    ["Action rate", m.actionRate === null ? null : `${Math.round(m.actionRate * 100)}%`],
-    ["Time scheduled", `${m.timeScheduledMin} min`],
-  ] as const;
+  const share = m.importedSaves > 0 ? Math.min(100, (m.savesWithDoneAction / m.importedSaves) * 100) : 0;
+  const titleId = `goal-${goal.id}-title`;
 
   return (
-    <Card className="space-y-4" pad="p-5">
-      <h2 className="text-base"><GoalChip goalId={goal.id} name={goal.name} /></h2>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-5">
-        {metrics.map(([label, value]) => (
-          <div key={label} className="space-y-1">
-            <dt className="text-small text-muted">{label}</dt>
-            <dd className="font-semibold">{value === null ? <Chip tone="missing">Missing</Chip> : value}</dd>
-          </div>
-        ))}
+    <section className="hm-card" aria-labelledby={titleId}>
+      <div className="hm-head">
+        <span id={titleId} className="hm-goal-name">
+          <span aria-hidden="true" className={cx("size-3 shrink-0 rounded-full", goalDotClass(goal.id))} />
+          <span>{goal.name}</span>
+        </span>
+        <span className="pg-goal-rate">
+          {m.actionRate === null ? <Chip tone="missing">Missing</Chip> : `${Math.round(m.actionRate * 100)}%`}
+        </span>
+      </div>
+      <div className="hm-bar" aria-hidden="true">
+        <div className={goalDotClass(goal.id)} style={{ width: `${share}%` }} />
+      </div>
+      <p className="pg-goal-caption">
+        {m.importedSaves > 0 ? `${m.savesWithDoneAction} of ${m.importedSaves} saves done · action rate` : "No saves yet · action rate"}
+      </p>
+      <dl className="pg-metrics">
+        <div><dt>Imported saves</dt><dd>{m.importedSaves}</dd></div>
+        <div><dt>Planned</dt><dd>{m.planned}</dd></div>
+        <div><dt>Marked done</dt><dd>{m.markedDone}</dd></div>
+        <div><dt>Time scheduled</dt><dd>{m.timeScheduledMin} <small>min</small></dd></div>
+        <div className="col-span-2"><dt>Deadline passed without completion</dt><dd>{m.deadlinePassedWithoutCompletion}</dd></div>
       </dl>
-      {m.demoSaves > 0 && <p className="text-small text-muted">Imported demo data · {m.demoSaves} saves</p>}
-    </Card>
+      {m.demoSaves > 0 && <p className="hm-sub">Imported demo data · {m.demoSaves} saves</p>}
+    </section>
   );
 }

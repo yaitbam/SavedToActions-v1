@@ -1,0 +1,52 @@
+/* Progress: summary tiles, one card per goal, then the weekly chart and deadlines. Shares the Overview card language. */
+.pg-page { display:grid; gap:24px; }
+.pg-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; }
+.pg-intro { max-width:560px; margin:12px 0 0; color:var(--color-muted); font-size:17px; line-height:1.6; }
+.pg-how { margin-top:12px; }
+
+.pg-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; }
+.pg-summary .hm-tile b { display:flex; align-items:baseline; gap:6px; min-height:44px; }
+.pg-summary .hm-tile b small { color:var(--color-muted); font:600 16px var(--font-sans); letter-spacing:0; }
+.pg-summary .hm-tile.is-missed .hm-tile-label i { border-radius:0; width:9px; height:9px; background:transparent; border:2px solid var(--color-nofit); transform:rotate(45deg); }
+.pg-summary .hm-tile.is-time .hm-tile-label i { border-radius:3px; background:var(--color-goal-learn); }
+
+.pg-goals { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+.pg-goals .hm-head { min-height:40px; }
+.pg-goal-rate { flex:none; font:800 32px/1 var(--font-display); letter-spacing:-.04em; }
+.pg-goal-caption { margin:-6px 0 0; color:var(--color-muted); font-size:14px; }
+.pg-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 16px; margin:0; padding-top:18px; border-top:1px solid var(--color-line); }
+.pg-metrics dt { color:var(--color-muted); font-size:14px; line-height:1.4; }
+.pg-metrics dd { margin:4px 0 0; font:800 22px/1.1 var(--font-display); letter-spacing:-.02em; }
+.pg-metrics dd small { color:var(--color-muted); font:600 14px var(--font-sans); letter-spacing:0; }
+
+.pg-bento { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:20px; align-items:stretch; }
+.pg-bento > * { grid-column:1/-1; min-width:0; }
+.pg-bento > * > .hm-card { height:100%; }
+@media(min-width:1000px) {
+ .pg-bento .cell-chart { grid-column:span 7; }
+ .pg-bento .cell-due { grid-column:span 5; }
+}
+
+.pg-legend { display:flex; flex-wrap:wrap; gap:6px 18px; color:var(--color-muted); font-size:14px; font-weight:500; }
+.pg-legend span { display:flex; align-items:center; gap:8px; }
+.pg-legend i { width:20px; height:3px; border-radius:2px; background:var(--color-ink); }
+.pg-legend i.done { background:var(--color-fits); }
+.pg-chart { width:100%; }
+.pg-chart text { font-size:13px; }
+.pg-empty { margin:0; padding:28px 16px; border:1px dashed color-mix(in srgb,var(--color-ink) 28%,var(--color-line)); border-radius:16px; color:var(--color-muted); font-size:15px; text-align:center; }
+
+.pg-list { display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none; }
+.pg-list .hm-row { justify-content:space-between; height:auto; padding:14px; }
+.pg-list .hm-row-body { display:flex; flex-direction:column; gap:2px; }
+.pg-list .hm-row-body > .semantic-pill { align-self:flex-start; }
+.pg-list .hm-row-body b { font-size:16px; font-weight:600; overflow-wrap:anywhere; }
+
+@media(max-width:900px) {
+ .pg-summary { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+ .pg-summary .hm-tile { flex-direction:column; align-items:flex-start; }
+ .pg-summary .hm-tile b { order:0; font-size:34px; }
+ .pg-summary .hm-tile b small,.pg-summary .hm-tile > small { display:inline; }
+ .pg-summary .hm-tile > small { display:block; }
+ .pg-summary .hm-tile:last-child:nth-child(odd) { grid-column:1/-1; }
+ .pg-goals { grid-template-columns:minmax(0,1fr); }
+}
