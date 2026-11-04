@@ -261,3 +261,20 @@ test("garbage model output never throws and yields safe, empty fields", () => {
     assert.equal(r.fields.suggestedEffortMin, null);
   }
 });
+
+test("goal: a catch-all goal such as Others is never chosen for the user", () => {
+  const withOthers = [...goals, { id: 4, name: "Others" }, { id: 5, name: " misc " }];
+  for (const id of [4, 5]) {
+    const r = norm({ ...flyerRaw, goal_id: id }, { goals: withOthers });
+    assert.equal(r.fields.goalId, null);
+    assert.ok(codes(r).includes("goal_not_chosen"));
+  }
+  assert.equal(norm({ ...flyerRaw, goal_id: 2 }, { goals: withOthers }).fields.goalId, 2);
+});
+
+test("prompt: catch-all goals are not offered to the model", async () => {
+  const { buildSystemPrompt } = await import("../src/extraction/extract.js");
+  const prompt = buildSystemPrompt({ goals: [...goals, { id: 4, name: "Others" }], today: "2026-11-04" });
+  assert.ok(prompt.includes("2: Learn a skill"));
+  assert.ok(!prompt.includes("4: Others"));
+});

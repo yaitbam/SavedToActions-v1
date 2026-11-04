@@ -10,6 +10,9 @@ import { cleanIntent } from "../scheduler/intent.js";
 import { isValidTimezone, localDate, wallToUtc, offsetAt } from "../tz.js";
 
 export const KINDS = ["try", "opportunity", "other"];
+
+// A goal such as "Other" or "Misc" is a place to put things, not a choice. The model never fills it for the user.
+export const isCatchAllGoal = (name) => /^(other|others|misc|miscellaneous|general|everything|anything|uncategori[sz]ed|random|none)$/i.test(String(name ?? "").trim());
 export const LABELS = ["claim", "validate", "read", "someday"];
 export const VERBATIM_TYPES = ["prompt", "link", "keyword"];
 
@@ -80,7 +83,7 @@ export function normalizeExtraction(raw, { note = "", goals = [], settingsTz = n
 
   let goalId = null;
   const rawGoal = typeof obj.goal_id === "string" && /^\d+$/.test(obj.goal_id) ? Number(obj.goal_id) : obj.goal_id;
-  if (Number.isInteger(rawGoal) && goals.some((g) => g.id === rawGoal)) goalId = rawGoal;
+  if (Number.isInteger(rawGoal) && goals.some((g) => g.id === rawGoal && !isCatchAllGoal(g.name))) goalId = rawGoal;
   else warn(warnings, "goal_not_chosen", "goal", "The model did not pick one of your goals. Choose one.");
 
   let kind = obj.kind;
