@@ -10,9 +10,9 @@ You save a post because you mean to act on it: a hackathon deadline, a prompt to
 
 ## What it does
 
-1. Drop a screenshot of a saved post, with an optional note. You can crop it first, to cut out the phone status bar, the bottom bar and other posts. Cropping happens in your browser, so the parts you cut are never uploaded.
-2. Confirm how long it will take. The model suggests minutes, but only the minutes you confirm are ever scheduled.
-3. Approve a time. The block is written to your Google Calendar, read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
+1. Drop a screenshot of a saved post, with a one line note of when and for how long ("tonight, 30 min") and, if you like, the link to the post. You can crop the screenshot first, to cut out the phone status bar, the bottom bar and other posts. Cropping happens in your browser, so the parts you cut are never uploaded.
+2. Muse reads the screenshot and your note and suggests a free time, so the first thing you see is a time and not a form. The minutes are on screen and you can change them. If nothing fits the time your note asked for, it says so and shows the next free time.
+3. Approve it with one tap. The minutes shown with the time are confirmed by that tap, and only confirmed minutes are ever scheduled. The block is written to your Google Calendar with a link back to the original post, read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
 
 Every field shows where it came from. A deadline only exists if its supporting quote is found in your note or in the text the model read from the image. Anything the post does not state stays **Missing**. Nothing is invented: not deadlines, not dates, not links, not urgency.
 
@@ -47,6 +47,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 - Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and the Meta Model API, which this project does not use.
 - Outside tester results are not in yet. See the empty section in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 - Model suggested minutes have not been measured against what users confirm.
+- How often the note's "when" and "how long" are read correctly has not been measured yet.
 
 ## Other tools
 
@@ -54,7 +55,11 @@ Task managers, read later apps and calendar assistants overlap with parts of thi
 
 ## No scraping
 
-SavedToAction never scrapes a platform, reads DMs, or posts or comments for you. The input is only screenshots, notes and pasted text that you provide.
+SavedToAction never scrapes a platform, reads DMs, or posts or comments for you. The input is only screenshots, notes and pasted text that you provide. A post link you add is kept as a reference and opened only by you. The app never fetches it and never sends it to the model.
+
+## The note is not a prompt
+
+The note is limited to 160 characters and read for two things only: when to do it and how long it takes. Each must quote words that are really in the note. Anything else in it is ignored, so it cannot be used to ask the model for something else, and the cost of a save stays the same.
 
 ## Demo posts are fictional
 

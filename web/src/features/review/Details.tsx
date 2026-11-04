@@ -13,6 +13,7 @@ interface Props {
   busy: boolean;
   onToggle: (open: boolean) => void;
   onPatch: (changes: ActionPatch) => void;
+  onLink: (link: string | null) => void;
 }
 
 const verbatimLabel = { prompt: "Prompt", link: "Link", keyword: "Keyword" } as const;
@@ -45,7 +46,7 @@ function CheckHistory({ action }: { action: Action }) {
   );
 }
 
-export function Details({ action, goals, open, busy, onToggle, onPatch }: Props) {
+export function Details({ action, goals, open, busy, onToggle, onPatch, onLink }: Props) {
   return (
     <details
       open={open}
@@ -55,7 +56,7 @@ export function Details({ action, goals, open, busy, onToggle, onPatch }: Props)
       <summary className="cursor-pointer font-display font-semibold tracking-tight">Details</summary>
       {open && (
         <div className="mt-4 space-y-6">
-          <EditFields action={action} goals={goals} busy={busy} onPatch={onPatch} />
+          <EditFields action={action} goals={goals} busy={busy} onPatch={onPatch} onLink={onLink} />
           {action.deliverables.length > 0 && (
             <Section title="Deliverables">
               <ul className="list-disc space-y-1 pl-5">

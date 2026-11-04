@@ -50,11 +50,11 @@ Working hours use HH:mm, with start before end. End may be 24:00. Timezone is an
 
 | Method | Path | Response / behavior |
 |---|---|---|
-| POST | /api/saves | Multipart image and optional note. Waits by default, returns 201 {saveId,action,extraction} |
+| POST | /api/saves | Multipart image, optional note (at most 160 characters, 400 note_too_long) and optional link to the post (400 invalid_link). Waits by default, returns 201 {saveId,action,extraction} |
 | POST | /api/saves?async=true | Same input, returns 202 {saveId,jobId,extractionStatus,statusUrl} |
 | GET | /api/extractions/:id | id, saveId, state, timestamps, result or error |
 | GET | /api/saves/:id | Save metadata, current extractionStatus, persisted job and action or null |
-| PATCH | /api/saves/:id | Body {note}, returns {saveId,note,action}. Blocked during extraction |
+| PATCH | /api/saves/:id | Body {note} and/or {link}. A link of null or empty removes it. Returns {saveId,note,link,action}. Blocked during extraction |
 | GET | /api/saves/:id/screenshot | Original PNG/JPEG/WebP bytes |
 | POST | /api/saves/:id/extract | Retry without reupload, same synchronous response |
 | POST | /api/saves/:id/extract?async=true | Background retry, returns 202 job envelope |
@@ -94,9 +94,9 @@ Do not set a multipart Content-Type manually. The browser supplies its boundary.
 | GET | /api/actions | Paged full action views plus countsByView |
 | GET | /api/actions/:id | Full action directly, including block, check, evidence, effort, warnings |
 | PATCH | /api/actions/:id | Edited fields, returns action directly |
-| POST | /api/actions/:id/propose | Earliest slot, or no-fit reason/hints; latestFeasibleStart when computable |
+| POST | /api/actions/:id/propose | Optional {effortMin, notBeforeUtc}. effortMin is the minutes on screen, used for this search only and never saved. notBeforeUtc asks for another time. Earliest slot, or no-fit reason/hints; latestFeasibleStart when computable. When the note asked for a time it is tried first and `intent` says {applied,label,reason?} |
 | POST | /api/actions/:id/agent-plan | Optional {instruction}; proposal/fallback, rationale, traceId, approveWith |
-| POST | /api/actions/:id/approve | {startUtc,endUtc,approved:true} → {replayed,action,block} |
+| POST | /api/actions/:id/approve | {startUtc,endUtc,approved:true,effortMin?} → {replayed,action,block}. effortMin is the minutes shown with the time. Approving confirms them, and the block must be exactly that long. Without it the minutes must already be confirmed |
 | POST | /api/actions/:id/move | Same body → {action,block,previous} including old-event cleanup result |
 | POST | /api/actions/:id/restore | {approved:true}; replace the current approved slot after recorded drift/failure, then read back |
 | POST | /api/actions/:id/readback | Repeat calendar read → {block}, no calendar write |
@@ -150,3 +150,9 @@ The supported local API is covered by the server tests and typed client methods 
 Run npm run smoke from server/ while the backend is running. It checks live GET routes and prints no user content. /ready distinguishes local process readiness from readyForScheduling, which additionally requires a configured user timezone, connected Google credentials and no missing scopes.
 
 Not implemented: multi-tenant authentication/billing, internet deployment, arbitrary calendar selection, individual trace-step replay, automatic undo of calendar writes, or claiming the user's completion was externally verified.
+
+## The note and the post link
+
+The note is one line, at most 160 characters. It is read as a closed set: when to do it (`today`, `tomorrow`, `weekend`, a date, and `morning`, `afternoon` or `evening`) and how many minutes. Every part must quote words that are in the note, otherwise it is dropped. Anything else in the note is ignored. The action view carries `intent` ({when, minutes, minutesQuote, label}) and `effort.statedMin`.
+
+The link to the post is kept as a reference and returned as `link` ({url, host, platform}). Only http and https are accepted, tracking parameters and the fragment are removed. It is never fetched and never sent to the model. It is added to the calendar event description as "Original post".

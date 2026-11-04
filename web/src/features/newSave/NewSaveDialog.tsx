@@ -8,6 +8,7 @@ import { createSave, retryExtraction } from "../../api/saves";
 import { Button } from "../../ui/Button";
 import { InlineAlert } from "../../ui/InlineAlert";
 import { fieldClass } from "../../ui/cx";
+import { NOTE_CHIPS, NOTE_MAX, addToNote, pullLinkOut } from "./note";
 import { CropEditor } from "./CropEditor";
 import { isSupportedImage } from "./NewSaveContext";
 
@@ -27,6 +28,10 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   const [file, setFile] = useState<File | null>(initialFile);
   const [cropping, setCropping] = useState(false);
   const [note, setNote] = useState("");
+  // The original post, kept as a reference. It is never opened or read by the app, only stored.
+  const [link, setLink] = useState("");
+  const [movedLink, setMovedLink] = useState(false);
+  const lastSent = useRef<string | null>(null);
   const [phase, setPhase] = useState<Phase>("pick");
   const [message, setMessage] = useState("");
   const retrySaveId = useRef<number | null>(null);
@@ -70,12 +75,17 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
 
   async function extract() {
     if (!file && retrySaveId.current === null) return;
+    // The same import key lets a retry after a dropped connection be recognised. A different file, note or link is
+    // a different import, so it gets a new key.
+    const signature = JSON.stringify([file?.name, file?.size, note.trim(), link.trim()]);
+    if (lastSent.current !== null && lastSent.current !== signature) idempotencyKey.current = crypto.randomUUID();
+    lastSent.current = signature;
     setPhase("working");
     try {
       const result =
         retrySaveId.current !== null
           ? await retryExtraction(retrySaveId.current)
-          : await createSave(file as File, note.trim() || undefined, idempotencyKey.current);
+          : await createSave(file as File, note.trim() || undefined, idempotencyKey.current, link.trim() || undefined);
       onClose();
       navigate(`/app/saves/${result.saveId}`);
     } catch (e) {
@@ -92,6 +102,18 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   }
 
   const working = phase === "working";
+
+  // People paste the post address into the note. It belongs in its own field, away from the model.
+  function onNote(value: string) {
+    const pulled = link.trim() ? null : pullLinkOut(value);
+    if (pulled) {
+      setNote(pulled.note);
+      setLink(pulled.link);
+      setMovedLink(true);
+    } else {
+      setNote(value.slice(0, NOTE_MAX));
+    }
+  }
   const cropped = !!file && file !== original;
   // Once a save exists on the server (a retry), its picture can no longer change here.
   const canCrop = !!original && retrySaveId.current === null && !working;
@@ -123,13 +145,48 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
               {working ? (
                 <ExtractionTelemetry />
               ) : (
-                <textarea
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  placeholder="What do you want to do with it? (optional)"
-                  rows={5}
-                  className={`${fieldClass} h-auto resize-none py-3`}
-                />
+                <>
+                  <label className="block space-y-1">
+                    <span className="text-small font-semibold">What should Muse do, and when?</span>
+                    <textarea
+                      value={note}
+                      onChange={(event) => onNote(event.target.value)}
+                      maxLength={NOTE_MAX}
+                      placeholder="For example: tonight, 30 min"
+                      rows={2}
+                      aria-describedby="note-hint"
+                      className={`${fieldClass} h-auto resize-none py-3`}
+                    />
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {NOTE_CHIPS.map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setNote((current) => addToNote(current, chip))}
+                        className="inline-flex h-9 items-center rounded-full border border-line bg-surface px-3 text-small font-medium hover:border-ink"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                    <span id="note-hint" className="ml-auto text-small text-muted">{note.length}/{NOTE_MAX}</span>
+                  </div>
+                  <label className="block space-y-1">
+                    <span className="text-small font-semibold">Link to the post <span className="font-normal text-muted">(optional)</span></span>
+                    <input
+                      type="url"
+                      inputMode="url"
+                      value={link}
+                      onChange={(event) => { setLink(event.target.value); setMovedLink(false); }}
+                      placeholder="Paste the post link from X, LinkedIn or Instagram"
+                      className={fieldClass}
+                    />
+                  </label>
+                  <p className="text-small text-muted">
+                    {movedLink ? "We moved the link out of your note. " : ""}
+                    Muse reads only when and how long. The link is kept so you can open the post later.
+                  </p>
+                </>
               )}
               {!working && (
                 <div className="flex flex-wrap items-center gap-1">

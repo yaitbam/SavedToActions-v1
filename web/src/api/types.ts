@@ -151,8 +151,25 @@ export interface EventDate extends Sourced {
   end: Nullable<string>;
 }
 
+// The post a save came from, kept as a reference. Never fetched.
+export interface PostLink {
+  url: string;
+  host: string;
+  platform: "x" | "linkedin" | "instagram" | "tiktok" | "threads" | "facebook" | "youtube" | "reddit" | "web";
+}
+
+// What the user's short note asked for: when, and for how long. Nothing else is read from it.
+export interface ActionIntent {
+  when: Nullable<{ day: Nullable<string>; date: Nullable<string>; part: Nullable<string>; quote: string }>;
+  minutes: Nullable<number>;
+  minutesQuote: Nullable<string>;
+  label: Nullable<string>;
+}
+
 export interface Effort {
   suggestedMin: Nullable<number>;
+  // Minutes the user wrote in their own note. They still approve the time that uses them.
+  statedMin: Nullable<number>;
   confirmedMin: Nullable<number>;
   confirmed: boolean;
   label: Nullable<"Model estimate" | "Your estimate">;
@@ -175,6 +192,8 @@ export interface Action {
   label: Nullable<"claim" | "validate" | "read" | "someday">;
   title: Nullable<string>;
   note: Nullable<string>;
+  link: Nullable<PostLink>;
+  intent: Nullable<ActionIntent>;
   transcription: Nullable<string>;
   screenshotUrl: string;
   isDemo: boolean;
@@ -231,6 +250,7 @@ export interface ExtractionJob {
 export interface SaveListItem {
   saveId: number;
   note: Nullable<string>;
+  link: Nullable<PostLink>;
   importedAt: string;
   importedAtDisplay: string;
   importedAtRelative?: string;
@@ -251,6 +271,7 @@ export interface Page<T> {
 export interface SaveDetail {
   saveId: number;
   note: Nullable<string>;
+  link: Nullable<PostLink>;
   importedAt: string;
   importedAtDisplay: string;
   isDemo: boolean;
@@ -276,7 +297,15 @@ export interface ActionQuery {
   offset?: number;
 }
 
+// Whether the time the note asked for was met. applied false means the next free time is shown instead.
+export interface ProposeIntent {
+  applied: boolean;
+  label: Nullable<string>;
+  reason?: string;
+}
+
 export interface ProposeFound {
+  intent?: ProposeIntent;
   mode: "new" | "move";
   found: true;
   slot: Slot;
@@ -285,6 +314,7 @@ export interface ProposeFound {
 }
 
 export interface ProposeNotFound {
+  intent?: ProposeIntent;
   mode: "new" | "move";
   found: false;
   reason: string;

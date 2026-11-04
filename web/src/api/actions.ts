@@ -19,12 +19,16 @@ export const getAction = (id: number) => get<Action>(`/api/actions/${id}`);
 export const updateAction = (id: number, changes: ActionPatch) =>
   patch<Action>(`/api/actions/${id}`, changes);
 
-export const proposeSlot = (id: number) => post<ProposeResult>(`/api/actions/${id}/propose`, {});
+// effortMin: the minutes on screen. They are used for this search only, nothing is saved.
+// notBeforeUtc: "another time", start no earlier than this instant.
+export const proposeSlot = (id: number, options: { effortMin?: number; notBeforeUtc?: string } = {}) =>
+  post<ProposeResult>(`/api/actions/${id}/propose`, options);
 export const agentPlan = (id: number, instruction: string) =>
   post<AgentPlan>(`/api/actions/${id}/agent-plan`, { instruction });
 
-export const approveSlot = (id: number, startUtc: string, endUtc: string) =>
-  post<ApproveResult>(`/api/actions/${id}/approve`, { approved: true, startUtc, endUtc });
+// effortMin: the minutes shown with the time. Approving confirms them.
+export const approveSlot = (id: number, startUtc: string, endUtc: string, effortMin?: number) =>
+  post<ApproveResult>(`/api/actions/${id}/approve`, { approved: true, startUtc, endUtc, ...(effortMin ? { effortMin } : {}) });
 export const moveBlock = (id: number, startUtc: string, endUtc: string) =>
   post<MoveResult>(`/api/actions/${id}/move`, { approved: true, startUtc, endUtc });
 

@@ -6,10 +6,9 @@ import { ImageViewer } from "../ui/ImageViewer";
 import { Receipt } from "../ui/Receipt";
 import { Skeleton } from "../ui/Skeleton";
 import { Thumb } from "../ui/Thumb";
-import { fieldClass } from "../ui/cx";
 import { DeleteSave } from "../features/review/DeleteSave";
 import { Details } from "../features/review/Details";
-import { EffortChips } from "../features/review/EffortChips";
+import { PlanCard } from "../features/review/PlanCard";
 import { ReviewHeader } from "../features/review/ReviewHeader";
 import { StateButton } from "../features/review/StateButton";
 import { StateNote } from "../features/review/StateNote";
@@ -32,7 +31,6 @@ export function Review() {
   const [zoom, setZoom] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsRef = useRef<HTMLDivElement>(null);
-  const preferenceRef = useRef<HTMLTextAreaElement>(null);
   const save = r.save.data;
   const action = r.action;
 
@@ -48,13 +46,10 @@ export function Review() {
     );
   }
 
-  const editable = r.stage === "effort" || r.stage === "proposed";
-  const effort = action?.effort;
-  const yourEstimate = !!effort && r.minutes !== null && (effort.confirmed || r.minutes !== effort.suggestedMin);
-  const estimateNote = r.minutes === null ? undefined : yourEstimate ? "Your estimate" : "Model estimate";
+  // Until a time is booked, the whole decision is one card: a time, the minutes and one button.
+  const planning = r.stage === "effort" || r.stage === "proposed";
   const block = action?.block;
   const readbackStatus = block?.readback?.status;
-  const goalSet = action?.goalId !== null;
   const three = stepThree[r.stage];
 
   return (
@@ -81,55 +76,59 @@ export function Review() {
             )
           ) : (
             <>
-              <ReviewHeader action={action} goals={r.goals} busy={r.busy !== null} onGoal={(goalId) => r.patch({ goalId })} onDeadline={(wall) => r.patch({ deadline: { wall } })} />
+              <ReviewHeader part="title" action={action} goals={r.goals} busy={r.busy !== null} onGoal={(goalId) => r.patch({ goalId })} onDeadline={(wall) => r.patch({ deadline: { wall } })} />
 
-              <Step n={2} title="How long will this take you?" hint={estimateNote} current={goalSet && r.stage === "effort"}>
-                <EffortChips minutes={r.minutes} disabled={!editable || r.busy !== null} onChange={r.changeMinutes} />
-                {editable && (
-                  <label className="block space-y-1">
-                    <span className="text-small text-muted">Any preference? (optional)</span>
-                    <textarea
-                      ref={preferenceRef}
-                      value={r.preference}
-                      onChange={(event) => r.setPreference(event.target.value)}
-                      rows={2}
-                      placeholder="For example: mornings only"
-                      className={`${fieldClass} h-auto resize-none py-3`}
+              {planning ? (
+                <PlanCard
+                  action={action}
+                  goals={r.goals}
+                  minutes={r.minutes}
+                  proposal={r.proposal}
+                  intent={r.intent}
+                  busy={r.busy}
+                  needsCalendar={r.needsCalendar}
+                  onMinutes={r.changeMinutes}
+                  onBook={r.book}
+                  onAnother={r.anotherTime}
+                  onFind={r.findNow}
+                  onAsk={r.askMuse}
+                  onGoal={(goalId) => r.patch({ goalId })}
+                  onSkip={r.skip}
+                />
+              ) : (
+                <Step title={three.title} hint={three.hint} current={r.stage === "conflict" || r.stage === "nofit"}>
+                  <StateNote stage={r.stage} action={action} proposal={r.proposal} minutes={r.minutes} />
+                  {r.showReceipt && block && readbackStatus && (
+                    <Receipt range={block.rangeRelative} readback={block.readback} moved={r.moved} />
+                  )}
+                  <div className="state-actions">
+                    <StateButton
+                      stage={r.stage}
+                      action={action}
+                      proposal={r.proposal}
+                      minutes={r.minutes}
+                      busy={r.busy}
+                      on={{
+                        plan: r.plan,
+                        book: r.book,
+                        done: r.done,
+                        recheck: r.recheck,
+                        moveToAlternative: r.moveToAlternative,
+                        keep: r.keep,
+                        unlock: r.unlock,
+                        skip: r.skip,
+                        otherTime: r.anotherTime,
+                        editDetails: () => {
+                          setDetailsOpen(true);
+                          detailsRef.current?.scrollIntoView({ block: "nearest" });
+                        },
+                      }}
                     />
-                  </label>
-                )}
-              </Step>
+                  </div>
+                </Step>
+              )}
 
-              <Step n={3} title={three.title} hint={three.hint} current={r.stage === "proposed" || r.stage === "conflict" || r.stage === "nofit"}>
-                <StateNote stage={r.stage} action={action} proposal={r.proposal} minutes={r.minutes} />
-                {r.showReceipt && block && readbackStatus && (
-                  <Receipt range={block.rangeRelative} readback={block.readback} moved={r.moved} />
-                )}
-                <div className="state-actions">
-                  <StateButton
-                    stage={r.stage}
-                    action={action}
-                    proposal={r.proposal}
-                    minutes={r.minutes}
-                    busy={r.busy}
-                    on={{
-                      plan: r.plan,
-                      book: r.book,
-                      done: r.done,
-                      recheck: r.recheck,
-                      moveToAlternative: r.moveToAlternative,
-                      keep: r.keep,
-                      unlock: r.unlock,
-                      skip: r.skip,
-                      otherTime: () => (r.preference.trim() ? r.plan() : preferenceRef.current?.focus()),
-                      editDetails: () => {
-                        setDetailsOpen(true);
-                        detailsRef.current?.scrollIntoView({ block: "nearest" });
-                      },
-                    }}
-                  />
-                </div>
-              </Step>
+              <ReviewHeader part="read" action={action} goals={r.goals} busy={r.busy !== null} onGoal={(goalId) => r.patch({ goalId })} onDeadline={(wall) => r.patch({ deadline: { wall } })} />
 
               <div ref={detailsRef}>
                 <Details
@@ -139,6 +138,7 @@ export function Review() {
                   busy={r.busy !== null}
                   onToggle={setDetailsOpen}
                   onPatch={r.patch}
+                  onLink={r.setLink}
                 />
               </div>
             </>

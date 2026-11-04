@@ -9,6 +9,8 @@ interface Props {
   goals: Goal[];
   busy: boolean;
   onPatch: (changes: ActionPatch) => void;
+  // The link belongs to the save, not the action. An empty value removes it.
+  onLink: (link: string | null) => void;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -20,14 +22,21 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-export function EditFields({ action, goals, busy, onPatch }: Props) {
+export function EditFields({ action, goals, busy, onPatch, onLink }: Props) {
   const settings = useAsync(getSettings, []);
   const [title, setTitle] = useState(action.title ?? "");
   const [deadline, setDeadline] = useState(action.deadline?.wall ?? "");
+  const [link, setLink] = useState(action.link?.url ?? "");
   const tz = action.deadline?.tz ?? settings.data?.tz ?? undefined;
 
   useEffect(() => setTitle(action.title ?? ""), [action.title]);
   useEffect(() => setDeadline(action.deadline?.wall ?? ""), [action.deadline?.wall]);
+  useEffect(() => setLink(action.link?.url ?? ""), [action.link?.url]);
+
+  const saveLink = () => {
+    const next = link.trim();
+    if (next !== (action.link?.url ?? "")) onLink(next || null);
+  };
 
   const saveTitle = () => {
     const next = title.trim();
@@ -80,6 +89,19 @@ export function EditFields({ action, goals, busy, onPatch }: Props) {
           <option value="opportunity">Opportunity</option>
           <option value="other">Other</option>
         </select>
+      </Field>
+      <Field label="Link to the post">
+        <input
+          type="url"
+          inputMode="url"
+          value={link}
+          disabled={busy}
+          placeholder="Paste the post link from X, LinkedIn or Instagram"
+          onChange={(event) => setLink(event.target.value)}
+          onBlur={saveLink}
+          className={fieldClass}
+        />
+        <p className="mt-2 text-small text-muted">Kept so you can open the post later. Muse never reads it.</p>
       </Field>
       <Field label={tz ? `Deadline (${tz})` : "Deadline"}>
         <input

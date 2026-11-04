@@ -3,6 +3,7 @@ import { Chip } from "../../ui/Chip";
 import { DeadlineChip } from "../../ui/DeadlineChip";
 import { GoalChip, goalDotClass } from "../../ui/GoalChip";
 import { ModelChip } from "../../ui/ModelChip";
+import { PostLinkChip } from "../../ui/PostLinkChip";
 import { SourceChip } from "../../ui/SourceChip";
 import { cx } from "../../ui/cx";
 import { Step } from "./Step";
@@ -14,6 +15,8 @@ interface Props {
   onGoal: (goalId: number) => void;
   // Saves a deadline the user accepted from a proposal. The server fills in the timezone.
   onDeadline: (wall: string) => void;
+  // The page shows the title first, the plan, then what was read. "all" keeps them together.
+  part?: "title" | "read" | "all";
 }
 
 const kindLabel: Record<string, string> = { try: "Try it", opportunity: "Opportunity" };
@@ -40,7 +43,7 @@ function missingDeadlineReason(action: Action): { text: string; wall: string | n
 }
 
 // The title, then step 1: what the model read, with where each field came from. Missing stays Missing.
-export function ReviewHeader({ action, goals, busy, onGoal, onDeadline }: Props) {
+export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "all" }: Props) {
   const goal = goals.find((item) => item.id === action.goalId);
   const reason = missingDeadlineReason(action);
   const tzText = timezoneChipText(action);
@@ -48,6 +51,7 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline }: Props)
 
   return (
     <>
+      {part !== "read" && (
       <div className="rv-title">
         {action.isDemo && <p className="text-small text-muted">Imported demo data</p>}
         {action.title ? (
@@ -58,10 +62,17 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline }: Props)
             <Chip tone="missing">Missing</Chip>
           </div>
         )}
-        {kind && <div className="rv-chips"><Chip>{kind}</Chip></div>}
+        {(kind || action.link) && (
+          <div className="rv-chips">
+            {kind && <Chip>{kind}</Chip>}
+            {action.link && <PostLinkChip link={action.link} />}
+          </div>
+        )}
       </div>
+      )}
 
-      <Step n={1} title="What we read" hint="Check these against your screenshot" current={action.goalId === null}>
+      {part !== "title" && (
+      <Step title="What Muse read" hint="Check these against your screenshot" current={action.goalId === null && part === "all"}>
         <dl className="rv-fields">
           <div>
             <dt>Goal</dt>
@@ -137,6 +148,7 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline }: Props)
           </div>
         )}
       </Step>
+      )}
     </>
   );
 }
