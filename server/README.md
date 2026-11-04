@@ -162,7 +162,7 @@ SQLite via better-sqlite3. Migrations are an append-only array in `db.js`. `PRAG
 | `extraction_jobs` | persisted queued/running/completed extraction state |
 | `action_transitions` | lifecycle changes supporting undo |
 
-Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. v10 records whether the user confirmed their timezone (`tz_confirmed`), trusting only a zone other than the default. The historical v1-to-v4 migration retained tokens on a database copy.
+Migration history: v1 base schema. v2 rebuilds `actions` (nullable goal_id, extraction columns). v3 adds `event_dates_json` and block read-back and cleanup columns. v4 adds `checks` and `agent_traces`. v5 adds extraction jobs and lifecycle transitions. v6 adds optional idempotent imports. v7 adds goal description, color and archiving. v8 shortens the default goal descriptions. v9 fills a missing timezone with the default. v10 records whether the user confirmed their timezone (`tz_confirmed`), trusting only a zone other than the default. v11 adds `deadline_time_assumed` for deadlines given as a date with no time. The historical v1-to-v4 migration retained tokens on a database copy.
 
 The separate central database contains `accounts`, `sessions`, `oauth_requests`, `usage` and sanitized `auth_failures`. Accounts are identified by verified Google `sub`. Session tokens are hashed, and only random workspace keys appear in workspace paths. A cached context contains that account's database and Calendar client. Live jobs and requests prevent its eviction.
 
@@ -264,11 +264,11 @@ Normalization rules (`extraction/normalize.js`):
 
 - Every quote must appear in the note or the model's transcription. A deadline without a matching quote is dropped and kept only as a warning.
 - Badges are precise: "Matched text in note", "Matched model transcription", "Edited by you", or "No match in note or model transcription". Never a general "Verified". Matching the model's own transcription proves consistency, not correct reading.
-- A deadline already in the past at import is dropped with a warning (almost always a past edition). A date with no time is not turned into a time. Missing year is assumed only with a warning.
+- A deadline already in the past at import is dropped with a warning (almost always a past edition). A date with no time becomes a deadline at 23:59 of that day, flagged `timeAssumed` and warned as `deadline_time_assumed`, and a user edit clears the flag. Missing year is assumed only with a warning.
 - The timezone is used only if stated. If not, the settings timezone is used and labeled `settings_fallback`. With no settings timezone it stays null.
 - `event_dates` are the event's own dates, separate from the deadline. If every supported date is before today the warning `event_already_happened` is raised. Date only comparison.
 - Goal is never defaulted. If the model gives none, `goal_not_chosen` and the user picks.
-- Warning codes: `goal_not_chosen`, `kind_defaulted`, `verbatim_unmatched`, `evidence_unmatched`, `deadline_unsupported`, `deadline_in_past`, `deadline_time_missing`, `deadline_invalid`, `deadline_timezone_fallback`, `deadline_timezone_missing`, `deadline_timezone_invalid`, `deadline_offset_ignored`, `deadline_year_assumed`, `event_already_happened`.
+- Warning codes: `goal_not_chosen`, `kind_defaulted`, `verbatim_unmatched`, `evidence_unmatched`, `deadline_unsupported`, `deadline_in_past`, `deadline_time_assumed`, `deadline_invalid`, `deadline_timezone_fallback`, `deadline_timezone_missing`, `deadline_timezone_invalid`, `deadline_offset_ignored`, `deadline_year_assumed`, `event_already_happened`.
 
 Real example, `flyer.png` (French hackathon poster for 6-7 JUIN 2026) with the note "I want to join the next edition": goal Join events and opportunities, kind opportunity, no deadline, event date kept verbatim and flagged as already happened, evidence quote matched in the note, effort a model estimate of 15 minutes.
 

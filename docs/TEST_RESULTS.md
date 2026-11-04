@@ -31,6 +31,8 @@ A deadline counts as matching when it equals the manifest, or when the post give
 
 The two goal misses are 03 and 09. In both the model returned no goal, and the app shows it as Missing for the user to choose.
 
+> Note: these runs were made before date only deadlines were supported. Rows marked "Missing (no time given)" would now get a deadline at the end of that day, labeled as assumed.
+
 | File | Time | Goal expected | Goal got | Deadline expected | Deadline got |
 |---|---|---|---|---|---|
 | 01 | 7.6 s | Events and opportunities | Events and opportunities | 2026-11-20 23:59 | 2026-11-20 23:59 |

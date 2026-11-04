@@ -257,6 +257,12 @@ export const MIGRATIONS = [
     SELECT 'tz_confirmed', '1' FROM settings WHERE key = 'tz' AND value IS NOT NULL AND value != '' AND value != 'America/New_York';
   `,
 
+  // v11. A post can give a date with no time. The deadline then runs to the end of that day, and this flag
+  // keeps it labeled as an assumption until the user sets a time.
+  `
+  ALTER TABLE actions ADD COLUMN deadline_time_assumed INTEGER NOT NULL DEFAULT 0 CHECK (deadline_time_assumed IN (0, 1));
+  `,
+
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

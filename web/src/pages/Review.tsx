@@ -81,7 +81,7 @@ export function Review() {
             )
           ) : (
             <>
-              <ReviewHeader action={action} goals={r.goals} busy={r.busy !== null} onGoal={(goalId) => r.patch({ goalId })} />
+              <ReviewHeader action={action} goals={r.goals} busy={r.busy !== null} onGoal={(goalId) => r.patch({ goalId })} onDeadline={(wall) => r.patch({ deadline: { wall } })} />
 
               <Step n={2} title="How long will this take you?" hint={estimateNote} current={goalSet && r.stage === "effort"}>
                 <EffortChips minutes={r.minutes} disabled={!editable || r.busy !== null} onChange={r.changeMinutes} />

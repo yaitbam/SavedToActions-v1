@@ -36,10 +36,10 @@ export function insertActionFromExtraction(db, { saveId, fields, warnings, raw, 
     .prepare(
       `INSERT INTO actions (
          save_id, goal_id, kind, label, title,
-         deadline_wall, deadline_tz, deadline_tz_source, deadline_utc, deadline_label, deadline_quote, deadline_year_assumed,
+         deadline_wall, deadline_tz, deadline_tz_source, deadline_utc, deadline_label, deadline_quote, deadline_year_assumed, deadline_time_assumed,
          deliverables_json, verbatim_items_json, evidence_quote, transcription, warnings_json, model_output_json, model_name,
          edited_fields_json, suggested_effort_min, event_dates_json, status, created_at, updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`,
     )
     .run(
       saveId,
@@ -54,6 +54,7 @@ export function insertActionFromExtraction(db, { saveId, fields, warnings, raw, 
       d?.label ?? null,
       d?.quote ?? null,
       d?.yearAssumed ? 1 : 0,
+      d?.timeAssumed ? 1 : 0,
       JSON.stringify(fields.deliverables),
       JSON.stringify(fields.verbatimItems.map(({ type, text }) => ({ type, text }))),
       fields.evidenceQuote,
@@ -136,6 +137,8 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
           label: row.deadline_label,
           quote: row.deadline_quote,
           yearAssumed: Boolean(row.deadline_year_assumed),
+          // True when the post gave a date only. The time is the end of that day until the user sets one.
+          timeAssumed: Boolean(row.deadline_time_assumed),
         }
       : null,
     // Dates of the event itself, verbatim as on the post. Not a deadline.
@@ -296,6 +299,7 @@ export function updateAction(db, id, patch, { settingsTz = null, nowIso }) {
           deadline_label: null,
           deadline_quote: null,
           deadline_year_assumed: 0,
+          deadline_time_assumed: 0,
         });
         edited.add("deadline");
       }
@@ -329,6 +333,7 @@ export function updateAction(db, id, patch, { settingsTz = null, nowIso }) {
           deadline_tz_source: source,
           deadline_utc: utc,
           deadline_year_assumed: 0,
+          deadline_time_assumed: 0,
         });
         if ("label" in d) set.deadline_label = optString(d.label, 200) ?? null;
         edited.add("deadline");

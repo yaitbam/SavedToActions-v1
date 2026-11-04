@@ -11,6 +11,8 @@ interface Props {
   goals: Goal[];
   busy: boolean;
   onGoal: (goalId: number) => void;
+  // Saves a deadline the user accepted from a proposal. The server fills in the timezone.
+  onDeadline: (wall: string) => void;
 }
 
 const kindLabel: Record<string, string> = { try: "Try it", opportunity: "Opportunity" };
@@ -25,9 +27,21 @@ function timezoneChipText(action: Action): string | null {
   return `Model wrote ${info.modelOffset} for ${city}. Corrected to ${info.computedOffset}`;
 }
 
+// Why there is no deadline, from the extraction warnings. Nothing is used until the user accepts it.
+function missingDeadlineReason(action: Action): { text: string; wall: string | null } | null {
+  if (action.deadline) return null;
+  const warning = action.warnings.find((item) =>
+    item.field === "deadline" && ["deadline_unsupported", "deadline_in_past", "deadline_invalid"].includes(item.code));
+  if (!warning) return null;
+  const proposed = warning.proposed as { wall?: string | null; date?: string | null } | undefined;
+  const wall = proposed?.wall ?? (proposed?.date ? `${proposed.date}T23:59` : null);
+  return { text: warning.message ?? "No deadline was set.", wall: warning.code === "deadline_unsupported" ? wall : null };
+}
+
 // The title, then step 1: what the model read, with where each field came from. Missing stays Missing.
-export function ReviewHeader({ action, goals, busy, onGoal }: Props) {
+export function ReviewHeader({ action, goals, busy, onGoal, onDeadline }: Props) {
   const goal = goals.find((item) => item.id === action.goalId);
+  const reason = missingDeadlineReason(action);
   const tzText = timezoneChipText(action);
   const kind = kindLabel[action.kind];
 
@@ -76,7 +90,33 @@ export function ReviewHeader({ action, goals, busy, onGoal }: Props) {
           </div>
           <div>
             <dt>Deadline</dt>
-            <dd>{action.deadline ? <Chip>{action.deadline.relative}</Chip> : <Chip tone="missing">Missing</Chip>}</dd>
+            <dd className="rv-deadline">
+              {action.deadline ? (
+                <>
+                  <Chip>{action.deadline.relative}</Chip>
+                  {action.deadline.timeAssumed && (
+                    <span className="rv-deadline-note">
+                      The post gave {action.deadline.display ? "a date only" : "a date"}. End of day is assumed. Change the time in Details if it says otherwise
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Chip tone="missing">Missing</Chip>
+                  {reason && (
+                    <span className="rv-deadline-note">
+                      {reason.text}
+                      {reason.wall && (
+                        <>
+                          {" "}
+                          <button type="button" className="rv-deadline-use" disabled={busy} onClick={() => onDeadline(reason.wall as string)}>Use it anyway</button>
+                        </>
+                      )}
+                    </span>
+                  )}
+                </>
+              )}
+            </dd>
           </div>
         </dl>
 

@@ -231,9 +231,23 @@ function normalizeDeadline(d, { sources, settingsTz, nowMs }, warnings) {
     return null;
   }
 
+  // A date with no time still is a deadline. The user has until the end of that day, so 23:59 is used and
+  // flagged as assumed, so it is never shown as if the post had said it.
+  let timeAssumed = false;
   if (!wall) {
-    warn(warnings, "deadline_time_missing", "deadline", `The post gives a date (${date}) but no time. Set a time if you want a deadline.`, proposed);
-    return null;
+    if (!realDate(date)) {
+      warn(warnings, "deadline_invalid", "deadline", `The deadline date "${date}" is not a real date. Dropped.`, proposed);
+      return null;
+    }
+    wall = `${date}T23:59`;
+    timeAssumed = true;
+    warn(
+      warnings,
+      "deadline_time_assumed",
+      "deadline",
+      `The post gives a date (${date}) but no time. Using the end of that day (23:59). Change the time if the post says otherwise.`,
+      proposed,
+    );
   }
 
   let tzSource = null;
@@ -277,5 +291,5 @@ function normalizeDeadline(d, { sources, settingsTz, nowMs }, warnings) {
     warn(warnings, "deadline_year_assumed", "deadline", `The year is not written in the post. Assumed ${wall.slice(0, 4)}. Check it.`);
   }
 
-  return { wall, tz, tzSource, utc: resolved.ok ? resolved.utc : null, label, quote, yearAssumed };
+  return { wall, tz, tzSource, utc: resolved.ok ? resolved.utc : null, label, quote, yearAssumed, timeAssumed };
 }

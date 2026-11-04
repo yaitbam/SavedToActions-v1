@@ -89,6 +89,7 @@ test("deadline: wall time + IANA tz from the model, UTC computed by code with mo
     label: "Registration closes",
     quote: "jusqu'au 20 novembre 2026 à 18h00",
     yearAssumed: false,
+    timeAssumed: false,
   });
   assert.ok(!r.warnings.some((w) => w.field === "deadline"));
 });
@@ -133,11 +134,22 @@ test("deadline: no supporting text in the note or transcription means no deadlin
   assert.equal(norm(futureDeadline({ quote: null })).fields.deadline, null);
 });
 
-test("deadline: a date without a time is not turned into a time", () => {
+test("deadline: a date without a time runs to the end of that day and is flagged as assumed", () => {
   const r = norm(futureDeadline({ wall: null, date: "2026-11-20", quote: "20 novembre 2026" }));
-  assert.equal(r.fields.deadline, null);
-  const w = r.warnings.find((x) => x.code === "deadline_time_missing");
-  assert.match(w.message, /2026-11-20.*no time/);
+  assert.equal(r.fields.deadline.wall, "2026-11-20T23:59");
+  assert.equal(r.fields.deadline.timeAssumed, true);
+  assert.ok(r.fields.deadline.utc);
+  const w = r.warnings.find((x) => x.code === "deadline_time_assumed");
+  assert.match(w.message, /2026-11-20.*no time.*end of that day/);
+  // A deadline the post gave with a time is never marked assumed.
+  assert.equal(norm(futureDeadline({})).fields.deadline.timeAssumed, false);
+});
+
+test("deadline: a date only deadline still needs supporting text and a real date", () => {
+  assert.equal(norm(futureDeadline({ wall: null, date: "2026-11-20", quote: "closes soon" })).fields.deadline, null);
+  const bad = norm(futureDeadline({ wall: null, date: "2026-02-31", quote: "20 novembre 2026" }));
+  assert.equal(bad.fields.deadline, null);
+  assert.ok(codes(bad).includes("deadline_invalid"));
 });
 
 test("deadline: garbage and impossible wall times are dropped", () => {

@@ -90,6 +90,7 @@ export function EditFields({ action, goals, busy, onPatch }: Props) {
           onBlur={saveDeadline}
           className={fieldClass}
         />
+        {action.deadline?.timeAssumed && <p className="mt-2 text-small text-muted">The post gave a date only. End of day (23:59) is assumed until you set a time.</p>}
       </Field>
     </div>
   );

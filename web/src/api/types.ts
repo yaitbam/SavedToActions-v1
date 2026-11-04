@@ -124,6 +124,8 @@ export interface Deadline {
   label: Nullable<string>;
   quote: Nullable<string>;
   yearAssumed: boolean;
+  // True when the post gave a date only. The time is the end of that day until the user sets one.
+  timeAssumed: boolean;
 }
 
 interface Sourced {
@@ -158,6 +160,7 @@ export interface Effort {
 export interface ActionWarning {
   code: string;
   field?: string;
+  message?: string;
   proposed?: unknown;
 }
 

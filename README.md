@@ -40,7 +40,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 - Google login and private workspaces are implemented. Google OAuth remains in Testing mode, so accounts must be added as test users. Public Google approval is a separate release step.
 - Hosting targets one server process with persistent disk. The shared demo, trust ledger and migration of legacy local data are not implemented.
 - Goal assignment is the weakest part of extraction. In the demo seed the model returned no goal for 2 of 14 posts, and results varied between runs. You can always pick the goal yourself.
-- Posts that give a date but no time get no deadline. The app does not guess a time.
+- Posts that give a date but no time get a deadline at the end of that day (23:59). It is always labeled as assumed on the save, and you can set the real time. A date is never turned into a different day.
 - The model takes about 7 s per screenshot, so the app shows loading states.
 - Completions are self reported. Progress numbers are computed from database records only.
 - The reasoning effort setting was compared on 5 screenshots, 4 of them synthetic. That is a small sample.

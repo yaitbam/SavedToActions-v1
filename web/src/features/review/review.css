@@ -56,3 +56,9 @@
  .rv-fields > div { grid-template-columns:minmax(0,1fr); gap:4px; }
  .rv-step { padding:18px; border-radius:20px; }
 }
+
+/* Deadline cell: the chip, then why it is assumed or missing. */
+.rv-fields dd.rv-deadline { flex-direction:column; flex-wrap:nowrap; align-items:flex-start; gap:6px; }
+.rv-deadline-note { max-width:520px; color:var(--color-muted); font-size:14px; font-weight:400; line-height:1.5; }
+.rv-deadline-use { padding:0; border:0; background:none; color:var(--color-brand); font:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+.rv-deadline-use:disabled { opacity:.5; cursor:not-allowed; }

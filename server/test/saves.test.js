@@ -356,3 +356,20 @@ test("edit validation: bad values are 400 with the field, unknown action is 404,
     assert.equal((await patch(base, action.id, { title: "x" })).status, 409);
   });
 });
+
+test("a post with a date and no time gets an end of day deadline that is labeled as assumed until the user sets a time", async () => {
+  await withServer({}, async ({ base, state }) => {
+    state.output = { ...flyerOutput, deadline: { wall: null, date: "2026-11-22", tz: null, label: "Deadline", quote: "jusqu'au 20 novembre 2026 à 18h00", year_assumed: false } };
+    const { action } = await (await upload(base)).json();
+    assert.equal(action.deadline.wall, "2026-11-22T23:59");
+    assert.equal(action.deadline.timeAssumed, true);
+    assert.equal(action.deadline.tz, "Africa/Casablanca");
+    assert.ok(action.warnings.some((w) => w.code === "deadline_time_assumed"));
+    const edited = await fetch(`${base}/api/actions/${action.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deadline: { wall: "2026-11-22T12:00" } }),
+    });
+    const after = (await edited.json()).deadline ?? (await (await fetch(`${base}/api/actions/${action.id}`)).json()).deadline;
+    assert.equal(after.wall, "2026-11-22T12:00");
+    assert.equal(after.timeAssumed, false);
+  });
+});
