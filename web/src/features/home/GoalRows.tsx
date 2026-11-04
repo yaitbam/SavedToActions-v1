@@ -1,18 +1,16 @@
+import { Link } from "react-router-dom";
 import type { Goal } from "../../api/types";
 import { goalDotClass } from "../../ui/GoalChip";
-import { Popover } from "../../ui/Popover";
 import { cx } from "../../ui/cx";
 import "./home.css";
 
-// Counts come from database records: saves with a done action, over saves imported.
+// A compact view of saves done over saves imported. The full breakdown and how we count live on Progress.
 export function GoalRows({ goals }: { goals: Goal[] }) {
   return (
     <section className="hm-card" aria-labelledby="goals-title">
       <div className="hm-head">
         <h2 id="goals-title">Goals</h2>
-        <Popover label="How we count">
-          Action rate is saves you marked done divided by saves imported, per goal. Completions are self reported
-        </Popover>
+        <Link to="/app/progress" className="hm-link">See full progress</Link>
       </div>
       <ul className="hm-goals">
         {goals.map((goal) => {
