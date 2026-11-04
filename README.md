@@ -6,6 +6,8 @@ Saved is not done. SavedToAction turns a screenshot of a post you saved into pro
 
 Repository cleaned of third party assets before submission. Commit dates are original.
 
+Demo video: VIDEO_URL
+
 ## The problem
 
 You save a post because you mean to act on it: a hackathon deadline, a prompt to try, a course, a freelance tip. It sits in Saved. The deadline passes. Saving feels like progress, but nothing happens.
@@ -31,7 +33,7 @@ Every field shows where it came from. A deadline only exists if its supporting q
 
 Muse Spark Open is an open weights model. This project calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API. Baseten is the default.
 
-A second provider, the Meta Model API, is built behind `MODEL_PROVIDER=meta` (key in `META_API_KEY` or `MODEL_API_KEY`, model `muse-spark-1.3` by default). It is not the default and has not been run against the real API yet. `node scripts/meta-smoke.mjs` checks it (`--provider baseten` runs the same checks on Baseten). Meta rejects a forced tool choice, so the app asks for a tool call with `auto` and an instruction there. With Meta active, the app names the model it really uses and does not call it open weights.
+A second provider, the Meta Model API, is built behind `MODEL_PROVIDER=meta` (key in `META_API_KEY` or `MODEL_API_KEY`, model `muse-spark-1.3` by default). It is not the default. `node scripts/meta-smoke.mjs` checks it (add `--provider baseten` for the same checks on Baseten). On Meta, a forced tool choice returns HTTP 400 and `auto` works, so the app asks for a tool call with `auto` and an instruction there. The full smoke results are not recorded in this repository. With Meta active, the app names the model it really uses and does not call it open weights.
 
 - **Image input.** The screenshot is sent as a base64 data URL, downscaled to 1280 px on the longest edge. The original is kept for you.
 - **Extraction.** The model returns structured JSON: transcription, title, goal, kind, deadline as local wall time plus an IANA timezone, event dates, deliverables, exact prompts and links, an evidence quote, a suggested number of minutes, and what your note asked for (when, and how long). Code then validates it. Quotes must be found in the note or the transcription, the deadline's UTC time is computed by code from the wall time and the timezone, and an offset the model adds is ignored.
@@ -43,7 +45,7 @@ A second provider, the Meta Model API, is built behind `MODEL_PROVIDER=meta` (ke
 
 These were checked by running them. Details and numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
-- Server tests: 319 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
+- Server tests: 340 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
 - Browser checks: the crop editor was exercised with the mouse and keyboard and the uploaded image size was checked (`web/test/crop.cjs`).
 - Demo seed: 14 of 14 illustrative posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
 - Timezone: Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so all conversions use moment-timezone and the server refuses to start if its startup self test fails. When the model writes an offset, code ignores it and computes the time itself.
@@ -61,7 +63,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 - Minutes written in the note are used as the starting point, and the user still approves the time that shows them. The sharing target for phones (share a screenshot straight to the app) is not built.
 - Completions are self reported. Progress numbers are computed from database records only.
 - The reasoning effort setting was compared on 5 screenshots, 4 of them synthetic. That is a small sample.
-- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and the Meta Model API provider (its code and tests exist, but `scripts/meta-smoke.mjs` has not been run against the real API yet).
+- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and most of the Meta Model API provider (the smoke script found that a forced tool choice returns HTTP 400 and `auto` works, and its full results are not recorded here).
 - Outside tester results are not in yet. See the empty section in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 - Model suggested minutes have not been measured against what users confirm.
 - How often the note's "when" and "how long" are read correctly has not been measured yet.
@@ -92,14 +94,18 @@ Free accounts receive 20 credits per GMT day, and owner accounts receive 100. On
 
 ## Setup
 
-You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth **Web application** client.
+You need Node 22 or newer, a Baseten API key (or a Meta key, see below), and a Google Cloud OAuth **Web application** client. Setup takes 5 commands.
 
 1. From the repository root, install both applications:
    ```sh
    npm --prefix server install
    npm --prefix web install
    ```
-2. For a new checkout, copy `.env.example` to `.env`. Preserve an existing `.env`. Set `BASETEN_API_KEY` (or `MODEL_PROVIDER=meta` with `META_API_KEY`), `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Keep `AUTH_MODE=on` and `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback` for local development.
+2. Copy the example settings without overwriting an existing `.env`, then fill in the keys (table below):
+   ```sh
+   cp -n .env.example .env
+   ```
+   Keep `AUTH_MODE=on` and `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback` for local development.
 3. Enable Google Calendar API. In the OAuth client's **Authorized redirect URIs**, register `http://localhost:3000/auth/google/callback` exactly. Login and Calendar share this callback by default. If you set a different `GOOGLE_LOGIN_REDIRECT_URI`, register that exact URL too. Keep consent in Testing mode and add your Google account as a test user. Login requests `openid email profile`. Calendar connection separately requests `calendar.events` and `calendar.freebusy`.
 4. Start the backend in one terminal:
    ```sh
@@ -111,9 +117,24 @@ You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth **Web app
    ```
 6. Open **http://localhost:5173**, choose **Try it**, sign in, and confirm your details. Connect Calendar from Overview, which then asks you to confirm your timezone and choose your goals. Set your working hours in Settings. Use `localhost` consistently throughout the flow.
 
+Environment variables. Everything else is optional, and `.env.example` lists every variable with its default.
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `MODEL_PROVIDER` | Which model API to call: `baseten` or `meta` | `baseten` |
+| `BASETEN_API_KEY` | Key for Baseten, needed when the provider is `baseten` | none |
+| `META_API_KEY` (or `MODEL_API_KEY`) | Key for the Meta Model API, needed when the provider is `meta` | none |
+| `META_BASE_URL`, `META_MODEL` | Meta endpoint and model id | `https://api.meta.ai/v1`, `muse-spark-1.3` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth web client, required | none |
+| `GOOGLE_REDIRECT_URI` | Must match the Google console exactly | `http://localhost:3000/auth/google/callback` |
+| `AUTH_MODE` | `on`, or `off` for an isolated local legacy workspace only | `on` |
+| `PORT`, `FRONTEND_ORIGIN` | Server port and the web app origin | `3000`, `http://localhost:5173` |
+| `DATA_DIR` | Where accounts, workspaces and the dev token key are stored | `data` |
+| `OWNER_EMAIL`, `COOKIE_SECURE`, `TOKEN_ENC_KEY`, `FREE_DAILY_CREDITS` | Production and quota settings | see `.env.example` |
+
 Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data. The old seed/reset scripts target the legacy database selected by `DB_PATH`, not signed-in account workspaces. Stop the server before using them. They never remove events already written to Google Calendar.
 
-For HTTPS production, configure the public origin and callback URLs, set `COOKIE_SECURE=true`, and supply a secret `TOKEN_ENC_KEY` containing 64 hexadecimal characters. Keep the key and persistent data backed up outside Git. Local development creates a private token key when this variable is absent. See [account setup](docs/AUTH_SETUP.md) for configuration and current limits.
+For HTTPS production, configure the public origin and callback URLs, set `COOKIE_SECURE=true`, and supply a secret `TOKEN_ENC_KEY` containing 64 hexadecimal characters. Keep the key and persistent data backed up outside Git. Local development creates a private token key when this variable is absent. See the [server guide](server/README.md) for configuration and current limits.
 
 ## Checks and component guides
 
@@ -124,7 +145,7 @@ npm --prefix web run build
 
 Browser checks need the app running and Playwright installed. `web/test/crop.cjs` is the one to start with.
 
-[Server guide](server/README.md) covers storage, API behavior and scheduling. [Web guide](web/README.md) covers routes, session handling, development and browser checks. The [core API reference](server/docs/API.md) and [account setup](docs/AUTH_SETUP.md) provide further detail.
+[Server guide](server/README.md) covers storage, API behavior and scheduling. [Web guide](web/README.md) covers routes, session handling, development and browser checks. The [core API reference](server/docs/API.md) provides further detail.
 
 ## Built with
 
