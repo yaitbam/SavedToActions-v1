@@ -27,7 +27,9 @@ Every field shows where it came from. A deadline only exists if its supporting q
 
 ## How Muse Spark Open is used
 
-Muse Spark Open is an open weights model. This project calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API.
+Muse Spark Open is an open weights model. This project calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API. Baseten is the default.
+
+A second provider, the Meta Model API, is built behind `MODEL_PROVIDER=meta` (key in `META_API_KEY` or `MODEL_API_KEY`, model `muse-spark-1.3` by default). It is not the default and has not been run against the real API yet. `node scripts/meta-smoke.mjs` checks it. With Meta active, the app names the model it really uses and does not call it open weights.
 
 - **Image input.** The screenshot is sent as a base64 data URL, downscaled to 1280 px on the longest edge. The original is kept for you.
 - **Extraction.** The model returns structured JSON: transcription, title, goal, kind, deadline as local wall time plus an IANA timezone, event dates, deliverables, exact prompts and links, an evidence quote, a suggested number of minutes, and what your note asked for (when, and how long). Code then validates it. Quotes must be found in the note or the transcription, the deadline's UTC time is computed by code from the wall time and the timezone, and an offset the model adds is ignored.
@@ -57,7 +59,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 - Minutes written in the note are used as the starting point, and the user still approves the time that shows them. The sharing target for phones (share a screenshot straight to the app) is not built.
 - Completions are self reported. Progress numbers are computed from database records only.
 - The reasoning effort setting was compared on 5 screenshots, 4 of them synthetic. That is a small sample.
-- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and the Meta Model API, which this project does not use.
+- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and the Meta Model API provider (its code and tests exist, but `scripts/meta-smoke.mjs` has not been run against the real API yet).
 - Outside tester results are not in yet. See the empty section in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 - Model suggested minutes have not been measured against what users confirm.
 - How often the note's "when" and "how long" are read correctly has not been measured yet.
@@ -95,7 +97,7 @@ You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth **Web app
    npm --prefix server install
    npm --prefix web install
    ```
-2. For a new checkout, copy `.env.example` to `.env`. Preserve an existing `.env`. Set `BASETEN_API_KEY`, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Keep `AUTH_MODE=on` and `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback` for local development.
+2. For a new checkout, copy `.env.example` to `.env`. Preserve an existing `.env`. Set `BASETEN_API_KEY` (or `MODEL_PROVIDER=meta` with `META_API_KEY`), `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Keep `AUTH_MODE=on` and `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback` for local development.
 3. Enable Google Calendar API. In the OAuth client's **Authorized redirect URIs**, register `http://localhost:3000/auth/google/callback` exactly. Login and Calendar share this callback by default. If you set a different `GOOGLE_LOGIN_REDIRECT_URI`, register that exact URL too. Keep consent in Testing mode and add your Google account as a test user. Login requests `openid email profile`. Calendar connection separately requests `calendar.events` and `calendar.freebusy`.
 4. Start the backend in one terminal:
    ```sh

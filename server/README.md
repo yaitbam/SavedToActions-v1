@@ -65,17 +65,21 @@ Sign-out revokes the current app session. Disconnect Calendar in Settings to rem
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `BASETEN_API_KEY` | none, required for extraction and agent | Baseten key for Muse Spark Open |
+| `BASETEN_API_KEY` | none, required for extraction and agent when the provider is baseten | Baseten key for Muse Spark Open |
+| `META_API_KEY`, `MODEL_API_KEY` | none, required when the provider is meta | Meta Model API key. `META_API_KEY` wins if both are set |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | none, required | OAuth web client. Add each tester while consent is in Testing mode |
 | `GOOGLE_REDIRECT_URI` | `http://localhost:3000/auth/google/callback` | Must match the Google console exactly |
 | `PORT` | `3000` | Server port. Binds to 127.0.0.1 only |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Allowed CORS origin, and where the OAuth callback redirects |
 | `DB_PATH` | `server/data/savedtoaction.db` | Legacy local workspace and manual seed/reset scripts |
 | `SCREENSHOT_DIR` | `server/data/screenshots` | Legacy local screenshot directory |
-| `MODEL_PROVIDER` | `baseten` | Provider switch. Only baseten exists |
+| `MODEL_PROVIDER` | `baseten` | Provider switch: `baseten` or `meta` |
 | `BASETEN_BASE_URL` | `https://inference.baseten.co/v1` | OpenAI compatible endpoint |
 | `BASETEN_MODEL` | `meta-models/muse-spark-open-1026` | Model id |
 | `BASETEN_REASONING_EFFORT` | `low` | One of minimal, low, medium, high. `off` or `default` sends nothing |
+| `META_BASE_URL` | `https://api.meta.ai/v1` | Meta endpoint, OpenAI compatible. A trailing slash is removed |
+| `META_MODEL` | `muse-spark-1.3` | Meta model id. An id ending in contributor is refused, for either provider |
+| `META_REASONING_EFFORT` | `low` | Same values as Baseten. `off` or `none` sends nothing, `none` is never sent as a value |
 | `WATCHER` | on | `WATCHER=off` disables the background recheck |
 | `WATCHER_INTERVAL_MS` | `300000` | Watcher period, 5 minutes |
 | `AUTH_MODE` | `on` | Google login and per-account workspaces. `off` is local development only and is refused in production |
@@ -105,7 +109,7 @@ src/
     extract.js          Prompt, model call, JSON parsing, failure codes.
     normalize.js        Raw model JSON to trusted fields: badges, deadline rules, event dates, the note's intent, warnings.
     image.js            Downscale to 1280 px for the model call. Original is never touched.
-  model/provider.js     Provider switch (baseten). Chat with optional tools. Error codes.
+  model/provider.js     Provider switch (baseten, meta). Chat with optional tools. Error codes.
   google/
     auth.js             OAuth flow, token storage and refresh persistence, status.
     calendar.js         Calendar client: FreeBusy, events.list, insert, patch, get, delete. CalendarError codes. buildEventBody.
@@ -321,7 +325,7 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
 
 ## The model provider
 
-`model/provider.js`: Baseten, OpenAI compatible, `POST {base}/chat/completions`, Bearer key. Image input is a base64 data URL. Tool calling and image input are verified. JSON mode (`response_format`) is unverified and not used.
+`model/provider.js`: two providers behind `MODEL_PROVIDER`, Baseten (default) and Meta, one OpenAI compatible core. Both use `POST {base}/chat/completions` with a Bearer key. The facts below were verified on Baseten. Image input is a base64 data URL. Tool calling and image input are verified. JSON mode (`response_format`) is unverified and not used.
 
 - Muse Spark Open is a reasoning model. Give it `max_tokens` 8000 for extraction. A real flyer used about 3200 reasoning tokens by default, far above the 600 to 700 seen on text only.
 - `reasoning_effort` is accepted by Baseten and works. Default is now `low`. A bogus parameter also returns HTTP 200, so a 200 alone proves nothing. What proves it is the token and time drop.
@@ -335,7 +339,8 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
   The one miss in each config was the same transcription check on the same screenshot, so it is not caused by the setting. Small sample, synthetic posts are cleaner than real ones.
 - Downscaling to 1280 px cut prompt tokens by 34% on the flyer (3752 to 2492) and the upload from 2251 KB to 256 KB.
 - Calls take several seconds. The UI needs loading states.
-- The Meta Model API provider is deferred (credits pending).
+- The Meta Model API provider is built but unverified. Same request shape. If Meta answers HTTP 400 and the body mentions reasoning, the call is retried once without `reasoning_effort` and one line is logged, later calls skip it. The reasoning field is read as `reasoning_content` or `reasoning`. `scripts/meta-smoke.mjs` runs plain text, JSON with a verbatim quote, forced and auto tool calls, image input and the Casablanca probe against it, and prints every field that differs from Baseten. Until its results are checked, Baseten stays the default.
+- The UI takes the model name from `GET /auth/session` (`model`), so it follows the active provider.
 
 ## Tests
 
@@ -417,7 +422,7 @@ Other known limits:
 - Editing confirmed effort or the deadline after planning is allowed. Recheck then reports `effort_changed` or `after_deadline` as amber.
 - Not built yet: Muse suggesting a new goal when a screenshot fits none of the user's goals, extraction in the background with a quick Book, Later or Skip triage, and a phone share target. How often the note's when and how long are read correctly is not measured.
 - A new workspace starts in `America/New_York`. Someone who never confirms their timezone and works elsewhere gets blocks in Eastern time.
-- Deferred by scope: claim workflow, reading queue, alerts page, MCP server, Meta API provider, model commentary, background watcher UI.
+- Deferred by scope: claim workflow, reading queue, alerts page, MCP server, model commentary, background watcher UI.
 
 ## Design decisions and why
 
