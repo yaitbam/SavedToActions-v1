@@ -524,6 +524,42 @@ test("skip: leaves the calendar block unless asked to remove it, and removal is 
   });
 });
 
+test("unplan: needs approval, removes the event and reads it back, keeps the save open, and can be planned again", async () => {
+  await withApp({}, async ({ api, seed, cal, db }) => {
+    const id = seed();
+    // Not booked yet, nothing to remove.
+    assert.equal((await api.post(`/api/actions/${id}/unplan`, { approved: true })).json.error, "not_planned");
+    const first = (await api.approve(id, slot("13:00"))).json.block;
+
+    const refused = await api.post(`/api/actions/${id}/unplan`, {});
+    assert.equal(refused.json.error, "approval_required");
+    assert.equal(cal.raw(first.googleEventId).status, "confirmed");
+
+    // Google cannot confirm the delete: nothing changes, the block is still active.
+    cal.failNext("deleteEvent", new CalendarError("google_unavailable", "down"));
+    const failed = await api.post(`/api/actions/${id}/unplan`, { approved: true });
+    assert.equal(failed.json.error, "calendar_remove_failed");
+    assert.equal(db.prepare("SELECT status FROM actions WHERE id = ?").get(id).status, "planned");
+    assert.equal(getActiveBlock(db, id).cancelled_at, null);
+
+    const ok = await api.post(`/api/actions/${id}/unplan`, { approved: true });
+    assert.equal(ok.status, 200);
+    assert.deepEqual(ok.json.calendar, { hadBlock: true, removed: true });
+    assert.equal(ok.json.action.status, "open");
+    assert.equal(ok.json.action.block, null);
+    assert.equal(cal.raw(first.googleEventId).status, "cancelled");
+    const rows = listBlocks(db, id);
+    assert.ok(rows[0].cancelled_at && rows[0].event_deleted_at);
+    assert.equal(scheduledMinutes(rows), 0);
+
+    // Plan it again, even in the same slot: a new event, and only the new block counts.
+    const again = (await api.approve(id, slot("13:00"))).json.block;
+    assert.notEqual(again.googleEventId, first.googleEventId);
+    assert.equal(cal.raw(again.googleEventId).status, "confirmed");
+    assert.equal(scheduledMinutes(listBlocks(db, id)), 60);
+  });
+});
+
 test("ignore all-day events (on): the first search reads events, skips all-day ones, and approval does not count them as conflicts", async () => {
   await withApp({ ignoreAllDay: true }, async ({ api, seed, cal }) => {
     cal.addEvent({ id: "conf", summary: "Conference", start: "2026-11-02T00:00:00Z", end: "2026-11-04T00:00:00Z", allDay: true });

@@ -67,6 +67,10 @@ export function registerPlanningRoutes(app, { db, planning, recheck, agent, lock
 
   app.post("/api/actions/:id/done", async (req, res) => send(res, await planning.markDone({ actionId: id(req), approved: req.body?.approved })));
 
+  // Takes the booked block off the calendar and keeps the save open. Needs approval, and nothing changes unless
+  // Google confirms the event is gone.
+  app.post("/api/actions/:id/unplan", async (req, res) => send(res, await planning.unplan({ actionId: id(req), approved: req.body?.approved })));
+
   app.post("/api/actions/:id/skip", async (req, res) => {
     if(req.body?.removeFromCalendar===true && req.body?.approved!==true)return res.status(400).json({error:'approval_required'});
     return send(res, await planning.skip({ actionId: id(req), removeFromCalendar: req.body?.removeFromCalendar === true }));

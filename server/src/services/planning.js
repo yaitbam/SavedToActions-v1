@@ -566,6 +566,39 @@ export function createPlanningService({ db, calendar, clock = Date.now, appOrigi
       });
     },
 
+    /**
+     * Take a booked save off the calendar and put it back to open, so the user can plan it again later. The event is
+     * deleted and read back as gone first. If that cannot be confirmed nothing changes, so the block is never half removed.
+     */
+    unplan({ actionId, approved }) {
+      return guard(async () => {
+        if (approved !== true) return fail(400, "approval_required", { detail: "Send approved: true to remove this from your calendar." });
+        const row = getRow(actionId);
+        if (!row) return fail(404, "not_found");
+        if (row.status !== "planned") return fail(409, "not_planned", { detail: "Only a save that is on the calendar can be removed from it." });
+        const nowIso = toIso(clock());
+        const block = getActiveBlock(db, actionId);
+        let removed = false;
+        if (block) {
+          try {
+            removed = await removeEvent(block.google_event_id);
+          } catch (err) {
+            if (!(err instanceof CalendarError)) throw err;
+            return fail(calendarErrorStatus(err.code), "calendar_remove_failed", { detail: "Google Calendar did not confirm the removal. Nothing was changed." });
+          }
+          if (!removed) return fail(502, "calendar_remove_failed", { detail: "Google Calendar did not confirm the removal. Nothing was changed." });
+        }
+        db.transaction(() => {
+          if (block) {
+            markEventDeleted(db, block.id, nowIso);
+            cancelBlock(db, block.id, nowIso);
+          }
+          db.prepare("UPDATE actions SET status = 'open', updated_at = ? WHERE id = ?").run(nowIso, actionId);
+        })();
+        return { ok: true, ...summary(row), calendar: { hadBlock: Boolean(block), removed } };
+      });
+    },
+
     /** Skip. The calendar block is only removed if the user asks for it (removeFromCalendar: true). */
     skip({ actionId, removeFromCalendar = false }) {
       return guard(async () => {
