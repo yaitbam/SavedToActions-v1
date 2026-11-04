@@ -56,3 +56,23 @@ test('week route navigates by ?date in the settings timezone, rejects bad dates,
  assert.equal(reads.length,2,'bad dates never read the calendar');
  db.close();
 });
+
+test('saved=week means a deadline within 7 days of now, not a block or the calendar week',()=>{
+ const db=openDb(':memory:');saveSettings(db,{tz:'America/New_York',workStart:'09:00',workEnd:'21:00',ignoreAllDay:true});
+ const routes=new Map();registerCollectionRoutes({get:(path,fn)=>routes.set(path,fn)},{db,clock:()=>Date.parse('2026-11-04T15:00:00Z')});
+ const at='2026-11-04T12:00:00.000Z';
+ const add=(title,deadlineUtc)=>{
+  const saveId=Number(db.prepare('INSERT INTO saves (note,imported_at) VALUES (?,?)').run(title,at).lastInsertRowid);
+  const id=Number(db.prepare("INSERT INTO actions (save_id,kind,title,status,deadline_wall,deadline_tz,deadline_utc,created_at,updated_at) VALUES (?,'try',?,'open',?,'UTC',?,?,?)").run(saveId,title,deadlineUtc?.slice(0,16)??null,deadlineUtc,at,at).lastInsertRowid);
+  return id;
+ };
+ const far=add('Far deadline, block this week','2026-11-22T23:59:00.000Z');
+ add('Due in 3 days','2026-11-07T20:00:00.000Z');
+ add('Overdue','2026-11-03T20:00:00.000Z');
+ add('Just past 7 days','2026-11-11T15:00:00.000Z');
+ add('No deadline',null);
+ db.prepare("INSERT INTO blocks (action_id,google_event_id,idempotency_key,start_utc,end_utc,tz,created_at) VALUES (?,'e','k','2026-11-05T14:00:00Z','2026-11-05T14:30:00Z','UTC',?)").run(far,at);
+ let payload;routes.get('/api/actions')({query:{saved:'week'}},{json:v=>payload=v});
+ assert.deepEqual(payload.items.map(a=>a.title),['Due in 3 days']);
+ db.close();
+});

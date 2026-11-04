@@ -21,7 +21,7 @@ export function registerCollectionRoutes(app,{db,clock=Date.now}){
   const counts={all:items.length,risk:items.filter(risk).length,later:items.filter(a=>a.label==='someday').length};
   if(q.saved==='risk')items=items.filter(risk);
   if(q.saved==='later')items=items.filter(a=>a.label==='someday');
-  if(q.saved==='week'){const {tz}=getSettings(db);if(!tz)return res.status(409).json({error:'missing_timezone',detail:'Set your timezone before using This week.'});const start=moment.tz(clock(),tz).startOf('isoWeek').valueOf(),end=moment.tz(start,tz).add(1,'week').valueOf();items=items.filter(a=>[a.deadline?.utc,a.block?.startUtc].some(v=>v&&Date.parse(v)>=start&&Date.parse(v)<end))}
+  if(q.saved==='week'){const {tz}=getSettings(db);if(!tz)return res.status(409).json({error:'missing_timezone',detail:'Set your timezone before using This week.'});const start=clock(),end=moment.tz(start,tz).add(7,'days').valueOf();items=items.filter(a=>{const v=a.deadline?.utc&&Date.parse(a.deadline.utc);return v>=start&&v<end})}
   const sort=q.sort??'deadline_asc';if(!['deadline','deadline_asc','deadline_desc','created_desc'].includes(sort))invalid('invalid_sort','Use deadline_asc, deadline_desc or created_desc.');
   items.sort((a,b)=>sort==='created_desc'?b.createdAt.localeCompare(a.createdAt)||b.id-a.id:!a.deadline?.utc?(!b.deadline?.utc?b.id-a.id:1):!b.deadline?.utc?-1:(sort==='deadline_desc'?-1:1)*a.deadline.utc.localeCompare(b.deadline.utc)||b.id-a.id);
   res.json({...collectionPage(items,q),countsByView:counts});
