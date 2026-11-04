@@ -16,4 +16,4 @@ Production uses one server process and persistent local disk. Horizontal scaling
 
 Google publishing/verification is a separate release step and has not been completed here. Calendar scope verification can require a public homepage, privacy policy and a scope justification. Check Google's current consent configuration before admitting public users.
 
-This phase implements login, sessions, private workspaces, CSRF, Calendar identity binding, encrypted tokens, usage limits and safe UI error handling. The shared demo, trust-ledger API, account deletion and owner-data migration remain separate work. No real Google sign-in or Calendar writes were performed by the automated auth tests.
+This phase implements login, sessions, private workspaces, CSRF, Calendar identity binding, encrypted tokens, usage limits, account deletion and safe UI error handling. The shared demo, trust-ledger API and owner-data migration remain separate work. No real Google sign-in or Calendar writes were performed by the automated auth tests.

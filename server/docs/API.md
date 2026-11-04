@@ -27,6 +27,7 @@ Version 1. This describes the implemented backend, replacing the earlier fronten
 | POST | /auth/disconnect | Clears local Google credentials, keeps Google events |
 | GET | /api/settings | workStart, workEnd, tz, ignoreAllDay |
 | PUT | /api/settings | Partial settings edit, returns settings. Explicit tz:null clears timezone |
+| GET | /api/timezones | `{ zones: [{ id, offset }] }`, canonical IANA names plus UTC, offset at the current time from moment-timezone, sorted by offset. Aliases stay valid in PUT /api/settings but are not listed |
 | GET | /api/goals | Three editable preset goals with database metrics |
 | PUT | /api/goals/:id | Body {name}, returns {id,name} |
 | GET | /api/goals/:id | Goal, linked actions, totals, weekly series, definitions |
@@ -95,6 +96,7 @@ Do not set a multipart Content-Type manually. The browser supplies its boundary.
 | GET | /api/actions/:id/checks?limit= | {checks}, newest first |
 | POST | /api/actions/:id/done | {action}, completion is self reported |
 | POST | /api/actions/:id/skip | Optional {removeFromCalendar}; true also requires approved:true. Returns {action,calendar}. Web client sends false |
+| DELETE | /api/saves/:id | Permanent. Needs {approved:true}, else 400 approval_required. {removeFromCalendar:true} first deletes the active calendar events and reads each back as gone. If one cannot be confirmed nothing is deleted (502, nothing local changes, retry is safe). Without it events stay on the calendar. 409 extraction_in_progress while the model runs. Returns {deleted,calendar:{blocks,removed,kept}} |
 | POST | /api/actions/:id/undo | Latest unchanged done/skip transition → {action,calendarUnchanged:true} |
 
 PATCH fields: title, goalId, kind, label, deliverables, verbatimItems, eventDates, evidenceQuote, deadline and confirmedEffortMin. Deadline is null or {wall,tz?,label?}. Model effort is read-only. Edited field badges prioritize Edited by you while preserving underlying text-match flags.
@@ -128,6 +130,7 @@ Actions include doneAtDisplay. Block read-back includes atDisplay and a separate
 | POST | /api/export | {download_url:'/api/export'} |
 | GET | /api/export | JSON attachment containing structured user records |
 | DELETE | /api/me/data | Requires {approved:true,confirmation:'DELETE MY DATA'} |
+| DELETE | /api/me | Account mode only. Requires {approved:true,confirmation:'DELETE MY ACCOUNT'} and the CSRF token. Revokes the Google grant best effort, removes the workspace folder, the account row and all sessions. Returns {deleted,google_revoked,calendarUnchanged}, google_revoked is null when no grant existed. 409 operations_in_progress while work is running. Existing Calendar events are kept |
 
 Export excludes Google credentials, API keys and image binaries. Local deletion is blocked during extraction/action operations. It removes local screenshot files and user records, clears local Google credentials, and recreates empty defaults. Existing Google events are kept. This operation is tested only against isolated test data, never the live workspace.
 

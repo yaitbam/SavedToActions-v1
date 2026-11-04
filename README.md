@@ -29,7 +29,7 @@ Muse Spark Open is an open weights model. This project calls `meta-models/muse-s
 
 These were checked by running them. Details and numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
-- Server tests: 276 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
+- Server tests: 280 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
 - Demo seed: 14 of 14 illustrative posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
 - Timezone: Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so all conversions use moment-timezone and the server refuses to start if its startup self test fails. When the model writes an offset, code ignores it and computes the time itself.
 - Google Calendar: the full flow of propose, approve, read back, recheck, conflict, move and cleanup passed 8 of 8 steps on a real calendar (recorded in `server/README.md`).
@@ -38,7 +38,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 ## Honest limits
 
 - Google login and private workspaces are implemented. Google OAuth remains in Testing mode, so accounts must be added as test users. Public Google approval is a separate release step.
-- Hosting targets one server process with persistent disk. The shared demo, trust ledger, account deletion and migration of legacy local data are not implemented.
+- Hosting targets one server process with persistent disk. The shared demo, trust ledger and migration of legacy local data are not implemented.
 - Goal assignment is the weakest part of extraction. In the demo seed the model returned no goal for 2 of 14 posts, and results varied between runs. You can always pick the goal yourself.
 - Posts that give a date but no time get no deadline. The app does not guess a time.
 - The model takes about 7 s per screenshot, so the app shows loading states.
@@ -64,7 +64,7 @@ The 14 images in `fixtures/demo/` are original illustrative posts. Every account
 
 Sign in with Google, confirm your name and verified email, then connect Google Calendar using the same Google account. You can upload and review saves before connecting Calendar. Scheduling also needs your timezone and working hours.
 
-Each account has its own workspace database, screenshots, settings and Calendar credentials. Sessions use HttpOnly cookies and expire after seven days. Calendar tokens are encrypted on the server. Sign-out ends the app session. Disconnecting Calendar leaves your app login active.
+Each account has its own workspace database, screenshots, settings and Calendar credentials. Sessions use HttpOnly cookies and expire after seven days. Calendar tokens are encrypted on the server. Sign-out ends the app session. Disconnecting Calendar leaves your app login active. You can delete your account and data in Settings after typing a confirmation. That asks Google to revoke Calendar access, removes your workspace and sessions, and keeps events already on your Calendar.
 
 Free accounts receive 20 credits per GMT day, and owner accounts receive 100. One extraction or agent-planning operation consumes one credit when a model response succeeds. Failed model requests refund their reservation. A process crash during a pending request may leave the reserved credit charged. There are no payments or paid plans.
 
@@ -87,7 +87,7 @@ You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth **Web app
    ```sh
    npm --prefix web run dev
    ```
-6. Open **http://localhost:5173**, choose **Try it**, sign in, and confirm your details. Connect Calendar in Settings and set your timezone and working hours. Use `localhost` consistently throughout the flow.
+6. Open **http://localhost:5173**, choose **Try it**, sign in, and confirm your details. Connect Calendar in Settings and choose your timezone from the list, then set your working hours. Use `localhost` consistently throughout the flow.
 
 Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data. The old seed/reset scripts target the legacy database selected by `DB_PATH`, not signed-in account workspaces. Stop the server before using them. They never remove events already written to Google Calendar.
 

@@ -59,7 +59,7 @@ Account mode stores the central database in `../data/central.sqlite` and each wo
 
 For a public read-only health check, use `curl http://localhost:3000/ready`. Resource routes require a signed-in browser session and a complete profile. Writes additionally require the session's `X-CSRF-Token` and the configured Origin. The old `npm run smoke` script assumes the legacy API and is intended for an isolated `AUTH_MODE=off` development server.
 
-Sign-out revokes the current app session. Disconnect Calendar in Settings to remove only that workspace's stored Calendar tokens. Neither operation deletes existing Calendar events. Full account deletion is not implemented.
+Sign-out revokes the current app session. Disconnect Calendar in Settings to remove only that workspace's stored Calendar tokens. Neither operation deletes existing Calendar events. `DELETE /api/me` with `{approved:true,confirmation:"DELETE MY ACCOUNT"}` asks Google to revoke the Calendar grant, then removes that account's workspace folder, its account row and every session. Existing Calendar events are kept.
 
 ## Environment variables
 
@@ -177,6 +177,7 @@ Account endpoints: `GET /auth/session`, `GET /auth/login/google`, `PATCH /api/me
 | Route | Notes |
 |---|---|
 | `GET /health` | Account mode: service and timezone status. Legacy mode also returns workspace schema and Google status |
+| `GET /api/timezones` | `{ zones: [{ id, offset }] }`. Canonical IANA names plus UTC with the current offset, computed by moment-timezone. Settings uses it for the timezone list. Aliases such as `US/Eastern` are not listed but stay valid in `PUT /api/settings` |
 | `GET /api/settings`, `PUT /api/settings` | `workStart`, `workEnd` (HH:mm, end may be 24:00), `tz` (IANA), `ignoreAllDay` (boolean). Partial updates. `tz: null` clears the timezone |
 | `GET /api/goals` | each goal is `{ id, name, metrics }`. `metrics` has `importedSaves`, `demoSaves`, `planned`, `markedDone`, `savesWithDoneAction`, `deadlinePassedWithoutCompletion`, `actionRate` (null with no saves), `timeScheduledMin`. Definitions are in `src/stats.js` and returned as `metric_definitions` by `/api/home` |
 | `PUT /api/goals/:id` | rename a goal `{name}` |
@@ -325,7 +326,7 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
 
 ## Tests
 
-`npm test` runs `node --test "test/*.test.js"`. 276 tests, using local HTTP where needed, with no external Google or model calls. They use:
+`npm test` runs `node --test "test/*.test.js"`. 280 tests, using local HTTP where needed, with no external Google or model calls. They use:
 
 - `test/fakeCalendar.js`: an in memory calendar with Google's behavior where it matters (unique ids with 409, deleted events stay readable as cancelled, events.list hides cancelled, FreeBusy merges, offsets in returned times, all-day events). `sim` switches on failures: wrong offset, shifted instants, changed timezone, stripped tags.
 - A fixed clock (Mon 2 Nov 2026 12:00 UTC in most files) injected into `createApp`.
@@ -365,7 +366,7 @@ Verified by running it (Nov 2):
 Assumed or not yet verified:
 
 - A full live two-account login, booking and isolation run. Automated auth tests use a fake Google provider.
-- Shared demo, trust-ledger API, full account deletion and legacy owner-data migration are not implemented.
+- Shared demo, trust-ledger API and legacy owner-data migration are not implemented.
 
 - The background watcher against real Google over real time (tested with fake timers only).
 - The agent in move mode against the real calendar (tested with the fake calendar).
