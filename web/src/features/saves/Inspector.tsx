@@ -59,10 +59,6 @@ export function Inspector({ save, goalName, onClose }: InspectorProps) {
           {action?.effort.confirmed ? "Confirmed by you. Only confirmed minutes are scheduled." : suggested !== null ? "This is a model estimate. Only the minutes you confirm in review are scheduled." : "No estimate. You choose the minutes in review."}
         </p>
       </section>
-      <section>
-        <h3>Transcription</h3>
-        {action?.transcription ? <pre className="drawer-transcript">{action.transcription}</pre> : <p className="drawer-muted">Missing</p>}
-      </section>
       <footer className="drawer-foot">
         <Link to={`/app/saves/${save.saveId}`} className="drawer-cta">Review &amp; schedule <span aria-hidden="true">→</span></Link>
         <p>You confirm minutes and approve the slot on the next screen.</p>

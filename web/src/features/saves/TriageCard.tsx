@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { SaveListItem } from "../../api/types";
 import { cx } from "../../ui/cx";
+import { shortDeadline } from "../../ui/DeadlineChip";
 import { GoalChip } from "../../ui/GoalChip";
 import { StatusChip } from "../../ui/StatusChip";
 import { saveStatus } from "./model";
@@ -12,7 +13,7 @@ const PREVIEW_MAX = 280;
 export function DeadlineBadge({ save }: { save: SaveListItem }) {
   const deadline = save.action?.deadline;
   if (!deadline) return <span className="deadline-badge none">Deadline: Missing</span>;
-  return <span className="deadline-badge" title={deadline.display ?? undefined}>Due {deadline.short ?? deadline.display}</span>;
+  return <span className="deadline-badge" title={deadline.display ?? undefined}>Due {shortDeadline(deadline)}</span>;
 }
 
 export function EffortPill({ save }: { save: SaveListItem }) {
