@@ -3,7 +3,7 @@ import { Button } from "../../ui/Button";
 import { InstagramIcon, LinkedInIcon, ScreenshotIcon, TikTokIcon, XIcon } from "../../ui/PlatformIcons";
 import { isSupportedImage, useNewSave } from "./NewSaveContext";
 
-// Illustrative posts from fixtures/demo. Every account in them is fictional.
+// Illustrative posts. Every account in them is fictional.
 const samples = [
   { file: "03.png", label: "A prompt to try" },
   { file: "04.png", label: "A template to use" },

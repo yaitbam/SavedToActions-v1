@@ -4,7 +4,7 @@
 
 Saved is not done. SavedToAction turns a screenshot of a post you saved into protected time on your calendar, and moves it when your week changes.
 
-Repository cleaned of third party assets before submission, apart from small platform logos (Instagram, X, LinkedIn, TikTok and Google) drawn in code only to name those platforms. Commit dates are original.
+Commit dates are original.
 
 Demo video: VIDEO_URL
 
@@ -47,7 +47,7 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 
 - Server tests: 340 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
 - Browser checks: the crop editor was exercised with the mouse and keyboard and the uploaded image size was checked (`web/test/crop.cjs`).
-- Demo seed: 14 of 14 illustrative posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
+- Demo seed, run on 14 invented posts before the seed script was removed from this repository: 14 of 14 posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
 - Timezone: Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so all conversions use moment-timezone and the server refuses to start if its startup self test fails. When the model writes an offset, code ignores it and computes the time itself.
 - Google Calendar: the full flow of propose, approve, read back, recheck, conflict, move and cleanup passed 8 of 8 steps on a real calendar (recorded in `server/README.md`).
 - Baseten: text, JSON extraction, tool calling and image input work with this model.
@@ -74,15 +74,11 @@ Task managers, read later apps and calendar assistants overlap with parts of thi
 
 ## No scraping
 
-SavedToAction never scrapes a platform, reads DMs, or posts or comments for you. The input is only screenshots, notes and pasted text that you provide. A post link you add is kept as a reference and opened only by you. The app never fetches it and never sends it to the model.
+SavedToAction never scrapes a platform, reads DMs, or posts or comments for you. The input is only screenshots, notes and pasted text that you provide. A post link you add is kept as a reference and opened only by you. The app never fetches it and never sends it to the model. No financial, medical or political advice is given.
 
 ## The note is not a prompt
 
 The note is limited to 160 characters and read for two things only: when to do it and how long it takes. Each must quote words that are really in the note. Anything else in it is ignored, so it cannot be used to ask the model for something else, and the cost of a save stays the same.
-
-## Demo posts are fictional
-
-The 14 images in `fixtures/demo/` are original illustrative posts. Every account, event, venue, grant and organization in them is invented. They are imported as "Imported demo data" and are never presented as real saves. No financial, medical or political advice is given.
 
 ## Accounts and privacy
 
@@ -132,7 +128,7 @@ Environment variables. Everything else is optional, and `.env.example` lists eve
 | `DATA_DIR` | Where accounts, workspaces and the dev token key are stored | `data` |
 | `OWNER_EMAIL`, `COOKIE_SECURE`, `TOKEN_ENC_KEY`, `FREE_DAILY_CREDITS` | Production and quota settings | see `.env.example` |
 
-Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data. The old seed/reset scripts target the legacy database selected by `DB_PATH`, not signed-in account workspaces. Stop the server before using them. They never remove events already written to Google Calendar.
+Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data.
 
 For HTTPS production, configure the public origin and callback URLs, set `COOKIE_SECURE=true`, and supply a secret `TOKEN_ENC_KEY` containing 64 hexadecimal characters. Keep the key and persistent data backed up outside Git. Local development creates a private token key when this variable is absent. See the [server guide](server/README.md) for configuration and current limits.
 

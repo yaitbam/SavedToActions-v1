@@ -71,7 +71,7 @@ Sign-out revokes the current app session. Disconnect Calendar in Settings to rem
 | `GOOGLE_REDIRECT_URI` | `http://localhost:3000/auth/google/callback` | Must match the Google console exactly |
 | `PORT` | `3000` | Server port. Binds to 127.0.0.1 only |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Allowed CORS origin, and where the OAuth callback redirects |
-| `DB_PATH` | `server/data/savedtoaction.db` | Legacy local workspace and manual seed/reset scripts |
+| `DB_PATH` | `server/data/savedtoaction.db` | Legacy local workspace, used only with `AUTH_MODE=off` |
 | `SCREENSHOT_DIR` | `server/data/screenshots` | Legacy local screenshot directory |
 | `MODEL_PROVIDER` | `baseten` | Provider switch: `baseten` or `meta` |
 | `BASETEN_BASE_URL` | `https://inference.baseten.co/v1` | OpenAI compatible endpoint |
@@ -411,7 +411,6 @@ Build order from the project brief, with status:
 Current API status and remaining product limits:
 
 - GET /api/actions, GET /api/saves, Home, goal metrics and workspace reads are implemented. The current complete route list is in [API.md](docs/API.md).
-- `scripts/seed-demo.mjs` and `scripts/demo-reset.mjs` manage the legacy workspace selected by `DB_PATH`. They do not populate signed-in accounts or provide a shared read-only demo.
 - Confirmed whole-workspace deletion and deleting a single save (with an option to remove its calendar block) are implemented.
 - Open actions have no fabricated availability state. Request a proposal to evaluate a slot. Recheck covers approved blocks.
 

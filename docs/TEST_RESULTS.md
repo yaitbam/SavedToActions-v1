@@ -15,7 +15,7 @@ The suite uses an in-memory database, a fake calendar and a scripted fake model.
 
 ## Demo seed
 
-`node scripts/seed-demo.mjs` sends the 14 illustrative posts in `fixtures/demo/` (01 to 14) through the real pipeline, with the real Muse Spark Open call. Each save is marked as demo data. The script then compares goal and deadline per file with `fixtures/demo/manifest.json`. The manifest is used only for checking, never as model input.
+A seed script, since removed from this repository, sent 14 invented posts (01 to 14) through the real pipeline, with the real Muse Spark Open call. Each save is marked as demo data. The script then compared goal and deadline per file with a manifest of expected values. The manifest was used only for checking, never as model input.
 
 | Metric | Result |
 |---|---|
