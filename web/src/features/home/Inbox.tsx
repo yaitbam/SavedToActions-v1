@@ -37,7 +37,8 @@ export function Inbox({ saves, total, goalName }: Props) {
                     title={action.title}
                     goalId={action.goalId}
                     goalName={goalName(action.goalId)}
-                    status={action.effort.confirmed ? null : "needs_input"}
+                    status={null}
+                    isDemo={save.isDemo}
                   />
                 </div>
               </Link>

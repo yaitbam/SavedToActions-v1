@@ -48,10 +48,6 @@ export function pickNextUp(home: Home): HomeSummary | null {
   return pool[0] ?? null;
 }
 
-export function hasDemoData(home: Home): boolean {
-  return home.recent_saves.some((save) => save.isDemo) || !!home.next_up?.isDemo;
-}
-
 export interface WeekBlock {
   chip: WeekChip;
   goalId: number | null;

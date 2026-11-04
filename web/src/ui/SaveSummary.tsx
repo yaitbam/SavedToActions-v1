@@ -9,12 +9,13 @@ interface SaveSummaryProps {
   goalName?: string | null;
   status: StatusKey | null;
   lines?: 1 | 2;
+  isDemo?: boolean;
 }
 
 const MAX_CHIPS = 2;
 
 // Title and chips of a saved post. At most 2 chips, and the word Missing appears once.
-export function SaveSummary({ title, goalId, goalName, status, lines = 2 }: SaveSummaryProps) {
+export function SaveSummary({ title, goalId, goalName, status, lines = 2, isDemo = false }: SaveSummaryProps) {
   const titleMissing = !title;
   const goalSet = goalId !== null && !!goalName;
   const chips = [
@@ -35,6 +36,7 @@ export function SaveSummary({ title, goalId, goalName, status, lines = 2 }: Save
     <div className="space-y-2">
       {title && <p className={cx("font-semibold", lines === 1 ? "line-clamp-1" : "line-clamp-2")}>{title}</p>}
       {chips.length > 0 && <div className="flex flex-wrap gap-2">{chips}</div>}
+      {isDemo && <p className="text-small text-muted">Imported demo data</p>}
     </div>
   );
 }

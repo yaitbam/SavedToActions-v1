@@ -27,6 +27,7 @@ export function NextUp({ action, goalName }: Props) {
               goalId={action.goalId}
               goalName={goalName}
               status={summaryStatus(action)}
+              isDemo={action.isDemo}
             />
           </div>
         </Card>

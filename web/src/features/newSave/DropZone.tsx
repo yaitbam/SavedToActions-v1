@@ -16,7 +16,7 @@ export function DropZone() {
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-card border-2 border-dashed border-line bg-surface px-5 py-3">
       <p className="min-w-0">
         <span className="font-semibold">Drop or paste a screenshot of a post you saved</span>
-        <span className="block text-small text-muted md:ml-3 md:inline">You review it before anything is booked</span>
+        <span className="mt-1 block text-small text-muted md:ml-3 md:mt-0 md:inline">You review it before anything is booked</span>
       </p>
       <Button variant="secondary" onClick={() => input.current?.click()}>
         Choose a screenshot

@@ -3,13 +3,12 @@ import { AttentionCard } from "../features/home/AttentionCard";
 import { ConnectCard } from "../features/home/ConnectCard";
 import { GoalRows } from "../features/home/GoalRows";
 import { Inbox } from "../features/home/Inbox";
-import { hasDemoData, inboxSaves, pickNextUp } from "../features/home/model";
+import { inboxSaves, pickNextUp } from "../features/home/model";
 import { NextUp } from "../features/home/NextUp";
 import { useHomeData } from "../features/home/useHomeData";
 import { WeekStrip } from "../features/home/WeekStrip";
 import { DropZone } from "../features/newSave/DropZone";
 import { Button } from "../ui/Button";
-import { Chip } from "../ui/Chip";
 import { ErrorState } from "../ui/ErrorState";
 import { Skeleton } from "../ui/Skeleton";
 
@@ -35,7 +34,6 @@ export function Home() {
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
               <span>{data.now.display}</span>
               {data.now.tz && <span>{data.now.tz}</span>}
-              {hasDemoData(data) && <Chip>Imported demo data</Chip>}
             </p>
           )}
         </div>

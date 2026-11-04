@@ -73,6 +73,7 @@ export function AttentionCard({ item, onChanged }: Props) {
         ) : (
           <Chip tone="missing">Missing</Chip>
         )}
+        {summary.isDemo && <p className="text-small text-muted">Imported demo data</p>}
         {note}
         <div className="flex flex-wrap items-center gap-3">
           {alternative ? (

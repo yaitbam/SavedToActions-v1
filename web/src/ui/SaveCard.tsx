@@ -12,16 +12,17 @@ interface SaveCardProps {
   goalName?: string | null;
   status: StatusKey | null;
   when?: string | null;
+  isDemo?: boolean;
 }
 
 // Every save card is a note card: ink border and hard offset shadow around the real screenshot.
-export function SaveCard({ saveId, screenshotUrl, title, goalId, goalName, status, when }: SaveCardProps) {
+export function SaveCard({ saveId, screenshotUrl, title, goalId, goalName, status, when, isDemo }: SaveCardProps) {
   return (
     <Link to={`/app/saves/${saveId}`} className="block rounded-card">
       <Card note pad="p-3" className="space-y-3 transition-transform duration-150 hover:-translate-y-0.5">
         <Thumb src={screenshotUrl} alt={`Screenshot of ${title ?? "a saved post"}`} />
         <div className="space-y-2 px-1 pb-1">
-          <SaveSummary title={title} goalId={goalId} goalName={goalName} status={status} />
+          <SaveSummary title={title} goalId={goalId} goalName={goalName} status={status} isDemo={isDemo} />
           {when && <p className="text-small text-muted">{when}</p>}
         </div>
       </Card>
