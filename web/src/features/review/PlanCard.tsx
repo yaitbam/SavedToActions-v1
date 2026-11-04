@@ -18,6 +18,8 @@ interface Props {
   proposal: Proposal | null;
   // Whether the time the note asked for was met. Only present on a first proposal.
   intent: { applied: boolean; label: string | null; reason?: string } | null;
+  // Set after "Ask Muse for a different time". It replaces what the note asked for.
+  request: { text: string; reason: string } | null;
   busy: string | null;
   needsCalendar: boolean;
   onMinutes: (minutes: number | null) => void;
@@ -36,7 +38,7 @@ const reasonText: Record<string, string> = {
 };
 
 // The whole decision on one card: a time, the minutes, and one button. Everything else stays out of the way.
-export function PlanCard({ action, goals, minutes, proposal, intent, busy, needsCalendar, onMinutes, onBook, onAnother, onFind, onAsk, onGoal, onSkip }: Props) {
+export function PlanCard({ action, goals, minutes, proposal, intent, request, busy, needsCalendar, onMinutes, onBook, onAnother, onFind, onAsk, onGoal, onSkip }: Props) {
   const [ask, setAsk] = useState("");
   const working = busy !== null;
   const finding = busy === "propose" || busy === "plan";
@@ -62,7 +64,11 @@ export function PlanCard({ action, goals, minutes, proposal, intent, busy, needs
     <section className="pc is-ready" aria-labelledby="pc-title" aria-busy={finding}>
       <header className="pc-head">
         <p className="pc-eyebrow">{proposal ? "Muse suggests" : "Plan it"}</p>
-        {noteChips.length > 0 && (
+        {request ? (
+          <span className="pc-note" title={request.text}>
+            <i aria-hidden="true" />From your request: {request.text}
+          </span>
+        ) : noteChips.length > 0 && (
           <span className="pc-note" title={fromNote?.when?.quote ?? undefined}>
             <i aria-hidden="true" />From your note: {noteChips.join(" · ")}
           </span>
@@ -77,7 +83,8 @@ export function PlanCard({ action, goals, minutes, proposal, intent, busy, needs
       ) : proposal ? (
         <>
           <h2 id="pc-title" className="pc-time">{proposal.slot.rangeRelative}</h2>
-          {intent && (
+          {request && <p className="pc-intent pc-reason is-met" role="status" title={request.reason}>{request.reason}</p>}
+          {!request && intent && (
             <p className={cx("pc-intent", intent.applied ? "is-met" : "is-unmet")} role="status">
               {intent.applied
                 ? `Matches your note: ${fromNote?.when?.quote ? `“${fromNote.when.quote}”` : intent.label}`

@@ -43,6 +43,8 @@ export function useReview(saveId: number) {
   const [moved, setMoved] = useState(false);
   // Whether the time the note asked for was met, from the first proposal. Cleared once the user asks for another.
   const [intent, setIntent] = useState<ProposeIntent | null>(null);
+  // What the user asked Muse for in their own words, and why the time on screen answers it. It replaces the note chip.
+  const [request, setRequest] = useState<{ text: string; reason: string } | null>(null);
   const [needsCalendar, setNeedsCalendar] = useState(false);
   // The minutes a time was last looked up for, so a new proposal only follows a real change.
   const [lookedUp, setLookedUp] = useState<{ id: number; minutes: number } | null>(null);
@@ -64,6 +66,7 @@ export function useReview(saveId: number) {
     setKept(false);
     setMoved(false);
     setIntent(null);
+    setRequest(null);
     setNeedsCalendar(false);
     setLookedUp(null);
   }, [saveId]);
@@ -102,6 +105,7 @@ export function useReview(saveId: number) {
 
   const applyPropose = (result: ProposeResult) => {
     setIntent(result.intent ?? null);
+    setRequest(null);
     if (result.found) setProposal({ mode: result.mode, slot: result.slot, latest: result.latestFeasibleStart });
     else setNoSlot(true);
   };
@@ -127,10 +131,16 @@ export function useReview(saveId: number) {
     }
   }
 
-  const applyAgent = (result: AgentPlan) => {
+  const applyAgent = (result: AgentPlan, text: string) => {
     const slot = result.proposal ?? result.fallback;
-    if (slot) setProposal({ mode: result.mode, slot, latest: null });
-    else setNoSlot(true);
+    if (slot) {
+      setProposal({ mode: result.mode, slot, latest: null });
+      // The reason is Muse's own words for a slot that code has already checked. Without a valid slot there is only the fallback.
+      const reason = result.proposal && typeof result.rationale === "string" && result.rationale.trim()
+        ? result.rationale.trim()
+        : "Muse could not place that request, so this is the earliest free time.";
+      setRequest({ text, reason });
+    } else setNoSlot(true);
   };
 
   const settle = (next: Action) => {
@@ -139,6 +149,7 @@ export function useReview(saveId: number) {
     setNoSlot(false);
     setUnlocked(false);
     setKept(false);
+    setRequest(null);
   };
 
   // Asks Muse for a time that follows a sentence, such as "after 6pm". Uses the minutes on screen and one credit.
@@ -151,7 +162,7 @@ export function useReview(saveId: number) {
       setProposal(null);
       setKept(false);
       setIntent(null);
-      if (text) applyAgent(await agentPlan(confirmed.id, text));
+      if (text) applyAgent(await agentPlan(confirmed.id, text), text);
       else applyPropose(await proposeSlot(confirmed.id));
     });
   const plan = () => planWith(preference.trim());
@@ -219,6 +230,7 @@ export function useReview(saveId: number) {
     setProposal(null);
     setNoSlot(false);
     setIntent(null);
+    setRequest(null);
     setLookedUp(null);
   };
 
@@ -234,6 +246,7 @@ export function useReview(saveId: number) {
       const result = await proposeSlot(action.id, { effortMin: forMinutes, notBeforeUtc: after });
       if (result.found) {
         setIntent(null);
+        setRequest(null);
         setProposal({ mode: result.mode, slot: result.slot, latest: result.latestFeasibleStart });
       } else {
         alert.warning("Nothing later fits before the deadline. Try fewer minutes.", { title: "No other time" });
@@ -271,6 +284,7 @@ export function useReview(saveId: number) {
     busy,
     stage,
     intent,
+    request,
     needsCalendar,
     findNow: () => (minutes ? findTime(minutes) : Promise.resolve()),
     anotherTime,

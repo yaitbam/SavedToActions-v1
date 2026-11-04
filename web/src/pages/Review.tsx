@@ -85,6 +85,7 @@ export function Review() {
                   minutes={r.minutes}
                   proposal={r.proposal}
                   intent={r.intent}
+                  request={r.request}
                   busy={r.busy}
                   needsCalendar={r.needsCalendar}
                   onMinutes={r.changeMinutes}
