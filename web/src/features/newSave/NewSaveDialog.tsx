@@ -2,13 +2,14 @@ import { ExtractionTelemetry } from "../../ui/ExtractionTelemetry";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Credits } from "../auth/Credits";
+import { CloseIcon, CropIcon, ImageIcon, LinkIcon, SwapIcon } from "./icons";
 import { ApiError } from "../../api/client";
 import { errorText } from "../../api/errors";
 import { createSave, retryExtraction } from "../../api/saves";
 import { Button } from "../../ui/Button";
 import { InlineAlert } from "../../ui/InlineAlert";
-import { fieldClass } from "../../ui/cx";
-import { NOTE_CHIPS, NOTE_MAX, addToNote, pullLinkOut } from "./note";
+import { HOW_LONG_CHIPS, NOTE_MAX, WHEN_CHIPS, addToNote, pullLinkOut } from "./note";
+import "./dialog.css";
 import { CropEditor } from "./CropEditor";
 import { isSupportedImage } from "./NewSaveContext";
 
@@ -102,6 +103,7 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   }
 
   const working = phase === "working";
+  const pasteKey = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘V" : "Ctrl+V";
 
   // People paste the post address into the note. It belongs in its own field, away from the model.
   function onNote(value: string) {
@@ -128,116 +130,124 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
         else if (cropping) { event.preventDefault(); setCropping(false); }
       }}
       onClick={(event) => event.target === dialog.current && !working && onClose()}
-      aria-label="New save"
-      className="m-auto w-[min(44rem,94vw)] rounded-card border border-line bg-surface p-6 shadow-hard backdrop:bg-ink/60"
+      aria-labelledby="ns-title"
+      className="ns-dialog"
     >
       {cropping && original ? (
-        <CropEditor file={original} onApply={(next) => finishCrop(next)} onCancel={() => setCropping(false)} />
+        <div className="ns-pad">
+          <CropEditor file={original} onApply={(next) => finishCrop(next)} onCancel={() => setCropping(false)} />
+        </div>
       ) : (
-      <div className="space-y-4">
-        <h2 className="text-title">New save</h2>
-        <Credits />
+        <div className="ns">
+          <header className="ns-head">
+            <h2 id="ns-title" className="ns-title">New save</h2>
+            <div className="ns-head-side">
+              <Credits compact />
+              <button type="button" className="ns-close" aria-label="Close" onClick={onClose} disabled={working}><CloseIcon /></button>
+            </div>
+          </header>
+          <p className="ns-sub">A screenshot and one line. Muse finds the time, you approve it.</p>
 
-        {preview ? (
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <img src={preview} alt="Your screenshot" className="h-48 w-40 shrink-0 rounded-thumb border border-line object-cover object-top" />
-            <div className="min-w-0 flex-1 space-y-3">
+          <input
+            ref={input}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(event) => choose(event.target.files?.[0])}
+          />
+
+          {!preview ? (
+            <button type="button" className="ns-drop" onClick={() => input.current?.click()}>
+              <span className="ns-drop-icon" aria-hidden="true"><ImageIcon /></span>
+              <b>Drop, paste or choose a screenshot</b>
+              <span>PNG, JPEG or WebP. On a computer you can paste with {pasteKey}.</span>
+            </button>
+          ) : (
+            <div className="ns-grid">
+              <figure className="ns-shot">
+                <div className="ns-frame">
+                  <img src={preview} alt="Your screenshot" />
+                  {cropped && <span className="ns-badge">Cropped</span>}
+                </div>
+                {!working && (
+                  <figcaption className="ns-shot-tools">
+                    {canCrop && (
+                      <button type="button" className="ns-tool" onClick={() => setCropping(true)}><CropIcon />{cropped ? "Crop again" : "Crop"}</button>
+                    )}
+                    {canCrop && cropped && <button type="button" className="ns-tool" onClick={() => finishCrop(null)}>Undo crop</button>}
+                    <button type="button" className="ns-tool" onClick={() => input.current?.click()}><SwapIcon />Change</button>
+                  </figcaption>
+                )}
+              </figure>
+
               {working ? (
                 <ExtractionTelemetry />
               ) : (
-                <>
-                  <label className="block space-y-1">
-                    <span className="text-small font-semibold">What should Muse do, and when?</span>
-                    <textarea
-                      value={note}
-                      onChange={(event) => onNote(event.target.value)}
-                      maxLength={NOTE_MAX}
-                      placeholder="For example: tonight, 30 min"
-                      rows={2}
-                      aria-describedby="note-hint"
-                      className={`${fieldClass} h-auto resize-none py-3`}
-                    />
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {NOTE_CHIPS.map((chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => setNote((current) => addToNote(current, chip))}
-                        className="inline-flex h-9 items-center rounded-full border border-line bg-surface px-3 text-small font-medium hover:border-ink"
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                    <span id="note-hint" className="ml-auto text-small text-muted">{note.length}/{NOTE_MAX}</span>
+                <div className="ns-form">
+                  <div className="ns-field">
+                    <label htmlFor="ns-note" className="ns-label">What should Muse do, and when?</label>
+                    <div className="ns-box">
+                      <textarea
+                        id="ns-note"
+                        value={note}
+                        onChange={(event) => onNote(event.target.value)}
+                        maxLength={NOTE_MAX}
+                        placeholder="For example: tonight, 30 min"
+                        rows={2}
+                      />
+                      <span className="ns-count" aria-live="off">{note.length}/{NOTE_MAX}</span>
+                    </div>
+                    <div className="ns-chips" role="group" aria-label="Quick phrases">
+                      <span className="ns-chips-label">When</span>
+                      {WHEN_CHIPS.map((chip) => (
+                        <button key={chip} type="button" className="ns-chip" onClick={() => setNote((current) => addToNote(current, chip))}>{chip}</button>
+                      ))}
+                    </div>
+                    <div className="ns-chips" role="group" aria-label="Quick durations">
+                      <span className="ns-chips-label">How long</span>
+                      {HOW_LONG_CHIPS.map((chip) => (
+                        <button key={chip} type="button" className="ns-chip" onClick={() => setNote((current) => addToNote(current, chip))}>{chip}</button>
+                      ))}
+                    </div>
                   </div>
-                  <label className="block space-y-1">
-                    <span className="text-small font-semibold">Link to the post <span className="font-normal text-muted">(optional)</span></span>
-                    <input
-                      type="url"
-                      inputMode="url"
-                      value={link}
-                      onChange={(event) => { setLink(event.target.value); setMovedLink(false); }}
-                      placeholder="Paste the post link from X, LinkedIn or Instagram"
-                      className={fieldClass}
-                    />
-                  </label>
-                  <p className="text-small text-muted">
-                    {movedLink ? "We moved the link out of your note. " : ""}
-                    Muse reads only when and how long. The link is kept so you can open the post later.
-                  </p>
-                </>
-              )}
-              {!working && (
-                <div className="flex flex-wrap items-center gap-1">
-                  {canCrop && (
-                    <Button variant="secondary" className="h-10 px-4" onClick={() => setCropping(true)}>
-                      {cropped ? "Crop again" : "Crop"}
-                    </Button>
-                  )}
-                  {canCrop && cropped && (
-                    <Button variant="text" onClick={() => finishCrop(null)}>
-                      Undo crop
-                    </Button>
-                  )}
-                  <Button variant="text" onClick={() => input.current?.click()}>
-                    Choose another
-                  </Button>
+
+                  <div className="ns-field">
+                    <label htmlFor="ns-link" className="ns-label">Link to the post <span>(optional)</span></label>
+                    <div className="ns-input">
+                      <LinkIcon />
+                      <input
+                        id="ns-link"
+                        type="url"
+                        inputMode="url"
+                        value={link}
+                        onChange={(event) => { setLink(event.target.value); setMovedLink(false); }}
+                        placeholder="Paste the link from X, LinkedIn or Instagram"
+                      />
+                    </div>
+                    <p className="ns-hint">
+                      {movedLink ? "We moved the link out of your note. " : ""}
+                      Kept so you can open the post later. Muse never reads it.
+                    </p>
+                  </div>
                 </div>
               )}
-              {!working && cropped && <p className="text-small text-muted">Cropped. Only the part you kept is uploaded.</p>}
             </div>
-          </div>
-        ) : (
-          <div className="flex w-full flex-col items-start gap-1 rounded-card border-2 border-dashed border-line p-6">
-            <span className="font-semibold">Drop or paste a screenshot of a post you saved</span>
-            <span className="text-small text-muted">You review it before anything is booked</span>
-          </div>
-        )}
-
-        <input
-          ref={input}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(event) => choose(event.target.files?.[0])}
-        />
-
-        {phase === "error" && <InlineAlert>{message}</InlineAlert>}
-
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="text" onClick={onClose} disabled={working}>
-            Cancel
-          </Button>
-          {!file && retrySaveId.current === null ? (
-            <Button onClick={() => input.current?.click()}>Choose a screenshot</Button>
-          ) : (
-            <Button onClick={extract} loading={working}>
-              {phase === "error" ? "Retry" : "Extract"}
-            </Button>
           )}
+
+          {phase === "error" && <InlineAlert>{message}</InlineAlert>}
+
+          <footer className="ns-foot">
+            <p className="ns-fine">Muse reads only when and how long. Nothing is booked until you approve a time.</p>
+            <div className="ns-actions">
+              <Button variant="text" onClick={onClose} disabled={working}>Cancel</Button>
+              {!file && retrySaveId.current === null ? (
+                <Button onClick={() => input.current?.click()}>Choose a screenshot</Button>
+              ) : (
+                <Button onClick={extract} loading={working}>{phase === "error" ? "Retry" : "Extract"}</Button>
+              )}
+            </div>
+          </footer>
         </div>
-      </div>
       )}
     </dialog>
   );

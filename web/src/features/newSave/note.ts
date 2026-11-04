@@ -2,7 +2,8 @@
 export const NOTE_MAX = 160;
 
 // Taps that add the usual words, so a note takes a second on a phone.
-export const NOTE_CHIPS = ["Tonight", "Tomorrow morning", "This weekend", "15 min", "30 min", "1 hour"] as const;
+export const WHEN_CHIPS = ["Tonight", "Tomorrow morning", "This weekend"] as const;
+export const HOW_LONG_CHIPS = ["15 min", "30 min", "1 hour"] as const;
 
 export function addToNote(note: string, phrase: string): string {
   const base = note.trim().replace(/[,\s]+$/, "");

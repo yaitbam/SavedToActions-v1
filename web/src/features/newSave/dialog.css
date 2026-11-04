@@ -1,0 +1,67 @@
+/* New save dialog: one calm sheet. A screenshot on the left, the two things Muse needs on the right. */
+.ns-dialog { margin:auto; padding:0; width:min(52rem,94vw); max-height:92vh; overflow:auto; border:1px solid var(--color-line); border-radius:28px; background:var(--color-surface); color:var(--color-ink); box-shadow:var(--shadow-lift); }
+.ns-dialog[open] { animation:ns-in .18s ease-out; }
+.ns-dialog::backdrop { background:rgb(15 23 42 / .55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+@keyframes ns-in { from { opacity:0; transform:translateY(10px) scale(.99); } to { opacity:1; transform:none; } }
+.ns, .ns-pad { padding:28px; }
+.ns { display:grid; gap:22px; }
+
+.ns-head { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.ns-title { margin:0; font:800 30px/1.1 var(--font-display); letter-spacing:-.04em; }
+.ns-sub { margin:-14px 0 0; color:var(--color-muted); font-size:15px; line-height:1.5; }
+.ns-head-side { display:flex; flex:none; align-items:center; gap:10px; }
+.ns-credits { padding:5px 12px; border:1px solid var(--color-line); border-radius:999px; background:var(--color-bg); color:var(--color-muted); font-size:14px; font-weight:600; white-space:nowrap; }
+.ns-credits.is-empty { border-color:color-mix(in srgb,var(--color-nofit) 35%,var(--color-line)); background:var(--color-nofit-bg); color:var(--color-nofit); }
+.ns-close { display:grid; place-items:center; width:40px; height:40px; border-radius:12px; color:var(--color-muted); transition:background-color .15s,color .15s; }
+.ns-close:hover:not(:disabled) { background:color-mix(in srgb,var(--color-ink) 7%,transparent); color:var(--color-ink); }
+.ns-close:disabled { opacity:.4; }
+
+.ns-drop { display:flex; flex-direction:column; align-items:center; gap:8px; width:100%; padding:46px 24px; border:2px dashed color-mix(in srgb,var(--color-brand) 35%,var(--color-line)); border-radius:22px; background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--color-brand) 8%,transparent),transparent 70%),var(--color-bg); text-align:center; transition:border-color .15s,background-color .15s; }
+.ns-drop:hover { border-color:var(--color-brand); background-color:var(--color-accent); }
+.ns-drop-icon { display:grid; place-items:center; width:62px; height:62px; margin-bottom:6px; border:1px solid var(--color-line); border-radius:18px; background:var(--color-surface); color:var(--color-brand); box-shadow:var(--shadow-card); }
+.ns-drop b { font:700 20px/1.2 var(--font-display); letter-spacing:-.02em; }
+.ns-drop > span:last-child { max-width:420px; color:var(--color-muted); font-size:15px; line-height:1.5; }
+
+.ns-grid { display:grid; grid-template-columns:210px minmax(0,1fr); gap:28px; align-items:start; }
+.ns-shot { display:grid; gap:10px; margin:0; }
+.ns-frame { position:relative; display:grid; place-items:center; height:310px; padding:8px; overflow:hidden; border:1px solid var(--color-line); border-radius:18px; background:var(--color-bg); }
+.ns-frame img { max-width:100%; max-height:100%; object-fit:contain; border-radius:10px; box-shadow:var(--shadow-card); }
+.ns-badge { position:absolute; top:10px; left:10px; padding:2px 10px; border-radius:999px; background:var(--color-ink); color:var(--color-surface); font-size:13px; font-weight:700; }
+.ns-shot-tools { display:flex; flex-wrap:wrap; gap:6px; }
+.ns-tool { display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 12px; border:1px solid var(--color-line); border-radius:11px; background:var(--color-surface); font-size:14px; font-weight:600; transition:border-color .15s; }
+.ns-tool:hover { border-color:var(--color-ink); }
+
+.ns-form { display:grid; gap:22px; min-width:0; }
+.ns-field { display:grid; gap:9px; min-width:0; }
+.ns-label { font-size:15px; font-weight:700; }
+.ns-label span { color:var(--color-muted); font-weight:500; }
+.ns-box { position:relative; }
+.ns-box textarea { display:block; width:100%; min-height:88px; padding:12px 14px 30px; border:1px solid var(--color-line); border-radius:14px; background:var(--color-surface); color:var(--color-ink); font:inherit; font-size:17px; line-height:1.4; resize:none; }
+.ns-box textarea::placeholder, .ns-input input::placeholder { color:var(--color-muted); }
+.ns-box textarea:focus, .ns-input:focus-within { border-color:var(--color-brand); outline:3px solid color-mix(in srgb,var(--color-brand) 22%,transparent); outline-offset:0; }
+.ns-box textarea:focus-visible { outline:3px solid color-mix(in srgb,var(--color-brand) 22%,transparent); outline-offset:0; }
+.ns-count { position:absolute; right:12px; bottom:9px; color:var(--color-muted); font:500 13px var(--font-mono); pointer-events:none; }
+.ns-chips { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.ns-chips-label { width:76px; color:var(--color-muted); font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+.ns-chip { height:34px; padding:0 13px; border:1px solid var(--color-line); border-radius:999px; background:var(--color-surface); font-size:14px; font-weight:600; transition:border-color .15s,background-color .15s; }
+.ns-chip:hover { border-color:var(--color-brand); background:var(--color-accent); }
+.ns-input { display:flex; align-items:center; gap:10px; height:50px; padding:0 14px; border:1px solid var(--color-line); border-radius:14px; background:var(--color-surface); color:var(--color-muted); }
+.ns-input input { flex:1; min-width:0; border:0; outline:0; background:none; color:var(--color-ink); font:inherit; font-size:16px; }
+.ns-hint { margin:0; color:var(--color-muted); font-size:14px; line-height:1.5; }
+
+.ns-foot { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 20px; padding-top:18px; border-top:1px solid var(--color-line); }
+.ns-fine { max-width:400px; margin:0; color:var(--color-muted); font-size:14px; line-height:1.5; }
+.ns-actions { display:flex; align-items:center; gap:8px; }
+
+@media(max-width:700px) {
+ .ns-dialog { width:100vw; max-width:none; max-height:94vh; margin:auto 0 0; border-radius:26px 26px 0 0; }
+ .ns, .ns-pad { padding:20px; }
+ .ns-title { font-size:26px; }
+ .ns-grid { grid-template-columns:minmax(0,1fr); gap:20px; }
+ .ns-frame { height:170px; }
+ .ns-credits { padding:4px 10px; font-size:13px; }
+ .ns-chips-label { width:100%; }
+ .ns-fine { display:none; }
+ .ns-actions { width:100%; }
+ .ns-actions > :last-child { flex:1; }
+}

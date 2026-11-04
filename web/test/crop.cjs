@@ -8,6 +8,7 @@ const os = require('node:os');
 const S = require('node:fs').mkdtempSync(path.join(os.tmpdir(), 'crop-'));
 const WEB = process.env.WEB_URL || 'http://localhost:5173';
 const assert = require('node:assert/strict');
+let b;
 (async()=>{
  // A phone screenshot: red status bar on top, the post in blue, green bottom bar. 400 x 800.
  const rect=(w,h,c)=>({create:{width:w,height:h,channels:3,background:c}});
@@ -16,7 +17,7 @@ const assert = require('node:assert/strict');
    {input: await sharp(rect(400,100,'#22c55e')).png().toBuffer(), top:700, left:0},
  ]).png().toBuffer();
  require('fs').writeFileSync(S+'/phone.png', img);
- const b=await chromium.launch(); const page=await (await b.newContext({viewport:{width:1100,height:900}})).newPage();
+ b=await chromium.launch(); const page=await (await b.newContext({viewport:{width:1100,height:900}})).newPage();
  page.on('pageerror',e=>console.log('E',e.message.slice(0,200)));
  let uploaded=null;
  await page.route(/\/api\/saves$/, async r=>{ if(r.request().method()!=='POST') return r.fallback(); uploaded=r.request().postDataBuffer(); r.fulfill({status:500,json:{error:'model_failed'}}); });
@@ -36,7 +37,7 @@ const assert = require('node:assert/strict');
  assert.equal(await page.locator('.crop-size').textContent(),'Keeping 380 × 620 px');
  await page.screenshot({path:S+'/crop-editor.png'});
  await page.click('text=Use this crop'); await page.waitForTimeout(500);
- assert.equal(await page.locator('text=Only the part you kept is uploaded').count(),1);
+ assert.equal(await page.locator('.ns-badge:has-text("Cropped")').count(),1);
  await page.click('button:has-text("Extract")'); await page.waitForTimeout(800);
  const buf=uploaded; const i=buf.indexOf(Buffer.from('IHDR')); 
  assert.deepEqual([buf.readUInt32BE(i+4), buf.readUInt32BE(i+8)],[380,620]);
@@ -44,4 +45,4 @@ const assert = require('node:assert/strict');
  // Undo returns the original.
  await page.getByRole('button',{name:'Retry'}).waitFor();
  await b.close();
-})().catch(e=>{console.error(e);process.exitCode=1;});
+})().catch(async e=>{console.error(e);process.exitCode=1;}).finally(()=>b&&b.close());
