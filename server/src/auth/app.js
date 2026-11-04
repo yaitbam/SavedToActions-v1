@@ -5,6 +5,7 @@ import { createRegistry } from "./registry.js";
 import { createVault } from "./vault.js";
 import { createUsage } from "./usage.js";
 import { setGoogleEmail } from "../db.js";
+import { modelInfo } from "../model/provider.js";
 
 export function createAuthenticatedApp({ config, provider, selfTest, clock = Date.now, clientFactory, workspaceFactory }) {
   const db = openAccounts(config.dataDir), vault = createVault(config.dataDir, config.tokenEncKey);
@@ -43,11 +44,11 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
     const account = req.account;
     if (!account) {
       const csrf = cookies(req).sta_csrf || random(); cookie(res, config, "sta_csrf", csrf, 3600);
-      return res.json({ authenticated: false, kind: null, profile_complete: false, name: null, email: null, csrf_token: csrf, credits: null, calendar_email: null, demo_available: false });
+      return res.json({ authenticated: false, kind: null, profile_complete: false, name: null, email: null, csrf_token: csrf, credits: null, calendar_email: null, demo_available: false, model: modelInfo(provider) });
     }
     res.json({ authenticated: true, kind: account.kind, profile_complete: !!account.profile_completed_at,
       name: account.name, email: account.email, csrf_token: account.csrf_token, credits: usage.credits(account),
-      calendar_email: account.calendar_sub ? account.email : null });
+      calendar_email: account.calendar_sub ? account.email : null, model: modelInfo(provider) });
   });
   app.get("/auth/login/google", (req, res) => {
     if (!config.google.clientId || !config.google.clientSecret) return res.redirect(`${config.frontendOrigin}/login?error=unavailable`);

@@ -44,7 +44,7 @@ if (config.watcher.enabled) watcher.start();
 // Bind to loopback for the local app or an HTTPS reverse proxy.
 app.listen(config.port, "127.0.0.1", () => {
   console.log(`SavedToAction server on http://localhost:${config.port}`);
-  console.log(`Model: ${provider.name} ${provider.model} (${provider.configured() ? "key set" : "NOT configured, set BASETEN_API_KEY"})`);
+  console.log(`Model: ${provider.name} ${provider.model} (${provider.configured() ? "key set" : `NOT configured, set ${provider.name === "meta" ? "META_API_KEY or MODEL_API_KEY" : "BASETEN_API_KEY"}`})`);
   console.log(`Watcher: ${config.watcher.enabled ? `every ${Math.round(config.watcher.intervalMs / 1000)} s` : "off"} (the "Recheck now" button runs the same function)`);
   console.log(`Google OAuth: ${config.google.clientId && config.google.clientSecret ? "client configured" : "NOT configured (set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)"}`);
 });

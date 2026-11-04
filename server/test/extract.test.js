@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ExtractionError, MAX_TOKENS, buildMessages, buildSystemPrompt, extractFromScreenshot, parseModelJson } from "../src/extraction/extract.js";
-import { ModelError, createProvider } from "../src/model/provider.js";
+import { ModelError, createProvider, modelInfo } from "../src/model/provider.js";
+import { modelConfigFromEnv } from "../src/config.js";
 
 const goals = [
   { id: 1, name: "Earn more" },
@@ -191,4 +192,108 @@ test("baseten: HTTP errors, timeouts, network errors and bad bodies map to codes
   await assert.rejects(chat(async () => { throw timeout; }), { code: "model_timeout" });
   await assert.rejects(chat(async () => { throw new TypeError("fetch failed"); }), { code: "model_unreachable" });
   await assert.rejects(chat(async () => okResponse("<html>bad gateway</html>")), { code: "model_bad_response" });
+});
+
+// ---- the provider switch: baseten (default) or meta ----------------------------------------------------------------
+const metaCfg = (over = {}) => ({ provider: "meta", meta: { apiKey: "meta-key-1", baseUrl: "https://api.meta.ai/v1", model: "muse-spark-1.3", reasoningEffort: "low", ...over } });
+const okChat = { choices: [{ message: { content: "ok" }, finish_reason: "stop" }], model: "muse-spark-1.3", usage: {} };
+
+test("config: baseten is the default and the meta values are the agreed defaults", () => {
+  const cfg = modelConfigFromEnv({});
+  assert.equal(cfg.provider, "baseten");
+  assert.equal(cfg.baseten.baseUrl, "https://inference.baseten.co/v1");
+  assert.equal(cfg.baseten.model, "meta-models/muse-spark-open-1026");
+  assert.equal(cfg.baseten.reasoningEffort, "low");
+  assert.deepEqual(cfg.meta, { apiKey: "", baseUrl: "https://api.meta.ai/v1", model: "muse-spark-1.3", reasoningEffort: "low" });
+});
+
+test("config: MODEL_PROVIDER, key names, overrides and the trailing slash", () => {
+  assert.equal(modelConfigFromEnv({ MODEL_PROVIDER: " Meta " }).provider, "meta");
+  assert.equal(modelConfigFromEnv({ MODEL_PROVIDER: "" }).provider, "baseten");
+  // META_API_KEY wins over MODEL_API_KEY, MODEL_API_KEY is the fallback, and the Baseten key is never used for Meta.
+  assert.equal(modelConfigFromEnv({ META_API_KEY: "a", MODEL_API_KEY: "b" }).meta.apiKey, "a");
+  assert.equal(modelConfigFromEnv({ MODEL_API_KEY: "b" }).meta.apiKey, "b");
+  assert.equal(modelConfigFromEnv({ BASETEN_API_KEY: "c" }).meta.apiKey, "");
+  assert.equal(modelConfigFromEnv({ META_API_KEY: "a" }).baseten.apiKey, "");
+  const over = modelConfigFromEnv({ META_BASE_URL: "https://example.test/v9//", META_MODEL: "muse-spark-2" });
+  assert.equal(over.meta.baseUrl, "https://example.test/v9");
+  assert.equal(over.meta.model, "muse-spark-2");
+  // none is never sent: it means send nothing.
+  for (const value of ["none", "off", "default", "NONE"]) assert.equal(modelConfigFromEnv({ META_REASONING_EFFORT: value }).meta.reasoningEffort, null);
+  assert.equal(modelConfigFromEnv({ META_REASONING_EFFORT: "high" }).meta.reasoningEffort, "high");
+});
+
+test("provider: both names work, unknown fails and lists them, contributor ids are refused", () => {
+  assert.equal(createProvider(modelCfg).name, "baseten");
+  assert.equal(createProvider(metaCfg()).name, "meta");
+  assert.throws(() => createProvider({ provider: "nope" }), /Supported: baseten, meta/);
+  assert.throws(() => createProvider(metaCfg({ model: "muse-spark-1.3-contributor" })), /contributor/);
+  assert.throws(() => createProvider({ provider: "baseten", baseten: { ...modelCfg.baseten, model: "x/Contributor" } }), /contributor/);
+  assert.throws(() => createProvider(metaCfg({ reasoningEffort: "none" })), /Invalid META_REASONING_EFFORT/);
+});
+
+test("meta: request shape, bearer key, base url and reasoning_effort low", async () => {
+  let seen;
+  const fetchImpl = async (url, init) => { seen = { url, init, body: JSON.parse(init.body) }; return okResponse(okChat); };
+  const out = await createProvider(metaCfg(), { fetchImpl }).chat({ messages: [{ role: "user", content: "hi" }], maxTokens: 123 });
+  assert.equal(seen.url, "https://api.meta.ai/v1/chat/completions");
+  assert.equal(seen.init.headers.Authorization, "Bearer meta-key-1");
+  assert.equal(seen.body.model, "muse-spark-1.3");
+  assert.equal(seen.body.reasoning_effort, "low");
+  assert.equal(seen.body.max_tokens, 123);
+  assert.equal(out.content, "ok");
+  // A reasoning field named "reasoning" is read too.
+  const named = await createProvider(metaCfg(), { fetchImpl: async () => okResponse({ choices: [{ message: { content: "a", reasoning: "why" } }] }) }).chat({ messages: [] });
+  assert.equal(named.reasoning, "why");
+});
+
+test("meta: a missing key names META_API_KEY and never calls the network", async () => {
+  let called = false;
+  const provider = createProvider(metaCfg({ apiKey: "" }), { fetchImpl: async () => { called = true; } });
+  assert.equal(provider.configured(), false);
+  await assert.rejects(provider.chat({ messages: [] }), (e) => e.code === "model_not_configured" && /META_API_KEY/.test(e.message));
+  assert.equal(called, false);
+});
+
+test("meta: a 400 about reasoning is retried once without it, with one log line, and later calls skip it", async () => {
+  const bodies = [], logs = [];
+  const warn = console.warn;
+  console.warn = (line) => logs.push(line);
+  try {
+    const fetchImpl = async (_url, init) => {
+      const body = JSON.parse(init.body);
+      bodies.push(body);
+      return "reasoning_effort" in body ? okResponse({ error: { message: "Unknown parameter: reasoning_effort" } }, 400) : okResponse(okChat);
+    };
+    const provider = createProvider(metaCfg(), { fetchImpl });
+    assert.equal((await provider.chat({ messages: [] })).content, "ok");
+    assert.equal((await provider.chat({ messages: [] })).content, "ok");
+    assert.deepEqual(bodies.map((b) => "reasoning_effort" in b), [true, false, false]);
+    assert.equal(logs.length, 1);
+    assert.match(logs[0], /rejected reasoning_effort/);
+    assert.ok(!logs[0].includes("meta-key-1"));
+  } finally { console.warn = warn; }
+});
+
+test("meta: other 400s are not retried, and baseten never retries", async () => {
+  let calls = 0;
+  const bad = async () => { calls += 1; return okResponse({ error: { message: "messages is required" } }, 400); };
+  await assert.rejects(createProvider(metaCfg(), { fetchImpl: bad }).chat({ messages: [] }), (e) => e.status === 400);
+  assert.equal(calls, 1);
+  calls = 0;
+  const reasoningBad = async () => { calls += 1; return okResponse({ error: { message: "bad reasoning_effort" } }, 400); };
+  await assert.rejects(createProvider(modelCfg, { fetchImpl: reasoningBad }).chat({ messages: [] }), (e) => e.status === 400);
+  assert.equal(calls, 1);
+  // With reasoning turned off there is nothing to retry.
+  calls = 0;
+  await assert.rejects(createProvider(metaCfg({ reasoningEffort: null }), { fetchImpl: reasoningBad }).chat({ messages: [] }), (e) => e.status === 400);
+  assert.equal(calls, 1);
+});
+
+test("modelInfo: the label and open weights claim come from the active config", () => {
+  const baseten = modelInfo(createProvider(modelCfg));
+  assert.deepEqual(baseten, { provider: "baseten", id: "meta-models/muse-spark-open-1026", label: "Muse Spark Open", openWeights: true });
+  const meta = modelInfo(createProvider(metaCfg()));
+  assert.deepEqual(meta, { provider: "meta", id: "muse-spark-1.3", label: "muse-spark-1.3", openWeights: false });
+  assert.deepEqual(modelInfo(null), { provider: null, id: null, label: null, openWeights: false });
 });

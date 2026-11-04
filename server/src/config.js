@@ -20,6 +20,30 @@ function reasoningEffortFromEnv(value) {
   return ["off", "default", "none"].includes(value.toLowerCase()) ? null : value;
 }
 
+// Both providers are OpenAI compatible. Only the one named by MODEL_PROVIDER is used.
+export function modelConfigFromEnv(env) {
+  return {
+    provider: (env.MODEL_PROVIDER || "baseten").trim().toLowerCase(),
+    baseten: {
+      apiKey: env.BASETEN_API_KEY || "",
+      baseUrl: env.BASETEN_BASE_URL || "https://inference.baseten.co/v1",
+      model: env.BASETEN_MODEL || "meta-models/muse-spark-open-1026",
+      // Default "low". Measured Nov 2 on 5 screenshots (4 synthetic, 1 real), 2 runs each: 45% faster, 79% fewer
+      // reasoning tokens, same accuracy (69/70 checks both ways). One of minimal, low, medium, high.
+      // BASETEN_REASONING_EFFORT=off sends no reasoning_effort at all (the model's own default).
+      reasoningEffort: reasoningEffortFromEnv(env.BASETEN_REASONING_EFFORT),
+    },
+    meta: {
+      // META_API_KEY wins, MODEL_API_KEY is the generic name.
+      apiKey: env.META_API_KEY || env.MODEL_API_KEY || "",
+      baseUrl: (env.META_BASE_URL || "https://api.meta.ai/v1").replace(/\/+$/, ""),
+      model: env.META_MODEL || "muse-spark-1.3",
+      // Same default as Baseten. Meta may reject it, the provider then retries once without it.
+      reasoningEffort: reasoningEffortFromEnv(env.META_REASONING_EFFORT),
+    },
+  };
+}
+
 export const config = {
   authMode: process.env.AUTH_MODE || "on",
   dataDir: process.env.DATA_DIR || path.join(REPO_ROOT, "data"),
@@ -38,19 +62,8 @@ export const config = {
     enabled: process.env.WATCHER !== "off",
     intervalMs: Number(process.env.WATCHER_INTERVAL_MS || 5 * 60_000),
   },
-  // Provider switch. Baseten only for now (Meta Model API is deferred).
-  model: {
-    provider: process.env.MODEL_PROVIDER || "baseten",
-    baseten: {
-      apiKey: process.env.BASETEN_API_KEY || "",
-      baseUrl: process.env.BASETEN_BASE_URL || "https://inference.baseten.co/v1",
-      model: process.env.BASETEN_MODEL || "meta-models/muse-spark-open-1026",
-      // Default "low". Measured Nov 2 on 5 screenshots (4 synthetic, 1 real), 2 runs each: 45% faster, 79% fewer
-      // reasoning tokens, same accuracy (69/70 checks both ways). One of minimal, low, medium, high.
-      // BASETEN_REASONING_EFFORT=off sends no reasoning_effort at all (the model's own default).
-      reasoningEffort: reasoningEffortFromEnv(process.env.BASETEN_REASONING_EFFORT),
-    },
-  },
+  // Provider switch. MODEL_PROVIDER=baseten (default) or meta. See modelConfigFromEnv.
+  model: modelConfigFromEnv(process.env),
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || "",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",

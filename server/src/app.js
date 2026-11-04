@@ -1,4 +1,5 @@
 import express from "express";
+import { modelInfo } from "./model/provider.js";
 import { createActionLocks } from "./services/actionLocks.js";
 import { registerAccountDataRoutes } from "./routes/accountData.js";
 import { registerWorkspaceRoutes } from "./routes/workspace.js";
@@ -151,7 +152,7 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
     }
   });
 
-  if (config.authMode === "off") app.get('/auth/session', (_req, res) => res.json({ authenticated: true, kind: 'owner', profile_complete: true, name: null, email: null, csrf_token: null, credits: null, calendar_email: null }));
+  if (config.authMode === "off") app.get('/auth/session', (_req, res) => res.json({ authenticated: true, kind: 'owner', profile_complete: true, name: null, email: null, csrf_token: null, credits: null, calendar_email: null, model: modelInfo(provider) }));
   // Google OAuth.
   app.get("/auth/status", (_req, res) => res.json(googleAuth.status()));
 

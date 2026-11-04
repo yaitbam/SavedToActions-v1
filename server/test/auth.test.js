@@ -20,7 +20,7 @@ async function withApp(run, sharedCallback = false) {
     async getToken(options) { assert.ok(options.codeVerifier); return { tokens: { id_token: 'test-id', refresh_token: 'test-refresh', scope: 'calendar' } }; },
     async verifyIdToken() { return { getPayload: () => ({ sub, name: 'Test name', email: sub + '@example.test', email_verified: true, nonce, iss: 'https://accounts.google.com', exp: now / 1000 + 3600 }) }; },
   });
-  const instance = createAuthenticatedApp({ config, provider: { configured: () => true, chat: async () => ({}) }, selfTest: runSelfTest(), clock: () => now, clientFactory });
+  const instance = createAuthenticatedApp({ config, provider: { name: 'meta', model: 'muse-spark-1.3', configured: () => true, chat: async () => ({}) }, selfTest: runSelfTest(), clock: () => now, clientFactory });
   const server = await new Promise(resolve => { const s = instance.app.listen(0, '127.0.0.1', () => resolve(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
   function browser() {
@@ -50,6 +50,8 @@ test('anonymous session, verified login, profile validation and sign-out', () =>
   const client = browser();
   const anonymous = await (await client.request('/auth/session')).json();
   assert.equal(anonymous.authenticated, false); assert.ok(anonymous.csrf_token);
+  // The landing page and the UI name the model from this, so it is public and comes from the active provider.
+  assert.deepEqual(anonymous.model, { provider: 'meta', id: 'muse-spark-1.3', label: 'muse-spark-1.3', openWeights: false });
   assert.equal((await client.request('/api/saves')).status, 401);
   const signedIn = await login(client);
   assert.equal(signedIn.authenticated, true); assert.equal(signedIn.profile_complete, false);
