@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { HomeSummary } from "../../api/types";
 import { Chip } from "../../ui/Chip";
+import { DeadlineChip } from "../../ui/DeadlineChip";
 import { StatusChip, statusFromCheck } from "../../ui/StatusChip";
 import "../home/home.css";
 import "./progress.css";
@@ -19,7 +20,7 @@ export function UpcomingDeadlines({ actions }: { actions: HomeSummary[] }) {
               <Link to={`/app/saves/${action.saveId}`} className="hm-row">
                 <div className="hm-row-body">
                   {action.title ? <b>{action.title}</b> : <Chip tone="missing">Missing</Chip>}
-                  <span className="hm-sub">{action.deadline?.relative ?? action.deadline?.display}</span>
+                  {action.deadline && <DeadlineChip deadline={action.deadline} />}
                   {action.isDemo && <span className="hm-sub">Imported demo data</span>}
                 </div>
                 <StatusChip status={action.status === "planned"

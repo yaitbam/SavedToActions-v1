@@ -363,6 +363,7 @@ test("a post with a date and no time gets an end of day deadline that is labeled
     const { action } = await (await upload(base)).json();
     assert.equal(action.deadline.wall, "2026-11-22T23:59");
     assert.equal(action.deadline.timeAssumed, true);
+    assert.match(action.deadline.short, /^22 Nov( 2026)?$/);
     assert.equal(action.deadline.tz, "Africa/Casablanca");
     assert.ok(action.warnings.some((w) => w.code === "deadline_time_assumed"));
     const edited = await fetch(`${base}/api/actions/${action.id}`, {

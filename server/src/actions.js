@@ -2,7 +2,7 @@
 // Badges and match flags are computed when the view is built, from the stored note and transcription,
 // so they stay true after edits. Only confirmed effort is ever scheduled.
 import { blockView, checkView, getActiveBlock, getLatestCheck } from "./blockStore.js";
-import { formatForDisplay, formatRelative, isValidTimezone, wallToUtc, localDate } from "./tz.js";
+import { formatForDisplay, formatRelative, formatShortDate, isValidTimezone, wallToUtc, localDate } from "./tz.js";
 import { getSettings } from "./db.js";
 import { KINDS, LABELS, VERBATIM_TYPES, badgeFor, badgeLabel, matchSources, eventDateWarning } from "./extraction/normalize.js";
 
@@ -134,6 +134,8 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
           // Formatted here. The browser must never convert times itself.
           display: row.deadline_utc && row.deadline_tz ? formatForDisplay(row.deadline_utc, row.deadline_tz) : null,
           relative: row.deadline_utc && row.deadline_tz ? formatRelative(row.deadline_utc, row.deadline_tz, nowMs) : null,
+          // The date alone, for chips and badges. The time stays in display and relative.
+          short: row.deadline_utc && row.deadline_tz ? formatShortDate(row.deadline_utc, row.deadline_tz, nowMs) : null,
           label: row.deadline_label,
           quote: row.deadline_quote,
           yearAssumed: Boolean(row.deadline_year_assumed),

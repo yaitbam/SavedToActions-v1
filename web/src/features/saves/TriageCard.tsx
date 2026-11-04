@@ -12,7 +12,7 @@ const PREVIEW_MAX = 280;
 export function DeadlineBadge({ save }: { save: SaveListItem }) {
   const deadline = save.action?.deadline;
   if (!deadline) return <span className="deadline-badge none">Deadline: Missing</span>;
-  return <span className="deadline-badge" title={deadline.relative}>Due {deadline.display}</span>;
+  return <span className="deadline-badge" title={deadline.display ?? undefined}>Due {deadline.short ?? deadline.display}</span>;
 }
 
 export function EffortPill({ save }: { save: SaveListItem }) {

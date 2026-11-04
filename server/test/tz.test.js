@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SELF_TEST, addDays, dataVersion, formatForDisplay, formatRelative, formatRelativeRange, isValidTimezone, listTimezones, offsetAt, runSelfTest, wallToUtc, withRelativeSlot } from "../src/tz.js";
+import { SELF_TEST, addDays, dataVersion, formatForDisplay, formatRelative, formatRelativeRange, formatShortDate, isValidTimezone, listTimezones, offsetAt, runSelfTest, wallToUtc, withRelativeSlot } from "../src/tz.js";
 
 test("listTimezones: moment-timezone offsets, Casablanca is +00:00, aliases left out, sorted by offset", () => {
   const zones = listTimezones(SELF_TEST.instantUtc);
@@ -127,4 +127,13 @@ test("withRelativeSlot: unchanged without a clock or a zone", () => {
   assert.equal(withRelativeSlot(slot, CASA, undefined), slot);
   assert.equal(withRelativeSlot(null, CASA, NOW), null);
   assert.equal(withRelativeSlot(slot, CASA, NOW).startRelative, "Tomorrow 14:00");
+});
+
+test("formatShortDate: the date alone, with the year only when it is not this year", () => {
+  assert.equal(formatShortDate("2026-11-22T23:59:00Z", CASA, NOW), "22 Nov");
+  assert.equal(formatShortDate("2026-11-04T05:00:00Z", CASA, NOW), "4 Nov");
+  assert.equal(formatShortDate("2027-01-09T10:00:00Z", CASA, NOW), "9 Jan 2027");
+  // The date is the one in the deadline's own zone, not UTC.
+  assert.equal(formatShortDate("2026-11-23T04:59:00Z", "America/New_York", NOW), "22 Nov");
+  assert.throws(() => formatShortDate("2026-11-22T10:00:00Z", "Mars/Olympus", NOW));
 });

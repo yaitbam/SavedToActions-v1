@@ -92,6 +92,17 @@ export function formatRelative(instant, tz, nowMs) {
   return `${at.format(at.year() === now.year() ? "ddd D MMM" : "ddd D MMM YYYY")} ${time}`;
 }
 
+/**
+ * "22 Nov", or "22 Nov 2027" when it is not this year. The date only, in the zone of the instant.
+ * Like formatRelative it goes stale, so compute it per response.
+ */
+export function formatShortDate(instant, tz, nowMs) {
+  if (!isValidTimezone(tz)) throw new Error(`invalid timezone: ${tz}`);
+  const at = moment.utc(instant).tz(tz);
+  const now = moment.utc(nowMs).tz(tz);
+  return at.format(at.year() === now.year() ? "D MMM" : "D MMM YYYY");
+}
+
 /** "Thu 14:00 to 15:00". The end repeats its day only when it falls on another local day. */
 export function formatRelativeRange(startInstant, endInstant, tz, nowMs) {
   const start = formatRelative(startInstant, tz, nowMs);

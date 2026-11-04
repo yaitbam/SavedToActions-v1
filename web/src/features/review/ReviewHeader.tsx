@@ -1,5 +1,6 @@
 import type { Action, Goal } from "../../api/types";
 import { Chip } from "../../ui/Chip";
+import { DeadlineChip } from "../../ui/DeadlineChip";
 import { GoalChip, goalDotClass } from "../../ui/GoalChip";
 import { ModelChip } from "../../ui/ModelChip";
 import { SourceChip } from "../../ui/SourceChip";
@@ -93,7 +94,7 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline }: Props)
             <dd className="rv-deadline">
               {action.deadline ? (
                 <>
-                  <Chip>{action.deadline.relative}</Chip>
+                  <DeadlineChip deadline={action.deadline} />
                   {action.deadline.timeAssumed && (
                     <span className="rv-deadline-note">
                       The post gave {action.deadline.display ? "a date only" : "a date"}. End of day is assumed. Change the time in Details if it says otherwise

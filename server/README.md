@@ -264,7 +264,7 @@ Normalization rules (`extraction/normalize.js`):
 
 - Every quote must appear in the note or the model's transcription. A deadline without a matching quote is dropped and kept only as a warning.
 - Badges are precise: "Matched text in note", "Matched model transcription", "Edited by you", or "No match in note or model transcription". Never a general "Verified". Matching the model's own transcription proves consistency, not correct reading.
-- A deadline already in the past at import is dropped with a warning (almost always a past edition). A date with no time becomes a deadline at 23:59 of that day, flagged `timeAssumed` and warned as `deadline_time_assumed`, and a user edit clears the flag. Missing year is assumed only with a warning.
+- A deadline already in the past at import is dropped with a warning (almost always a past edition). A date with no time becomes a deadline at 23:59 of that day, flagged `timeAssumed` and warned as `deadline_time_assumed`, and a user edit clears the flag. The action view also gives `deadline.short`, the date alone (`22 Nov`, with the year when it is not this year) in the deadline's zone, for chips. Missing year is assumed only with a warning.
 - The timezone is used only if stated. If not, the settings timezone is used and labeled `settings_fallback`. With no settings timezone it stays null.
 - `event_dates` are the event's own dates, separate from the deadline. If every supported date is before today the warning `event_already_happened` is raised. Date only comparison.
 - Goal is never defaulted. If the model gives none, `goal_not_chosen` and the user picks.

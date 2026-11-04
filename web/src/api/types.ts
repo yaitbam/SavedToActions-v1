@@ -121,6 +121,8 @@ export interface Deadline {
   utc: string;
   display: string;
   relative: string;
+  // The date alone, such as "22 Nov". Worked out on the server in the deadline's timezone.
+  short: Nullable<string>;
   label: Nullable<string>;
   quote: Nullable<string>;
   yearAssumed: boolean;
