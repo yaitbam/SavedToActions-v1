@@ -8,9 +8,13 @@ const fs = require('node:fs/promises');
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
   await page.goto(process.env.WEB_URL || 'http://127.0.0.1:5173');
   await page.getByRole('heading',{name:'Saved is not done.'}).waitFor();
-  for(const id of ['pain','how','value','impact']) assert.equal(await page.locator(`#${id}`).count(),1,`section ${id}`);
+  for(const id of ['pain','how','features','impact','faq']) assert.equal(await page.locator(`#${id}`).count(),1,`section ${id}`);
   assert.equal(await page.locator('.hero-machine, .ba-range, .inspection-grid').count(),0,'interactive demos removed');
-  assert.equal(await page.locator('.metric').count(),6);
+  assert.equal(await page.locator('.feature-grid article').count(),6);
+  assert.equal(await page.locator('.faq-list details').count(),7);
+  // The FAQ opens and closes without a script.
+  await page.locator('.faq-list summary').first().click();
+  assert.equal(await page.locator('.faq-list details[open]').count(),1);
   await fs.mkdir('artifacts/design',{recursive:true});
   assert.equal(await page.getByRole('button',{name:/theme/i}).count(),0,'no theme switch');
   for(const width of [1440,768,390]) {

@@ -25,7 +25,7 @@ npm run preview
 
 | Route | Purpose |
 |---|---|
-| `/` | Public landing page. It explains the problem, what SavedToAction does, the value and the impact. No interactive demos |
+| `/` | Public landing page: a hero that shows the suggested time, a strip of facts about what it is built on (no invented logos or reviews), the problem, three steps with the note and the calendar event, six benefits, an example of progress by goal, what it will never do, an FAQ and a closing call to action. Short copy, no interactive demos |
 | `/login` | Google sign-in with the Google button. The demo button is hidden when the server reports it unavailable |
 | `/complete-profile` | Confirm name and the read-only verified Google email |
 | `/privacy` | Public privacy information |
@@ -78,7 +78,7 @@ node web/test/phase6.cjs
 
 `errors.cjs` verifies missing-session recovery and that technical errors are not shown. `new-save.cjs` checks preview lifecycle and upload bytes using intercepted uploads. `phase6.cjs` checks the landing page and image viewers.
 
-`crop.cjs` crops a phone style screenshot with the mouse and keyboard in the new save dialog and checks the size of the image that is uploaded. It needs `sharp`, which the server package installs, and it closes its browser on failure. `design.cjs` checks that the landing sections exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px, and that there is no theme switch. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
+`crop.cjs` crops a phone style screenshot with the mouse and keyboard in the new save dialog and checks the size of the image that is uploaded. It needs `sharp`, which the server package installs, and it closes its browser on failure. `design.cjs` checks that the landing sections (including the FAQ, which opens and closes) exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px, and that there is no theme switch. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
 
 `phase5.cjs` expects the seeded legacy database and an isolated `AUTH_MODE=off` backend. Its initial reads use the local API and later write checks are intercepted. It is not an authenticated multiuser end-to-end test.
 
