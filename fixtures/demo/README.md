@@ -11,4 +11,4 @@ Coverage: 6 posts with a future deadline (01, 02, 06, 07, 12, 13), prompts and t
 Rules for use:
 - Import through the real extraction pipeline. Do not hand write extracted fields.
 - Mark every save from this folder as is_demo and show "Imported demo data".
-- Do not present them as real saves in the demo or README. Say "illustrative posts". Real saves come from fixtures/real/.
+- Do not present them as real saves in the demo or README. Say "illustrative posts".

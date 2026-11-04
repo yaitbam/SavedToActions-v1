@@ -4,7 +4,7 @@
 
 Saved is not done. SavedToAction turns a screenshot of a post you saved into protected time on your calendar, and moves it when your week changes.
 
-Repository cleaned of third party assets before submission. Commit dates are original.
+Repository cleaned of third party assets before submission, apart from small platform logos (Instagram, X, LinkedIn, TikTok and Google) drawn in code only to name those platforms. Commit dates are original.
 
 Demo video: VIDEO_URL
 
