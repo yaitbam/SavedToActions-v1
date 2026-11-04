@@ -1,7 +1,7 @@
 import { Chip } from "./Chip";
 import { cx } from "./cx";
 
-// Goal ids are 1, 2, 3 in preset order: Earn more, Learn a skill, Don't miss deadlines.
+// Goal ids are 1, 2, 3 in preset order: Earn more, Learn a skill, Events and opportunities.
 const dots = ["bg-goal-earn", "bg-goal-learn", "bg-goal-deadlines"];
 
 export function goalDotClass(goalId: number): string {

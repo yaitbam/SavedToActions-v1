@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useNewSave } from "../features/newSave/NewSaveContext";
 import { Button } from "../ui/Button";
 import { cx } from "../ui/cx";
 import { Logo } from "../ui/Logo";
@@ -12,11 +13,9 @@ const items: Array<{ to: string; label: string; icon: ReactElement; end?: boolea
   { to: "/app/settings", label: "Settings", icon: <SettingsIcon /> },
 ];
 
-interface AppShellProps {
-  onNewSave?: () => void;
-}
-
-export function AppShell({ onNewSave }: AppShellProps) {
+export function AppShell() {
+  const { open } = useNewSave();
+  const onNewSave = () => open();
   return (
     <div className="min-h-screen">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col gap-8 p-6 md:flex">

@@ -7,10 +7,11 @@ interface ThumbProps {
   alt: string;
   onOpen?: () => void;
   className?: string;
+  // Show the whole screenshot at its own proportions (Review). Default is a 4:5 crop.
+  natural?: boolean;
 }
 
-// 4:5 screenshot thumbnail. Click opens the full size viewer when onOpen is set.
-export function Thumb({ src, alt, onOpen, className }: ThumbProps) {
+export function Thumb({ src, alt, onOpen, className, natural = false }: ThumbProps) {
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
 
   const image = (
@@ -27,13 +28,20 @@ export function Thumb({ src, alt, onOpen, className }: ThumbProps) {
           loading="lazy"
           onLoad={() => setState("ready")}
           onError={() => setState("failed")}
-          className="absolute inset-0 size-full object-cover"
+          className={cx(
+            natural ? "block h-auto max-h-[75vh] w-full object-contain" : "absolute inset-0 size-full object-cover",
+            natural && state !== "ready" && "min-h-64",
+          )}
         />
       )}
     </>
   );
 
-  const frame = cx("relative block aspect-[4/5] w-full overflow-hidden rounded-thumb bg-missing-bg", className);
+  const frame = cx(
+    "relative block w-full overflow-hidden rounded-thumb bg-missing-bg",
+    !natural && "aspect-[4/5]",
+    className,
+  );
 
   if (!onOpen) return <div className={frame}>{image}</div>;
   return (

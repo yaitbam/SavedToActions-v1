@@ -11,6 +11,7 @@ import { Logo } from "../ui/Logo";
 import { ModelChip } from "../ui/ModelChip";
 import { Popover } from "../ui/Popover";
 import { Receipt } from "../ui/Receipt";
+import { SaveCard } from "../ui/SaveCard";
 import { Skeleton } from "../ui/Skeleton";
 import { SourceChip } from "../ui/SourceChip";
 import { StatusChip, type StatusKey } from "../ui/StatusChip";
@@ -79,7 +80,7 @@ export function UiKit() {
       <Section title="Goal, source, model">
         <GoalChip goalId={1} name="Earn more" />
         <GoalChip goalId={2} name="Learn a skill" />
-        <GoalChip goalId={3} name="Don't miss deadlines" />
+        <GoalChip goalId={3} name="Events and opportunities" />
         <GoalChip goalId={null} name={null} />
         <SourceChip badge="matched_note" />
         <SourceChip badge="matched_transcription" />
@@ -89,15 +90,24 @@ export function UiKit() {
       </Section>
       <Section title="Receipt">
         <div className="grid w-full gap-3 md:grid-cols-3">
-          <Receipt startDisplay="Thu 14:00" endDisplay="14:30" readback={{ ...driftReadback, status: "ok", driftDisplay: [] }} />
-          <Receipt startDisplay="Thu 14:00" endDisplay="14:30" readback={driftReadback} />
-          <Receipt startDisplay="Thu 14:00" endDisplay="14:30" readback={{ ...driftReadback, status: "failed", driftDisplay: [] }} />
+          <Receipt range="Thu 14:00 to 14:30" readback={{ ...driftReadback, status: "ok", driftDisplay: [] }} />
+          <Receipt range="Thu 14:00 to 14:30" readback={driftReadback} />
+          <Receipt range="Thu 14:00 to 14:30" readback={{ ...driftReadback, status: "failed", driftDisplay: [] }} />
         </div>
       </Section>
       <Section title="Cards">
-        <Card note className="w-56 -rotate-2">
-          <Thumb src={sample} alt="Sample screenshot" />
-        </Card>
+        <div className="w-56">
+          <SaveCard
+            saveId={0}
+            screenshotUrl={sample}
+            title="Sample save card"
+            goalId={2}
+            goalName="Learn a skill"
+            status="fits"
+            when="Today 18:30"
+            demo
+          />
+        </div>
         <Card className="w-56">Flat card</Card>
       </Section>
       <Section title="Thumb, viewer, skeleton">

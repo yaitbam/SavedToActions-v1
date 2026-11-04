@@ -40,6 +40,9 @@ export interface Slot {
   durationMin: number;
   startDisplay: string;
   endDisplay: string;
+  startRelative: string;
+  endRelative: string;
+  rangeRelative: string;
 }
 
 export interface SlotLabel extends Slot {
@@ -79,12 +82,13 @@ export interface Check {
   blockId: number;
   checkedAt: string;
   checkedAtDisplay: string;
+  checkedAtRelative: string;
   source: "manual" | "watcher";
   state: CheckState;
   reason: Nullable<string>;
   tz: string;
   explanation: string[];
-  conflicts: Array<{ title?: string; startDisplay: string; endDisplay: string }>;
+  conflicts: Array<{ title?: string; startDisplay: string; endDisplay: string; startRelative?: string }>;
   problems: string[];
   alternative: Nullable<Slot>;
   hints: unknown;
@@ -103,6 +107,7 @@ export interface Deadline {
   tzSourceLabel: string;
   utc: string;
   display: string;
+  relative: string;
   label: Nullable<string>;
   quote: Nullable<string>;
   yearAssumed: boolean;
@@ -159,6 +164,7 @@ export interface Action {
   check: Nullable<Check>;
   doneAt: Nullable<string>;
   doneAtDisplay: Nullable<string>;
+  doneAtRelative: Nullable<string>;
   deadline: Nullable<Deadline>;
   eventDates: EventDate[];
   deliverables: string[];
@@ -168,6 +174,8 @@ export interface Action {
   edited: string[];
   warnings: ActionWarning[];
   model: Nullable<string>;
+  extractionLatencyMs: Nullable<number>;
+  hasTimezoneCorrection: boolean;
   createdAt: string;
 }
 
@@ -334,6 +342,7 @@ export interface TraceStep {
   at: string;
   ms: Nullable<number>;
   type: string;
+  label?: string;
   [key: string]: unknown;
 }
 
@@ -378,6 +387,7 @@ export interface HomeRecentSave {
   saveId: number;
   importedAt: string;
   importedAtDisplay: string;
+  importedAtRelative?: string;
   note: Nullable<string>;
   screenshotUrl: string;
   isDemo: boolean;

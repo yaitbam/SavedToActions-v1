@@ -2,12 +2,12 @@ import type { Readback } from "../api/types";
 import { cx } from "./cx";
 
 interface ReceiptProps {
-  startDisplay: string;
-  endDisplay: string;
+  // The server's rangeRelative string, shown as is.
+  range: string;
   readback: Readback | null;
 }
 
-export function Receipt({ startDisplay, endDisplay, readback }: ReceiptProps) {
+export function Receipt({ range, readback }: ReceiptProps) {
   const status = readback?.status ?? null;
   const drift = status === "drift";
   const failed = status === "failed";
@@ -27,9 +27,7 @@ export function Receipt({ startDisplay, endDisplay, readback }: ReceiptProps) {
       ) : failed ? (
         <p className="mt-1">Could not read the calendar back. Try Recheck now</p>
       ) : (
-        <p className="mt-1">
-          Booked {startDisplay} to {endDisplay}. Calendar matched start, end and timezone
-        </p>
+        <p className="mt-1">Booked {range}. Calendar matched start, end and timezone</p>
       )}
     </div>
   );
