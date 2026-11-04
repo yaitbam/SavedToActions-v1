@@ -10,6 +10,13 @@
 .due-strip code { margin-left:4px; padding:2px 8px; border-radius:6px; background:rgb(255 255 255 / .16); font:500 14px var(--font-mono); }
 .due-strip button { flex:none; padding:8px 16px; border-radius:10px; background:#fff; color:#1d4ed8; font-size:15px; font-weight:600; }
 .due-strip button[aria-pressed=true] { background:#fbbf24; color:#451a03; }
+/* On a phone the text got a narrow column beside the button, and the date wrapped over four lines. Stack them. */
+@media(max-width:560px) {
+ .due-strip { flex-wrap:wrap; align-items:flex-start; gap:12px 14px; }
+ .due-strip p { flex:1 1 0; }
+ .due-strip code { display:inline-block; margin:4px 0 0; }
+ .due-strip button { width:100%; min-height:44px; }
+}
 
 .triage-tools { display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
 .triage-split { display:grid; gap:24px; grid-template-columns:minmax(0,1fr); }

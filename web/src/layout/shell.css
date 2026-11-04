@@ -44,5 +44,12 @@
  .app-mobile-nav a svg { width:18px; height:18px; }
  .app-mobile-nav a.active { color:var(--color-brand); background:var(--color-accent); }
 }
-@media(max-width:560px) { .app-topbar .new-save-label { display:none; } }
+@media(max-width:560px) {
+ .app-topbar .new-save-label { display:none; }
+ /* Logo, drop button and profile did not fit one row at 390px. Keep the profile as the avatar, with its name for screen readers. */
+ .app-topbar > a { min-width:0; }
+ .topbar-right { flex:none; }
+ .app-topbar .profile-trigger { padding:4px; max-width:none; }
+ .app-topbar .profile-trigger-name { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+}
 .app-topbar .profile-panel { max-width:calc(100vw - 32px); }
