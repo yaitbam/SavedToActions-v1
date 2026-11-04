@@ -85,8 +85,13 @@
 .pc-check { display:grid; gap:10px; padding:16px; border:1px dashed color-mix(in srgb,var(--color-ink) 28%,var(--color-line)); border-radius:16px; }
 .pc-goal { display:grid; gap:8px; font-size:15px; font-weight:600; }
 .pc-checkline { margin:0; color:var(--color-muted); font-size:14px; line-height:1.5; }
-.pc-ask summary { color:var(--color-muted); font-size:15px; font-weight:600; }
-.pc-ask[open] summary { margin-bottom:12px; }
+.pc-step { display:flex; align-items:center; gap:10px; margin:0; }
+.pc-step .rv-n { width:28px; height:28px; border-radius:10px; font-size:14px; }
+.pc-more summary { color:var(--color-muted); font-size:15px; font-weight:600; cursor:pointer; }
+.pc-more[open] summary { margin-bottom:12px; }
+.pc-more-body { display:grid; gap:16px; justify-items:start; }
+.pc-ask { display:grid; gap:8px; width:100%; }
+.pc-later { display:flex; flex-wrap:wrap; gap:8px; }
 .pc-ask-form { display:flex; gap:10px; margin-bottom:8px; }
 .pc-ask-form .h-12 { height:48px; }
 @media(max-width:560px) { .pc { padding:20px; } .pc-ask-form { flex-direction:column; } .pc-actions > * { flex:1 1 auto; } }

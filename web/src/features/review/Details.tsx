@@ -14,6 +14,7 @@ interface Props {
   onToggle: (open: boolean) => void;
   onPatch: (changes: ActionPatch) => void;
   onLink: (link: string | null) => void;
+  label?: string;
 }
 
 const verbatimLabel = { prompt: "Prompt", link: "Link", keyword: "Keyword" } as const;
@@ -46,14 +47,14 @@ function CheckHistory({ action }: { action: Action }) {
   );
 }
 
-export function Details({ action, goals, open, busy, onToggle, onPatch, onLink }: Props) {
+export function Details({ action, goals, open, busy, onToggle, onPatch, onLink, label = "Details" }: Props) {
   return (
     <details
       open={open}
       onToggle={(event) => onToggle((event.currentTarget as HTMLDetailsElement).open)}
       className="rounded-card border border-line bg-surface p-6"
     >
-      <summary className="cursor-pointer font-display font-semibold tracking-tight">Details</summary>
+      <summary className="cursor-pointer font-display font-semibold tracking-tight">{label}</summary>
       {open && (
         <div className="mt-4 space-y-6">
           <EditFields action={action} goals={goals} busy={busy} onPatch={onPatch} onLink={onLink} />

@@ -1,4 +1,5 @@
 import type { Action, Goal } from "../../api/types";
+import { Button } from "../../ui/Button";
 import { Chip } from "../../ui/Chip";
 import { DeadlineChip } from "../../ui/DeadlineChip";
 import { GoalChip, goalDotClass } from "../../ui/GoalChip";
@@ -17,6 +18,8 @@ interface Props {
   onDeadline: (wall: string) => void;
   // The page shows the title first, the plan, then what was read. "all" keeps them together.
   part?: "title" | "read" | "all";
+  // While planning, the check step is step 1 and carries the way to edit before anything is added.
+  step?: { n: number; title: string; hint: string; onEdit: () => void };
 }
 
 const kindLabel: Record<string, string> = { try: "Try it", opportunity: "Opportunity" };
@@ -43,7 +46,7 @@ function missingDeadlineReason(action: Action): { text: string; wall: string | n
 }
 
 // The title, then step 1: what the model read, with where each field came from. Missing stays Missing.
-export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "all" }: Props) {
+export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "all", step }: Props) {
   const goal = goals.find((item) => item.id === action.goalId);
   const reason = missingDeadlineReason(action);
   const tzText = timezoneChipText(action);
@@ -72,7 +75,7 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "
       )}
 
       {part !== "title" && (
-      <Step title="What Muse read" hint="Check these against your screenshot" current={action.goalId === null && part === "all"}>
+      <Step n={step?.n} title={step?.title ?? "What Muse read"} hint={step?.hint ?? "Check these against your screenshot"} current={action.goalId === null}>
         <dl className="rv-fields">
           <div>
             <dt>Goal</dt>
@@ -145,6 +148,11 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "
           <div className="rv-chips">
             {action.model && <ModelChip ms={action.extractionLatencyMs} />}
             {tzText && <Chip tone="neutral">{tzText}</Chip>}
+          </div>
+        )}
+        {step && (
+          <div>
+            <Button variant="secondary" onClick={step.onEdit}>Edit title, deadline, goal or link</Button>
           </div>
         )}
       </Step>
