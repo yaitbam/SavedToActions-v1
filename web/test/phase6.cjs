@@ -59,9 +59,9 @@ async function main() {
       await page.getByRole('button', { name: 'Close', exact: true }).click();
       await page.getByRole('dialog').waitFor({ state: 'hidden' });
       const copy = await page.locator('body').innerText();
-      assert.ok(!/\d/.test(copy), 'No unsupported numeric claims or build dates');
-      assert.ok(copy.includes('Illustrative posts and accounts are fictional.'));
-      assert.ok(copy.includes('Imported demo data'));
+      assert.ok(!/\d/.test(await page.locator('main').innerText()), 'No unsupported numeric claims or build dates');
+      assert.equal(await page.locator('footer p').innerText(), '© 2026 SavedToAction. All rights reserved.');
+      assert.ok(!/demo|No scraping|Illustrative posts and accounts are fictional/i.test(copy));
       assert.ok(copy.includes('The AI proposes.'));
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No horizontal overflow');
       assert.ok(await page.evaluate(() => Array.from(document.querySelectorAll('main img')).every(image => {

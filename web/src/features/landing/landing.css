@@ -32,8 +32,6 @@
 .landing-week-block { position: absolute; top: 42px; left: calc(20% + 6px); width: calc(60% - 12px); display: flex; flex-direction: column; gap: 4px; padding: 12px; border-left: 3px solid var(--color-ink); border-radius: 4px; background: var(--color-goal-learn); font-size: 13px; }
 .landing-week-block strong { font-weight: 600; }
 .landing-week-caption { margin-top: 8px; color: var(--color-muted); font-size: 13px; }
-.landing-demo { margin-top: 24px; color: var(--color-muted); font-size: 13px; line-height: 1.6; }
-.landing-desk > .landing-demo { text-align: right; }
 .landing-pain { border-block: 1px solid var(--color-line); background: var(--color-missing-bg); }
 .landing-pain-inner { display: grid; grid-template-columns: 1fr 2.2fr; gap: 24px 80px; padding-block: 64px; }
 .landing-pain h2 { max-width: 800px; font-size: 48px; line-height: 1.08; }
@@ -83,7 +81,6 @@
   .landing-desk-connector { margin-top: 40px; }
   .landing-week { padding: 16px; }
   .landing-week-caption { font-size: 11px; }
-  .landing-desk > .landing-demo { text-align: left; }
   .landing-pain-inner { grid-template-columns: 1fr; gap: 24px; padding-block: 48px; }
   .landing-pain h2 { font-size: 40px; }
   .landing-pain-inner > p:last-child { grid-column: 1; }

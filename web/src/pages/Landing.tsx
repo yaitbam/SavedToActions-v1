@@ -48,7 +48,7 @@ export function Landing() {
             <h2 id="changes-title">When your week changes</h2>
             <p>A meeting lands on your booked time. Review the conflict, then approve a new slot before anything moves.</p>
           </div>
-          <ProductShot name="conflict" alt="Demo conflict card showing the overlap and Move to Today 09:30" />
+          <ProductShot name="conflict" alt="Conflict card showing the overlap and Move to Today 09:30" />
         </section>
         <section className="landing-trust landing-width" aria-labelledby="trust-title">
           <p className="landing-eyebrow">Your calendar. Your call.</p>
@@ -58,7 +58,7 @@ export function Landing() {
       </main>
       <footer className="landing-footer landing-width">
         <Logo />
-        <p>No scraping. Bring your own screenshots.<br />Illustrative posts and accounts are fictional.</p>
+        <p>© 2026 SavedToAction. All rights reserved.</p>
       </footer>
     </div>
   );

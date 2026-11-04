@@ -22,7 +22,6 @@ export function LandingSteps() {
           </li>
         ))}
       </ol>
-      <p className="landing-demo">Imported demo data · Illustrative posts and accounts are fictional</p>
     </section>
   );
 }

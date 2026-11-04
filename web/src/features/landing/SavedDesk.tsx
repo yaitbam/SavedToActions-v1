@@ -20,7 +20,6 @@ export function SavedDesk() {
         </div>
         <p className="landing-week-caption">Illustrative week · After your approval</p>
       </div>
-      <p className="landing-demo">Imported demo data · Fictional illustrative posts</p>
     </div>
   );
 }
