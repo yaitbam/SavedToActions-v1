@@ -1,0 +1,107 @@
+{
+  "savedAt": "2026-11-04T00:05:19.882Z",
+  "requestSentAt": "2026-11-04T00:05:19.024Z",
+  "requestedModel": "meta-models/muse-spark-open-1026",
+  "responseModel": "meta-models/muse-spark-open-1026",
+  "httpStatus": 200,
+  "request": {
+    "model": "meta-models/muse-spark-open-1026",
+    "temperature": 0,
+    "max_tokens": 4000,
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "create_prep_block",
+          "description": "Stage a calendar block to prepare for a deadline.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "start_iso": {
+                "type": "string"
+              },
+              "duration_min": {
+                "type": "integer"
+              },
+              "timezone": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "start_iso",
+              "duration_min",
+              "timezone"
+            ]
+          }
+        }
+      }
+    ],
+    "tool_choice": {
+      "type": "function",
+      "function": {
+        "name": "create_prep_block"
+      }
+    },
+    "messages": [
+      {
+        "role": "user",
+        "content": "Grant deadline is Fri Nov 6 2026 23:59 GMT. My timezone is Africa/Casablanca. Stage a 120 minute prep block on Thu Nov 5 2026 at 10:00."
+      }
+    ]
+  },
+  "rawResponse": {
+    "id": "chatcmpl-aa6b701b87dc44b19fb5ff4035bcc97e",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "chatcmpl-tool-a04baaf7873148b3bb93730a7624979a",
+              "type": "function",
+              "function": {
+                "name": "create_prep_block",
+                "arguments": "{\"title\": \"Grant deadline prep\", \"start_iso\": \"2026-11-05T10:00:00+01:00\", \"duration_min\": 120, \"timezone\": \"Africa/Casablanca\"}"
+              }
+            }
+          ],
+          "role": "assistant"
+        },
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "created": 1793750719,
+    "model": "meta-models/muse-spark-open-1026",
+    "object": "chat.completion",
+    "usage": {
+      "prompt_tokens": 738,
+      "completion_tokens": 89,
+      "total_tokens": 827,
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": 0,
+        "audio_tokens": 0,
+        "reasoning_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    }
+  },
+  "ourCode": {
+    "library": "moment-timezone",
+    "wallTime": "2026-11-05T10:00",
+    "zone": "Africa/Casablanca",
+    "utc": "2026-11-05T10:00:00.000Z",
+    "offset": "+00:00",
+    "modelStartIso": "2026-11-05T10:00:00+01:00",
+    "modelOffset": "+01:00",
+    "modelOffsetMatchesOurs": false
+  }
+}

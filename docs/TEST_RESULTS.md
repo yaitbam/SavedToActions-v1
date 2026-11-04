@@ -57,15 +57,29 @@ Notes:
 
 Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so every conversion uses moment-timezone.
 
+Evidence file: [docs/evidence/timezone-catch.json](evidence/timezone-catch.json). It holds the raw Baseten response, the model name and the timestamp. It was made by `node scripts/timezone-catch.mjs`, one forced tool call with no Google Calendar and no database. The request asks for a prep block on 2026-11-05 at 10:00 in Africa/Casablanca.
+
+| | Value |
+|---|---|
+| Model | `meta-models/muse-spark-open-1026` (response `model` field) |
+| Saved at | 2026-11-04T00:05:19.882Z |
+| HTTP status, finish reason | 200, `tool_calls` |
+| Model wrote (`start_iso`) | `2026-11-05T10:00:00+01:00` |
+| Model timezone field | `Africa/Casablanca` |
+| Our code, same wall time (moment-timezone) | UTC `2026-11-05T10:00:00.000Z`, offset `+00:00` |
+| Model offset matches ours | No |
+
+If the model's `+01:00` were trusted, the block would land one hour early (09:00 UTC). The app does not trust it. The model returns wall time plus the IANA zone, code computes UTC, and an offset the model adds is ignored and recorded as a correction (`modelOffset +01:00`, `computedOffset +00:00`).
+
+Other checks:
+
 | Check | Result |
 |---|---|
 | Startup self test (Africa/Casablanca at 2026-11-05T10:00Z must be +00:00) | Passes, the server exits if it does not |
-| Model wrote an offset of +01:00 for Africa/Casablanca | Recorded in `server/README.md` from early model smoke tests |
-| What the code does | Ignores the model's offset, computes UTC from the wall time and the IANA zone, shows the correction as +00:00 |
 | Automated test | A scripted model answer with a +01:00 deadline gives modelOffset +01:00 and computedOffset +00:00, and an answer with +00:00 or no offset records no correction. Passing, in `server/test/saves.test.js` |
-| Corrections in the 14 seed runs | 0. The model did not add an offset in those runs |
+| Corrections in the 14 seed runs | 0. The correction did not trigger in any of the 14 seed runs, because the model did not add an offset to a deadline in those runs |
 
-TODO: the raw output of the original +01:00 model answer is not saved in this repo. Add it here if it still exists.
+The evidence file shows the model making this mistake in a tool call. It does not show the correction firing inside the extraction pipeline on a real screenshot. That has not been observed. It is covered by the automated test only.
 
 ## Live calendar flow
 
