@@ -10,6 +10,7 @@ export type StatusKey =
   | "needs_input"
   | "error"
   | "drift"
+  | "passed"
   | "missing";
 
 const statuses: Record<StatusKey, { label: string; tone: Tone }> = {
@@ -21,6 +22,7 @@ const statuses: Record<StatusKey, { label: string; tone: Tone }> = {
   needs_input: { label: "Needs input", tone: "missing" },
   error: { label: "Error", tone: "nofit" },
   drift: { label: "Calendar changed", tone: "conflict" },
+  passed: { label: "Deadline passed", tone: "nofit" },
   missing: { label: "Missing", tone: "missing" },
 };
 

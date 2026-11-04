@@ -7,12 +7,14 @@ interface ThumbProps {
   alt: string;
   onOpen?: () => void;
   className?: string;
-  // Show the whole screenshot at its own proportions (Review). Default is a 4:5 crop.
+  // Show the whole screenshot at its own proportions (Review). Default is a 4:5 frame.
   natural?: boolean;
 }
 
 export function Thumb({ src, alt, onOpen, className, natural = false }: ThumbProps) {
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  // Tall screenshots fill the frame and crop from the top. Wide ones are shown whole on a tint.
+  const [wide, setWide] = useState(false);
 
   const image = (
     <>
@@ -26,11 +28,17 @@ export function Thumb({ src, alt, onOpen, className, natural = false }: ThumbPro
           src={src}
           alt={alt}
           loading="lazy"
-          onLoad={() => setState("ready")}
+          onLoad={(event) => {
+            const { naturalWidth, naturalHeight } = event.currentTarget;
+            setWide(naturalWidth > naturalHeight);
+            setState("ready");
+          }}
           onError={() => setState("failed")}
           className={cx(
-            natural ? "block h-auto max-h-[75vh] w-full object-contain" : "absolute inset-0 size-full object-cover",
+            natural && "block h-auto max-h-[75vh] w-full object-contain",
             natural && state !== "ready" && "min-h-64",
+            !natural && "absolute inset-0 size-full",
+            !natural && (wide ? "object-contain" : "object-cover object-top"),
           )}
         />
       )}
@@ -38,7 +46,8 @@ export function Thumb({ src, alt, onOpen, className, natural = false }: ThumbPro
   );
 
   const frame = cx(
-    "relative block w-full overflow-hidden rounded-thumb bg-missing-bg",
+    "relative block w-full overflow-hidden rounded-thumb",
+    !natural && wide ? "bg-line" : "bg-missing-bg",
     !natural && "aspect-[4/5]",
     className,
   );

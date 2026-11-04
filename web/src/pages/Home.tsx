@@ -1,59 +1,101 @@
-import { getGoals } from "../api/goals";
-import { getHome } from "../api/home";
-import type { HomeSummary } from "../api/types";
-import { useAsync } from "../api/useAsync";
+import { Link } from "react-router-dom";
+import { AttentionCard } from "../features/home/AttentionCard";
+import { ConnectCard } from "../features/home/ConnectCard";
+import { GoalRows } from "../features/home/GoalRows";
+import { Inbox } from "../features/home/Inbox";
+import { hasDemoData, inboxSaves, pickNextUp } from "../features/home/model";
+import { NextUp } from "../features/home/NextUp";
+import { useHomeData } from "../features/home/useHomeData";
+import { WeekStrip } from "../features/home/WeekStrip";
 import { DropZone } from "../features/newSave/DropZone";
+import { Button } from "../ui/Button";
+import { Chip } from "../ui/Chip";
 import { ErrorState } from "../ui/ErrorState";
-import { SaveCard } from "../ui/SaveCard";
 import { Skeleton } from "../ui/Skeleton";
-import { statusFromCheck, type StatusKey } from "../ui/StatusChip";
 
-function cardStatus(action: HomeSummary | null): StatusKey | null {
-  if (!action) return "error";
-  if (action.status === "done") return "done";
-  if (action.status === "skipped") return null;
-  if (action.status === "planned") return action.check ? statusFromCheck(action.check.state) : "planned";
-  return action.effort.confirmed ? null : "needs_input";
-}
+const ATTENTION_VISIBLE = 2;
 
 export function Home() {
-  const home = useAsync(getHome, []);
-  const goals = useAsync(getGoals, []);
-  const saves = home.data?.recent_saves ?? [];
+  const { home, goals, planned, week, reload, recheck, rechecking, recheckNote } = useHomeData();
+  const data = home.data;
   const goalName = (id: number | null | undefined) => goals.data?.find((goal) => goal.id === id)?.name;
+
+  const attention = data?.needs_attention ?? [];
+  const inbox = data ? inboxSaves(data) : [];
+  const inboxTotal = Math.max(inbox.length, data?.inbox.needs_effort ?? 0);
+  const nextUp = data ? pickNextUp(data) : null;
+  const plannedItems = planned.data?.items ?? [];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-title">What needs you today</h1>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-title">What needs you today</h1>
+          {data && (
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
+              <span>{data.now.display}</span>
+              {data.now.tz && <span>{data.now.tz}</span>}
+              {hasDemoData(data) && <Chip>Imported demo data</Chip>}
+            </p>
+          )}
+        </div>
+        {data?.google_connected && (
+          <div className="flex items-center gap-3">
+            {recheckNote && (
+              <span role="alert" className="text-small text-nofit">
+                {recheckNote}
+              </span>
+            )}
+            <Button variant="secondary" onClick={recheck} loading={rechecking} disabled={plannedItems.length === 0}>
+              Recheck now
+            </Button>
+          </div>
+        )}
+      </header>
+
       <DropZone />
 
-      {home.error && !home.data ? (
+      {home.error && !data ? (
         <ErrorState error={home.error} title="Could not load your saves" onRetry={() => void home.reload()} />
-      ) : !home.data ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[0, 1, 2, 3].map((n) => (
-            <Skeleton key={n} className="aspect-[4/5]" />
-          ))}
+      ) : !data ? (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
         </div>
-      ) : saves.length === 0 ? (
+      ) : !data.google_connected ? (
+        <ConnectCard />
+      ) : data.recent_saves.length === 0 && attention.length === 0 ? (
         <p className="text-muted">Your saved posts are waiting. Drop one to start</p>
       ) : (
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {saves.map((save) => (
-            <li key={save.saveId}>
-              <SaveCard
-                saveId={save.saveId}
-                screenshotUrl={save.screenshotUrl}
-                title={save.action?.title ?? null}
-                goalId={save.action?.goalId ?? null}
-                goalName={goalName(save.action?.goalId)}
-                status={cardStatus(save.action)}
-                when={save.importedAtRelative}
-                demo={save.isDemo}
-              />
-            </li>
-          ))}
-        </ul>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
+          <div className="space-y-6">
+            {attention.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="text-base">Needs you now</h2>
+                {attention.slice(0, ATTENTION_VISIBLE).map((item) => (
+                  <AttentionCard key={item.action.id} item={item} onChanged={() => void reload()} />
+                ))}
+                {attention.length > ATTENTION_VISIBLE && (
+                  <Link to="/app/saves" className="inline-block text-small font-medium underline underline-offset-4">
+                    {attention.length - ATTENTION_VISIBLE} more need you
+                  </Link>
+                )}
+              </section>
+            )}
+            {nextUp && <NextUp action={nextUp} goalName={goalName(nextUp.goalId)} />}
+          </div>
+
+          <div className="space-y-6">
+            {goals.data && <GoalRows goals={goals.data} />}
+            {inbox.length > 0 && <Inbox saves={inbox} total={inboxTotal} goalName={goalName} />}
+            <WeekStrip
+              week={week.data}
+              planned={plannedItems}
+              error={week.error}
+              onRetry={() => void week.reload()}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

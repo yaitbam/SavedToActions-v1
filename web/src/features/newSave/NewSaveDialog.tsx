@@ -113,14 +113,10 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => input.current?.click()}
-            className="flex w-full flex-col items-start gap-1 rounded-card border-2 border-dashed border-line p-6 text-left hover:border-ink"
-          >
+          <div className="flex w-full flex-col items-start gap-1 rounded-card border-2 border-dashed border-line p-6">
             <span className="font-semibold">Drop or paste a screenshot of a post you saved</span>
             <span className="text-small text-muted">You review it before anything is booked</span>
-          </button>
+          </div>
         )}
 
         <input
@@ -141,9 +137,13 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
           <Button variant="text" onClick={onClose} disabled={working}>
             Cancel
           </Button>
-          <Button onClick={extract} loading={working} disabled={!file && retrySaveId.current === null}>
-            {phase === "error" ? "Retry" : "Extract"}
-          </Button>
+          {!file && retrySaveId.current === null ? (
+            <Button onClick={() => input.current?.click()}>Choose a screenshot</Button>
+          ) : (
+            <Button onClick={extract} loading={working}>
+              {phase === "error" ? "Retry" : "Extract"}
+            </Button>
+          )}
         </div>
       </div>
     </dialog>

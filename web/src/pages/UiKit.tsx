@@ -105,7 +105,6 @@ export function UiKit() {
             goalName="Learn a skill"
             status="fits"
             when="Today 18:30"
-            demo
           />
         </div>
         <Card className="w-56">Flat card</Card>
