@@ -6,6 +6,7 @@ import { createVault } from "./vault.js";
 import { createUsage } from "./usage.js";
 import { setGoogleEmail } from "../db.js";
 import { modelInfo } from "../model/provider.js";
+import { findDemoAccount } from "../demo/loadDemo.js";
 
 export function createAuthenticatedApp({ config, provider, selfTest, clock = Date.now, clientFactory, workspaceFactory }) {
   const db = openAccounts(config.dataDir), vault = createVault(config.dataDir, config.tokenEncKey);
@@ -44,7 +45,7 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
     const account = req.account;
     if (!account) {
       const csrf = cookies(req).sta_csrf || random(); cookie(res, config, "sta_csrf", csrf, 3600);
-      return res.json({ authenticated: false, kind: null, profile_complete: false, name: null, email: null, csrf_token: csrf, credits: null, calendar_email: null, demo_available: false, model: modelInfo(provider) });
+      return res.json({ authenticated: false, kind: null, profile_complete: false, name: null, email: null, csrf_token: csrf, credits: null, calendar_email: null, demo_available: !!findDemoAccount(db), model: modelInfo(provider) });
     }
     res.json({ authenticated: true, kind: account.kind, profile_complete: !!account.profile_completed_at,
       name: account.name, email: account.email, csrf_token: account.csrf_token, credits: usage.credits(account),
@@ -75,7 +76,14 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
     if (req.account) db.prepare("DELETE FROM sessions WHERE token_hash=?").run(req.account.token_hash);
     cookie(res, config, "sta_session", "", 0); res.json({ signed_out: true });
   });
-  app.post("/auth/demo", (_req, res) => res.status(503).json({ error: "demo_unavailable" }));
+  // The shared read only demo. It exists once scripts/load-demo.mjs has filled it, and needs no Google account.
+  app.post("/auth/demo", (req, res) => {
+    const demo = findDemoAccount(db);
+    if (!demo) return res.status(503).json({ error: "demo_unavailable" });
+    if (req.account) db.prepare("DELETE FROM sessions WHERE token_hash=?").run(req.account.token_hash);
+    newSession(db, res, config, demo.id, clock());
+    res.json({ demo: true });
+  });
   // Account deletion. Needs a typed confirmation. The Google grant is revoked best effort, the workspace folder and the
   // account row are removed, which also ends every session. Events already on Google Calendar are kept.
   const deleteAccount = async (req, res) => {
@@ -111,12 +119,14 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
   });
   app.get("/api/me", (req, res) => res.json({ name: req.account.name, email: req.account.email }));
   app.patch("/api/me", (req, res) => {
+    // The demo account is shared by every visitor, so nobody can rename it.
+    if (req.account.kind === "demo") return res.status(403).json({ error: "demo_readonly" });
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
     if (!name || name.length > 80) return res.status(400).json({ error: "invalid_name" });
     db.prepare("UPDATE accounts SET name=?,profile_completed_at=COALESCE(profile_completed_at,?) WHERE id=?").run(name, clock(), req.account.id);
     res.json({ name, email: req.account.email });
   });
-  app.get("/auth/google", (req, res) => identity.start(req, res, "calendar", req.account.id));
+  app.get("/auth/google", (req, res) => req.account.kind === "demo" ? res.redirect(`${config.frontendOrigin}/app`) : identity.start(req, res, "calendar", req.account.id));
   app.get("/auth/google/callback", async (req, res) => {
     try {
       const { profile, tokens } = await identity.finish(req, "calendar", req.account.id);
