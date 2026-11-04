@@ -40,6 +40,23 @@ export function offsetAt(instant, tz) {
   return moment.utc(instant).tz(tz).format("Z");
 }
 
+const CHOOSABLE_ZONE = /^(Africa|America|Antarctica|Arctic|Asia|Atlantic|Australia|Europe|Indian|Pacific)\//;
+
+/**
+ * Zones a user can pick in Settings: canonical region names plus UTC, each with its offset at `instant`.
+ * Offsets come from moment-timezone, never from Intl, so Africa/Casablanca is right. Sorted by offset, then name.
+ * Legacy aliases such as US/Eastern are left out. They stay valid when sent, they are just not offered.
+ */
+export function listTimezones(instant) {
+  const at = moment.utc(instant);
+  return moment.tz
+    .names()
+    .filter((id) => id === "UTC" || CHOOSABLE_ZONE.test(id))
+    .map((id) => ({ id, offset: at.clone().tz(id).format("Z"), minutes: at.clone().tz(id).utcOffset() }))
+    .sort((a, b) => a.minutes - b.minutes || a.id.localeCompare(b.id))
+    .map(({ id, offset }) => ({ id, offset }));
+}
+
 /** Local calendar date "YYYY-MM-DD" of an instant in a zone. */
 export function localDate(instant, tz) {
   return moment.utc(instant).tz(tz).format("YYYY-MM-DD");

@@ -75,6 +75,32 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
     cookie(res, config, "sta_session", "", 0); res.json({ signed_out: true });
   });
   app.post("/auth/demo", (_req, res) => res.status(503).json({ error: "demo_unavailable" }));
+  // Account deletion. Needs a typed confirmation. The Google grant is revoked best effort, the workspace folder and the
+  // account row are removed, which also ends every session. Events already on Google Calendar are kept.
+  const deleteAccount = async (req, res) => {
+    const account = req.account;
+    if (!account) return res.status(401).json({ error: "unauthenticated" });
+    if (account.kind === "demo") return res.status(403).json({ error: "demo_readonly" });
+    if (req.body?.approved !== true || req.body?.confirmation !== "DELETE MY ACCOUNT") {
+      return res.status(400).json({ error: "confirmation_required", detail: "Send approved: true and confirmation: DELETE MY ACCOUNT." });
+    }
+    const ws = registry.get(account);
+    const busy = () => ws.references || ws.app.locals.workspaceBusy?.();
+    const busyReply = () => res.status(409).json({ error: "operations_in_progress", detail: "Wait for active extraction and calendar operations to finish, then try again." });
+    if (busy()) return busyReply();
+    const google = typeof ws.googleAuth?.revoke === "function" ? await ws.googleAuth.revoke() : { revoked: false };
+    // Everything below is synchronous, so no request can slip in between the checks and the removal.
+    if (busy()) return busyReply();
+    registry.destroy(account);
+    db.transaction(() => {
+      db.prepare("DELETE FROM oauth_requests WHERE account_id=?").run(account.id);
+      db.prepare("DELETE FROM accounts WHERE id=?").run(account.id);
+    })();
+    cookie(res, config, "sta_session", "", 0);
+    // null means there was no Google grant to revoke.
+    res.json({ deleted: true, google_revoked: google.reason === "not_connected" ? null : google.revoked, calendarUnchanged: true, detail: "Your account, saves, screenshots and settings were removed. Existing Google Calendar events were kept." });
+  };
+  app.delete("/api/me", (req, res, next) => deleteAccount(req, res).catch(next));
   app.use((req, res, next) => {
     if (!req.account && req.path.startsWith("/auth/google")) return res.redirect(`${config.frontendOrigin}/login?error=session_expired`);
     if (!req.account) return res.status(401).json({ error: "unauthenticated" });
@@ -133,6 +159,7 @@ export function createAuthenticatedApp({ config, provider, selfTest, clock = Dat
       while (index < accounts.length) {
         const account = accounts[index++];
         if ((backoff.get(account.id) ?? 0) > clock()) continue;
+        if (!db.prepare("SELECT 1 FROM accounts WHERE id=?").get(account.id)) continue; // deleted while this pass was running
         let ws;
         try {
           ws = registry.get(account); ws.references = (ws.references ?? 0) + 1;

@@ -29,6 +29,14 @@ export function createRegistry({ config, provider, selfTest, vault, clock, works
       }
       ctx.lastUsed = clock(); contexts.set(account.id, ctx); return ctx;
     },
+    // Closes the workspace and removes its folder. The folder name must be the generated uuid and stay inside workspaces/.
+    destroy(account) {
+      const ctx = contexts.get(account.id);
+      if (ctx) { ctx.db.close(); contexts.delete(account.id); }
+      const root = path.resolve(config.dataDir, "workspaces");
+      const folder = path.resolve(root, String(account.workspace_key));
+      if (!workspaceFactory && /^[0-9a-f-]{36}$/.test(String(account.workspace_key)) && folder.startsWith(root + path.sep)) fs.rmSync(folder, { recursive: true, force: true });
+    },
     values: () => [...contexts.values()],
     close() { for (const ctx of contexts.values()) ctx.db.close(); contexts.clear(); },
   };

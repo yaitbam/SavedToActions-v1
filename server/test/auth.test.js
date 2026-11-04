@@ -87,6 +87,37 @@ test('two accounts isolate overlapping IDs and calendar credentials; wrong Googl
   assert.equal((await (await b.request('/auth/status')).json()).connected, false);
 }));
 
+test('DELETE /api/me needs the typed confirmation, then removes only that account with its workspace and sessions', () => withApp(async ({ browser, login, db, dir }) => {
+  const a = browser(), b = browser();
+  const sa = await login(a), sb = await login(b, 'account-b');
+  for (const [client, session, name] of [[a, sa, 'Name A'], [b, sb, 'Name B']]) await client.request('/api/me', { method: 'PATCH', body: { name }, csrf: session.csrf_token });
+  await a.request('/api/goals/1', { method: 'PUT', body: { name: 'Goal of A' }, csrf: sa.csrf_token });
+  await b.request('/api/goals/1', { method: 'PUT', body: { name: 'Goal of B' }, csrf: sb.csrf_token });
+  const folderA = path.join(dir, 'workspaces', db.prepare('SELECT workspace_key FROM accounts WHERE google_sub=?').get('account-a').workspace_key);
+  assert.ok(fs.existsSync(folderA));
+
+  const confirmed = { approved: true, confirmation: 'DELETE MY ACCOUNT' };
+  const wrongText = await a.request('/api/me', { method: 'DELETE', body: { approved: true, confirmation: 'delete' }, csrf: sa.csrf_token });
+  assert.equal(wrongText.status, 400); assert.equal((await wrongText.json()).error, 'confirmation_required');
+  assert.equal((await a.request('/api/me', { method: 'DELETE', body: { confirmation: 'DELETE MY ACCOUNT' }, csrf: sa.csrf_token })).status, 400);
+  assert.equal((await a.request('/api/me', { method: 'DELETE', body: confirmed })).status, 403, 'CSRF token is required');
+  assert.ok(fs.existsSync(folderA), 'nothing is removed by a refused request');
+
+  const done = await a.request('/api/me', { method: 'DELETE', body: confirmed, csrf: sa.csrf_token });
+  assert.equal(done.status, 200);
+  const result = await done.json();
+  assert.equal(result.deleted, true); assert.equal(result.google_revoked, null, 'no Google grant was connected'); assert.equal(result.calendarUnchanged, true);
+  assert.equal(fs.existsSync(folderA), false);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM accounts WHERE google_sub=?').get('account-a').n, 0);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n, 1, 'only the other account keeps a session');
+  assert.equal((await (await a.request('/auth/session')).json()).authenticated, false);
+
+  assert.equal((await (await b.request('/api/goals')).json())[0].name, 'Goal of B');
+  const again = browser(), sAgain = await login(again);
+  await again.request('/api/me', { method: 'PATCH', body: { name: 'Back again' }, csrf: sAgain.csrf_token });
+  assert.notEqual((await (await again.request('/api/goals')).json())[0].name, 'Goal of A', 'a new sign in starts from an empty workspace');
+}));
+
 test('OAuth state is browser-bound, single-use and expires; sessions expire', () => withApp(async ({ browser, login, advance }) => {
   const a = browser(), b = browser();
   let result = await a.request('/auth/login/google');

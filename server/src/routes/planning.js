@@ -1,6 +1,12 @@
 // HTTP for planning. Thin: parse, call the service, send. Writes need `approved: true` in the body.
 
-export function registerPlanningRoutes(app, { planning, recheck, agent, locks }) {
+import fs from "node:fs";
+import path from "node:path";
+
+const FILE_RE = /^[0-9a-f-]{36}\.(png|jpg|webp)$/;
+
+export function registerPlanningRoutes(app, { db, planning, recheck, agent, locks, config, jobs }) {
+  const raw = app;
   if(locks){const actual=app;app={get:(...args)=>actual.get(...args),post:(path,handler)=>actual.post(path,(req,res)=>locks.run(Number(req.params.id),()=>handler(req,res)))};}
 
   const send = (res, result, okStatus = 200) => {
@@ -58,5 +64,22 @@ export function registerPlanningRoutes(app, { planning, recheck, agent, locks })
   app.post("/api/actions/:id/skip", async (req, res) => {
     if(req.body?.removeFromCalendar===true && req.body?.approved!==true)return res.status(400).json({error:'approval_required'});
     return send(res, await planning.skip({ actionId: id(req), removeFromCalendar: req.body?.removeFromCalendar === true }));
+  });
+
+  // Permanent. Always needs approval. With removeFromCalendar the calendar events are deleted and read back first,
+  // and if that fails nothing is deleted. Without it the events stay on the calendar.
+  raw.delete("/api/saves/:id", async (req, res) => {
+    const saveId = Number(req.params.id);
+    if (!Number.isSafeInteger(saveId) || saveId < 1) return res.status(400).json({ error: "invalid_id" });
+    if (req.body?.approved !== true) return res.status(400).json({ error: "approval_required", detail: "Send approved: true to delete a save." });
+    if (jobs?.isRunning(saveId)) return res.status(409).json({ error: "extraction_in_progress", detail: "Wait for the extraction to finish, then delete the save." });
+    const actionIds = db.prepare("SELECT id FROM actions WHERE save_id = ?").all(saveId).map((r) => r.id);
+    const run = (ids, work) => (ids.length && locks ? locks.run(ids[0], () => run(ids.slice(1), work)) : work());
+    const result = await run(actionIds, () => planning.deleteSave({ saveId, removeFromCalendar: req.body?.removeFromCalendar === true }));
+    if (result.ok && FILE_RE.test(result.screenshotPath ?? "") && config?.screenshotDir) {
+      try { fs.unlinkSync(path.join(config.screenshotDir, result.screenshotPath)); } catch (error) { if (error.code !== "ENOENT") result.screenshotKept = true; }
+    }
+    const { screenshotPath, ...rest } = result;
+    return send(res, rest);
   });
 }

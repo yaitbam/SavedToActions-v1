@@ -552,5 +552,40 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
         return { ok: true, ...summary(row), calendar: { hadBlock: Boolean(block), removed, removeError } };
       });
     },
+
+    /**
+     * Delete a save with its actions and records. With removeFromCalendar the active calendar events go first, each
+     * read back as gone. If one cannot be removed nothing local is deleted, so the user can retry or keep the event.
+     */
+    deleteSave({ saveId, removeFromCalendar = false }) {
+      return guard(async () => {
+        const save = db.prepare("SELECT id, screenshot_path FROM saves WHERE id = ?").get(saveId);
+        if (!save) return fail(404, "not_found");
+        const actionIds = db.prepare("SELECT id FROM actions WHERE save_id = ?").all(saveId).map((r) => r.id);
+        const blocks = actionIds.map((id) => getActiveBlock(db, id)).filter((b) => b && !b.event_deleted_at);
+        let removed = 0;
+        if (removeFromCalendar) {
+          for (const block of blocks) {
+            const nowIso = toIso(clock());
+            if (!(await removeEvent(block.google_event_id))) {
+              return fail(502, "calendar_remove_failed", { detail: "The calendar event could not be confirmed as removed. Nothing was deleted.", calendar: { blocks: blocks.length, removed, kept: blocks.length - removed } });
+            }
+            markEventDeleted(db, block.id, nowIso);
+            cancelBlock(db, block.id, nowIso);
+            removed += 1;
+          }
+        }
+        db.transaction(() => {
+          const marks = actionIds.map(() => "?").join(",");
+          if (actionIds.length) {
+            for (const table of ["action_transitions", "checks", "agent_traces", "blocks"]) db.prepare(`DELETE FROM ${table} WHERE action_id IN (${marks})`).run(...actionIds);
+            db.prepare(`DELETE FROM actions WHERE id IN (${marks})`).run(...actionIds);
+          }
+          db.prepare("DELETE FROM extraction_jobs WHERE save_id = ?").run(saveId);
+          db.prepare("DELETE FROM saves WHERE id = ?").run(saveId);
+        })();
+        return { ok: true, deleted: true, screenshotPath: save.screenshot_path, calendar: { blocks: blocks.length, removed, kept: blocks.length - removed } };
+      });
+    },
   };
 }

@@ -55,6 +55,18 @@ test("OPTIONS preflight answers 204", async () => {
   });
 });
 
+test("GET /api/timezones lists choosable zones with moment-timezone offsets", async () => {
+  await withServer(stubGoogle(), async (base) => {
+    const res = await fetch(`${base}/api/timezones`);
+    assert.equal(res.status, 200);
+    const { zones } = await res.json();
+    assert.ok(zones.length > 300);
+    assert.ok(zones.every((zone) => typeof zone.id === "string" && /^[+-]\d\d:\d\d$/.test(zone.offset)));
+    assert.ok(zones.some((zone) => zone.id === "Africa/Casablanca"));
+    for (const zone of zones.slice(0, 5)) assert.equal((await put(`${base}/api/settings`, { tz: zone.id })).status, 200);
+  });
+});
+
 test("settings: defaults, validation, partial update", async () => {
   await withServer(stubGoogle(), async (base) => {
     assert.deepEqual(await (await fetch(`${base}/api/settings`)).json(), { workStart: "09:00", workEnd: "21:00", tz: null, ignoreAllDay: true });

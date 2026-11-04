@@ -1,6 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SELF_TEST, addDays, dataVersion, formatForDisplay, formatRelative, formatRelativeRange, isValidTimezone, offsetAt, runSelfTest, wallToUtc, withRelativeSlot } from "../src/tz.js";
+import { SELF_TEST, addDays, dataVersion, formatForDisplay, formatRelative, formatRelativeRange, isValidTimezone, listTimezones, offsetAt, runSelfTest, wallToUtc, withRelativeSlot } from "../src/tz.js";
+
+test("listTimezones: moment-timezone offsets, Casablanca is +00:00, aliases left out, sorted by offset", () => {
+  const zones = listTimezones(SELF_TEST.instantUtc);
+  const offsets = Object.fromEntries(zones.map((zone) => [zone.id, zone.offset]));
+  assert.equal(offsets["Africa/Casablanca"], "+00:00");
+  assert.equal(offsets.UTC, "+00:00");
+  assert.equal(offsets["America/New_York"], "-05:00");
+  assert.equal(offsets["US/Eastern"], undefined);
+  assert.equal(offsets["Etc/GMT+5"], undefined);
+  assert.ok(zones.every((zone) => isValidTimezone(zone.id)));
+  const minutes = zones.map((zone) => (zone.offset[0] === "-" ? -1 : 1) * (Number(zone.offset.slice(1, 3)) * 60 + Number(zone.offset.slice(4))));
+  assert.deepEqual(minutes, [...minutes].sort((a, b) => a - b));
+});
 
 test("self test: Africa/Casablanca is +00:00 on 2026-11-05 (moment-timezone data, not Node Intl)", () => {
   assert.equal(offsetAt(SELF_TEST.instantUtc, SELF_TEST.tz), "+00:00");

@@ -58,6 +58,7 @@ async function withApp(opts, fn) {
     return { status: res.status, json: await res.json() };
   };
   const api = {
+    request,
     get: (path) => request("GET", path),
     post: (path, body) => request("POST", path, body),
     propose: (id) => request("POST", `/api/actions/${id}/propose`),
@@ -556,5 +557,49 @@ test("the action view carries the block, and none before approval", async () => 
     assert.equal(view.block.durationMin, 60);
     assert.equal(view.block.readback.status, "ok");
     assert.equal(view.effort.scheduledMin, 60);
+  });
+});
+
+test("delete save: needs approval, removes the calendar event only when asked, and deletes nothing if the event stays", async () => {
+  await withApp({}, async ({ api, seed, cal, db }) => {
+    const del = (id, body) => api.request("DELETE", `/api/saves/${id}`, body);
+    const saveOf = (actionId) => db.prepare("SELECT save_id FROM actions WHERE id = ?").get(actionId).save_id;
+    const rows = (saveId) => db.prepare("SELECT (SELECT COUNT(*) FROM saves WHERE id = ?) AS s, (SELECT COUNT(*) FROM actions WHERE save_id = ?) AS a").get(saveId, saveId);
+
+    const plain = seed();
+    const plainSave = saveOf(plain);
+    assert.equal((await del(plainSave)).json.error, "approval_required");
+    assert.deepEqual(rows(plainSave), { s: 1, a: 1 });
+    const r0 = await del(plainSave, { approved: true });
+    assert.deepEqual([r0.status, r0.json.deleted, r0.json.calendar], [200, true, { blocks: 0, removed: 0, kept: 0 }]);
+    assert.deepEqual(rows(plainSave), { s: 0, a: 0 });
+    assert.equal((await del(plainSave, { approved: true })).status, 404);
+
+    const booked = seed();
+    const event = (await api.approve(booked, slot("13:00"))).json.block;
+    const bookedSave = saveOf(booked);
+    const r1 = await del(bookedSave, { approved: true, removeFromCalendar: true });
+    assert.deepEqual(r1.json.calendar, { blocks: 1, removed: 1, kept: 0 });
+    assert.equal(cal.raw(event.googleEventId).status, "cancelled");
+    assert.deepEqual(rows(bookedSave), { s: 0, a: 0 });
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM blocks WHERE action_id = ?").get(booked).n, 0);
+
+    const kept = seed();
+    const keptEvent = (await api.approve(kept, slot("15:00"))).json.block;
+    const r2 = await del(saveOf(kept), { approved: true });
+    assert.deepEqual(r2.json.calendar, { blocks: 1, removed: 0, kept: 1 });
+    assert.equal(cal.raw(keptEvent.googleEventId).status, "confirmed", "the event is left alone unless the user asks");
+
+    const stuck = seed();
+    const stuckEvent = (await api.approve(stuck, slot("17:00"))).json.block;
+    const stuckSave = saveOf(stuck);
+    cal.failNext("deleteEvent", new CalendarError("google_unavailable", "down"));
+    const r3 = await del(stuckSave, { approved: true, removeFromCalendar: true });
+    assert.deepEqual([r3.status, r3.json.error], [502, "google_unavailable"]);
+    assert.deepEqual(rows(stuckSave), { s: 1, a: 1 }, "nothing is deleted when the event could not be removed");
+    assert.equal(cal.raw(stuckEvent.googleEventId).status, "confirmed");
+    const retry = await del(stuckSave, { approved: true, removeFromCalendar: true });
+    assert.deepEqual(retry.json.calendar, { blocks: 1, removed: 1, kept: 0 });
+    assert.deepEqual(rows(stuckSave), { s: 0, a: 0 });
   });
 });

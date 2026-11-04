@@ -78,5 +78,18 @@ export function createGoogleAuth({ db, config, vault }) {
     const previous = readStored() ?? {};
     writeStored({ ...previous, ...tokens, refresh_token: tokens.refresh_token ?? previous.refresh_token });
   }
-  return { saveVerifiedTokens, configured, authUrl, handleCallback, authorizedClient, status, disconnect };
+
+  /** Asks Google to revoke the grant. Never throws. Local tokens are not touched here. */
+  async function revoke() {
+    const tokens = readStored();
+    const token = tokens?.refresh_token ?? tokens?.access_token;
+    if (!token) return { revoked: false, reason: "not_connected" };
+    try {
+      await newClient().revokeToken(token);
+      return { revoked: true };
+    } catch {
+      return { revoked: false, reason: "revoke_failed" };
+    }
+  }
+  return { saveVerifiedTokens, configured, authUrl, handleCallback, authorizedClient, status, disconnect, revoke };
 }

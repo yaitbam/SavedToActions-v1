@@ -13,7 +13,7 @@ import { createPlanningService } from "./services/planning.js";
 import { createRecheckService } from "./services/recheck.js";
 import { goalMetrics } from "./stats.js";
 import { validateWorkingHours } from "./scheduler/time.js";
-import { isValidTimezone } from "./tz.js";
+import { isValidTimezone, listTimezones } from "./tz.js";
 
 /**
  * Express app factory. Dependencies are injected so tests can use an in-memory database
@@ -64,6 +64,8 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
   app.get('/api/me',(_req,res)=>res.json({name:null,email:getGoogleEmail(db),local:true}));
   app.get('/api/capabilities',(_req,res)=>res.json({singleUser:true,calendarWritesRequireApproval:true,extraction:{synchronous:true,background:true,statusPolling:true,streaming:false,importIdempotency:true},operations:{undoLifecycle:true,restore:true,bulkRecheck:true,traceStreaming:true,export:true,deleteLocalData:true},apiVersion:1}));
   app.get("/api/settings", (_req, res) => res.json(getSettings(db)));
+  // Zones to choose from, with offsets computed by moment-timezone. The browser never works out offsets.
+  app.get("/api/timezones", (_req, res) => res.json({ zones: listTimezones(clock()) }));
 
   app.put("/api/settings", (req, res) => {
     const current = getSettings(db);
@@ -133,7 +135,7 @@ export function createApp({ db, config, googleAuth, selfTest, provider, calendar
   app.locals.workspaceBusy = () => jobs.isBusy() || locks.isBusy();
   const planning = createPlanningService({ db, calendar, clock });
   const agent = createAgent({ db, provider, planning, clock });
-  registerPlanningRoutes(app, { planning, recheck, agent, locks });
+  registerPlanningRoutes(app, { db, planning, recheck, agent, locks, config, jobs });
   app.post('/api/actions/recheck',async(req,res)=>{
     const ids=req.body?.ids;
     if(!Array.isArray(ids)||ids.length>100||ids.some(id=>!Number.isSafeInteger(id)||id<1))return res.status(400).json({error:'invalid_ids',detail:'Send up to 100 positive action IDs.'});
