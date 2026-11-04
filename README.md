@@ -10,7 +10,7 @@ You save a post because you mean to act on it: a hackathon deadline, a prompt to
 
 ## What it does
 
-1. Drop a screenshot of a saved post, with an optional note.
+1. Drop a screenshot of a saved post, with an optional note. You can crop it first, to cut out the phone status bar, the bottom bar and other posts. Cropping happens in your browser, so the parts you cut are never uploaded.
 2. Confirm how long it will take. The model suggests minutes, but only the minutes you confirm are ever scheduled.
 3. Approve a time. The block is written to your Google Calendar, read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
 

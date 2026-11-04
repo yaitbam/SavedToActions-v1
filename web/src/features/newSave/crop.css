@@ -1,0 +1,22 @@
+/* Crop editor inside the new save dialog. */
+.crop { display:flex; flex-direction:column; gap:14px; }
+.crop-help { margin:0; color:var(--color-muted); font-size:15px; line-height:1.6; }
+.crop-wrap { display:flex; justify-content:center; padding:12px; border:1px solid var(--color-line); border-radius:16px; background:var(--color-bg); }
+.crop-stage { position:relative; display:inline-block; max-width:100%; line-height:0; overflow:hidden; border-radius:6px; touch-action:none; user-select:none; -webkit-user-select:none; }
+.crop-img { display:block; max-width:100%; max-height:58vh; width:auto; height:auto; pointer-events:none; }
+.crop-box { position:absolute; box-sizing:border-box; border:2px solid #fff; box-shadow:0 0 0 9999px rgb(15 23 42 / .6); outline:1px solid rgb(15 23 42 / .5); cursor:move; touch-action:none; }
+.crop-grip { position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; padding:0; border:2px solid #fff; border-radius:6px; background:var(--color-brand); box-shadow:0 1px 3px rgb(15 23 42 / .5); touch-action:none; }
+.crop-grip:focus-visible { outline:3px solid #fff; outline-offset:2px; background:var(--color-ink); }
+.crop-grip-nw { left:0; top:0; cursor:nwse-resize; }
+.crop-grip-n { left:50%; top:0; cursor:ns-resize; }
+.crop-grip-ne { left:100%; top:0; cursor:nesw-resize; }
+.crop-grip-e { left:100%; top:50%; cursor:ew-resize; }
+.crop-grip-se { left:100%; top:100%; cursor:nwse-resize; }
+.crop-grip-s { left:50%; top:100%; cursor:ns-resize; }
+.crop-grip-sw { left:0; top:100%; cursor:nesw-resize; }
+.crop-grip-w { left:0; top:50%; cursor:ew-resize; }
+.crop-size { margin:0; min-height:1.5em; color:var(--color-muted); font:500 14px var(--font-mono); text-align:center; }
+.crop-error { margin:0; color:var(--color-nofit); font-size:14px; }
+.crop-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.crop-spacer { flex:1; }
+@media(max-width:560px) { .crop-grip { width:28px; height:28px; margin:-14px 0 0 -14px; } }

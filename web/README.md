@@ -72,7 +72,7 @@ node web/test/phase6.cjs
 
 `errors.cjs` verifies missing-session recovery and that technical errors are not shown. `new-save.cjs` checks preview lifecycle and upload bytes using intercepted uploads. `phase6.cjs` checks the landing page and image viewers.
 
-`design.cjs` checks that the landing sections exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px, and that there is no theme switch. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
+`crop.cjs` crops a phone style screenshot with the mouse and keyboard in the new save dialog and checks the size of the image that is uploaded. `design.cjs` checks that the landing sections exist and the old interactive demos are gone, that there is no horizontal overflow at 1440, 768 and 390 px, and that there is no theme switch. It writes snapshots under `artifacts/design/`. Playwright was not installed when the latest redesign was made, so none of these browser scripts were run afterwards. `phase5.cjs`, `phase6.cjs` and the other scripts were written for the earlier landing, Saved and Review pages and may need updating.
 
 `phase5.cjs` expects the seeded legacy database and an isolated `AUTH_MODE=off` backend. Its initial reads use the local API and later write checks are intercepted. It is not an authenticated multiuser end-to-end test.
 

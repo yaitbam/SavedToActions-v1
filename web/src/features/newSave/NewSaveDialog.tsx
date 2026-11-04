@@ -8,6 +8,7 @@ import { createSave, retryExtraction } from "../../api/saves";
 import { Button } from "../../ui/Button";
 import { InlineAlert } from "../../ui/InlineAlert";
 import { fieldClass } from "../../ui/cx";
+import { CropEditor } from "./CropEditor";
 import { isSupportedImage } from "./NewSaveContext";
 
 interface Props {
@@ -21,7 +22,10 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  // The file as picked, and the file to upload. They differ once the user has cropped.
+  const [original, setOriginal] = useState<File | null>(initialFile);
   const [file, setFile] = useState<File | null>(initialFile);
+  const [cropping, setCropping] = useState(false);
   const [note, setNote] = useState("");
   const [phase, setPhase] = useState<Phase>("pick");
   const [message, setMessage] = useState("");
@@ -51,8 +55,17 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
       setPhase("error");
       return;
     }
+    setOriginal(next);
     setFile(next);
     setPhase("pick");
+    idempotencyKey.current = crypto.randomUUID();
+  }
+
+  // A different image is a different import, so it gets its own key.
+  function finishCrop(next: File | null) {
+    setFile(next ?? original);
+    setCropping(false);
+    idempotencyKey.current = crypto.randomUUID();
   }
 
   async function extract() {
@@ -79,16 +92,26 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   }
 
   const working = phase === "working";
+  const cropped = !!file && file !== original;
+  // Once a save exists on the server (a retry), its picture can no longer change here.
+  const canCrop = !!original && retrySaveId.current === null && !working;
 
   return (
     <dialog
       ref={dialog}
       onClose={onClose}
-      onCancel={(event) => working && event.preventDefault()}
+      // Escape closes the crop editor first, not the whole dialog.
+      onCancel={(event) => {
+        if (working) event.preventDefault();
+        else if (cropping) { event.preventDefault(); setCropping(false); }
+      }}
       onClick={(event) => event.target === dialog.current && !working && onClose()}
       aria-label="New save"
       className="m-auto w-[min(44rem,94vw)] rounded-card border border-line bg-surface p-6 shadow-hard backdrop:bg-ink/60"
     >
+      {cropping && original ? (
+        <CropEditor file={original} onApply={(next) => finishCrop(next)} onCancel={() => setCropping(false)} />
+      ) : (
       <div className="space-y-4">
         <h2 className="text-title">New save</h2>
         <Credits />
@@ -109,10 +132,23 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
                 />
               )}
               {!working && (
-                <Button variant="text" onClick={() => input.current?.click()}>
-                  Choose another
-                </Button>
+                <div className="flex flex-wrap items-center gap-1">
+                  {canCrop && (
+                    <Button variant="secondary" className="h-10 px-4" onClick={() => setCropping(true)}>
+                      {cropped ? "Crop again" : "Crop"}
+                    </Button>
+                  )}
+                  {canCrop && cropped && (
+                    <Button variant="text" onClick={() => finishCrop(null)}>
+                      Undo crop
+                    </Button>
+                  )}
+                  <Button variant="text" onClick={() => input.current?.click()}>
+                    Choose another
+                  </Button>
+                </div>
               )}
+              {!working && cropped && <p className="text-small text-muted">Cropped. Only the part you kept is uploaded.</p>}
             </div>
           </div>
         ) : (
@@ -145,6 +181,7 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
           )}
         </div>
       </div>
+      )}
     </dialog>
   );
 }
