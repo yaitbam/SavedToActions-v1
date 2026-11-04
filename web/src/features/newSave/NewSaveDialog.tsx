@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { errorText } from "../../api/errors";
@@ -25,7 +25,7 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   const [message, setMessage] = useState("");
   const retrySaveId = useRef<number | null>(null);
   const idempotencyKey = useRef(crypto.randomUUID());
-  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const element = dialog.current;
@@ -33,10 +33,14 @@ export function NewSaveDialog({ initialFile, onClose }: Props) {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   function choose(next: File | undefined) {
     if (!next) return;
