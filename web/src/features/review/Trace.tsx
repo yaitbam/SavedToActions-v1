@@ -12,7 +12,8 @@ export function Trace({ actionId }: { actionId: number }) {
 
   const active = useModelLabel();
   const trace = latest.data;
-  const steps = trace?.steps.filter((step) => step.label) ?? [];
+  // Steps and their words come from the server. A provider that sends no reasoning text or no usage leaves nothing missing here.
+  const steps = (trace?.steps ?? []).filter((step) => typeof step.label === "string" && step.label);
   if (!trace || steps.length === 0) return null;
 
   return (

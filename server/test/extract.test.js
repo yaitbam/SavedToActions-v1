@@ -204,7 +204,7 @@ test("config: baseten is the default and the meta values are the agreed defaults
   assert.equal(cfg.baseten.baseUrl, "https://inference.baseten.co/v1");
   assert.equal(cfg.baseten.model, "meta-models/muse-spark-open-1026");
   assert.equal(cfg.baseten.reasoningEffort, "low");
-  assert.deepEqual(cfg.meta, { apiKey: "", baseUrl: "https://api.meta.ai/v1", model: "muse-spark-1.3", reasoningEffort: "low" });
+  assert.deepEqual(cfg.meta, { apiKey: "", baseUrl: "https://api.meta.ai/v1", model: "muse-spark-1.3", reasoningEffort: "low", forcedToolChoice: "auto" });
 });
 
 test("config: MODEL_PROVIDER, key names, overrides and the trailing slash", () => {
@@ -296,4 +296,76 @@ test("modelInfo: the label and open weights claim come from the active config", 
   const meta = modelInfo(createProvider(metaCfg()));
   assert.deepEqual(meta, { provider: "meta", id: "muse-spark-1.3", label: "muse-spark-1.3", openWeights: false });
   assert.deepEqual(modelInfo(null), { provider: null, id: null, label: null, openWeights: false });
+});
+
+// ---- forced tool calls: Baseten sends the object, Meta asks with auto and a strict instruction ---------------------------
+const TOOL = { type: "function", function: { name: "get_availability", description: "x", parameters: { type: "object", properties: {} } } };
+const OTHER = { type: "function", function: { name: "find_slot", description: "y", parameters: { type: "object", properties: {} } } };
+const FORCE = { type: "function", function: { name: "get_availability" } };
+const toolReply = (name) => okResponse({ choices: [{ message: { content: null, tool_calls: [{ id: "c1", type: "function", function: { name, arguments: "{}" } }] }, finish_reason: "tool_calls" }] });
+const textReply = okResponse({ choices: [{ message: { content: "I can help with that" }, finish_reason: "stop" }] });
+const recorder = (...replies) => {
+  const bodies = [];
+  return { bodies, fetchImpl: async (_u, init) => { bodies.push(JSON.parse(init.body)); return replies[Math.min(bodies.length, replies.length) - 1]; } };
+};
+
+test("meta: a forced tool is asked for with auto, only that tool and a strict instruction", async () => {
+  const { bodies, fetchImpl } = recorder(toolReply("get_availability"));
+  const out = await createProvider(metaCfg(), { fetchImpl }).chat({ messages: [{ role: "user", content: "check 2026-11-05" }], tools: [TOOL, OTHER], toolChoice: FORCE });
+  assert.equal(bodies.length, 1);
+  assert.equal(bodies[0].tool_choice, "auto");
+  assert.deepEqual(bodies[0].tools.map((t) => t.function.name), ["get_availability"]);
+  assert.equal(bodies[0].messages[0].role, "system");
+  assert.match(bodies[0].messages[0].content, /must call the tool "get_availability"/);
+  assert.equal(bodies[0].messages[1].content, "check 2026-11-05");
+  assert.equal(out.toolCalls[0].name, "get_availability");
+  assert.equal(out.toolMode, "auto+instruction");
+  assert.equal(out.toolAttempts, 1);
+});
+
+test("meta: no tool call is retried once, a second miss fails with a clear error", async () => {
+  const retried = recorder(textReply, toolReply("get_availability"));
+  const ok = await createProvider(metaCfg(), { fetchImpl: retried.fetchImpl }).chat({ messages: [], tools: [TOOL], toolChoice: FORCE });
+  assert.equal(retried.bodies.length, 2);
+  assert.equal(ok.toolAttempts, 2);
+
+  const missed = recorder(textReply, textReply, toolReply("get_availability"));
+  await assert.rejects(
+    createProvider(metaCfg(), { fetchImpl: missed.fetchImpl }).chat({ messages: [], tools: [TOOL], toolChoice: FORCE }),
+    (e) => e instanceof ModelError && e.code === "model_no_tool_call" && /"get_availability" after 2 tries/.test(e.message),
+  );
+  assert.equal(missed.bodies.length, 2, "exactly one retry, never more");
+
+  // A call to some other tool does not count as the forced one.
+  const wrong = recorder(toolReply("find_slot"), toolReply("find_slot"));
+  await assert.rejects(createProvider(metaCfg(), { fetchImpl: wrong.fetchImpl }).chat({ messages: [], tools: [TOOL, OTHER], toolChoice: FORCE }), (e) => e.code === "model_no_tool_call");
+  // The tool must exist in the list.
+  await assert.rejects(createProvider(metaCfg(), { fetchImpl: async () => textReply }).chat({ messages: [], tools: [OTHER], toolChoice: FORCE }), (e) => e.code === "model_bad_request");
+});
+
+test("meta: META_FORCED_TOOL_CHOICE=required is opt in, auto stays the default, bad values are refused", async () => {
+  assert.equal(modelConfigFromEnv({}).meta.forcedToolChoice, "auto");
+  assert.equal(modelConfigFromEnv({ META_FORCED_TOOL_CHOICE: " Required " }).meta.forcedToolChoice, "required");
+  const { bodies, fetchImpl } = recorder(toolReply("get_availability"));
+  const out = await createProvider(metaCfg({ forcedToolChoice: "required" }), { fetchImpl }).chat({ messages: [], tools: [TOOL], toolChoice: FORCE });
+  assert.equal(bodies[0].tool_choice, "required");
+  assert.match(bodies[0].messages[0].content, /get_availability/);
+  assert.equal(out.toolMode, "required+instruction");
+  assert.throws(() => createProvider(metaCfg({ forcedToolChoice: "none" })), /Invalid forced tool choice/);
+});
+
+test("meta: an auto tool choice is passed through untouched, and Baseten still sends the forced object", async () => {
+  const auto = recorder(toolReply("get_availability"));
+  const messages = [{ role: "user", content: "hi" }];
+  await createProvider(metaCfg(), { fetchImpl: auto.fetchImpl }).chat({ messages, tools: [TOOL, OTHER], toolChoice: "auto" });
+  assert.equal(auto.bodies[0].tool_choice, "auto");
+  assert.deepEqual(auto.bodies[0].tools.map((t) => t.function.name), ["get_availability", "find_slot"]);
+  assert.deepEqual(auto.bodies[0].messages, messages);
+
+  const base = recorder(toolReply("get_availability"));
+  const out = await createProvider(modelCfg, { fetchImpl: base.fetchImpl }).chat({ messages, tools: [TOOL, OTHER], toolChoice: FORCE });
+  assert.deepEqual(base.bodies[0].tool_choice, FORCE);
+  assert.deepEqual(base.bodies[0].messages, messages);
+  assert.deepEqual(base.bodies[0].tools.map((t) => t.function.name), ["get_availability", "find_slot"]);
+  assert.equal(out.toolMode, undefined);
 });

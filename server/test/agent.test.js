@@ -383,7 +383,7 @@ test("an agent bug is kept in the trace as failed, then surfaces as a server err
 
 test("stepLabel: every trace step type has plain words", () => {
   const cases = [
-    [{ type: "extraction" }, "Muse Spark Open read the screenshot"],
+    [{ type: "extraction" }, "Muse read the screenshot"],
     [{ type: "start" }, "Planning started"],
     [{ type: "model_request" }, "Asked the model for a plan"],
     [{ type: "tool_call", name: "get_availability" }, "Read your calendar availability"],
@@ -395,4 +395,27 @@ test("stepLabel: every trace step type has plain words", () => {
     [{ type: "something_new" }, "Something new"],
   ];
   for (const [step, label] of cases) assert.equal(stepLabel(step), label);
+  // The extraction words name the model that really ran, so a Meta trace never says Muse Spark Open.
+  assert.equal(stepLabel({ type: "extraction" }, "meta-models/muse-spark-open-1026"), "Muse Spark Open read the screenshot");
+  assert.equal(stepLabel({ type: "extraction" }, "muse-spark-1.3"), "muse-spark-1.3 read the screenshot");
+});
+
+test("a Meta style answer with no reasoning field, no usage and null content still makes a readable trace", async () => {
+  const bare = (fn) => async (req) => ({ ...(await fn(req)), usage: null, reasoning: undefined });
+  const script = [
+    bare(toolTurn(["get_availability", { from_utc: "2026-11-03T09:00:00Z", to_utc: "2026-11-03T21:00:00Z" }])),
+    bare(toolTurn(["find_slot", { not_before_utc: "2026-11-03T12:00:00Z" }])),
+    bare(pickOffered("The first free time after noon.")),
+  ];
+  await withApp(script, async ({ api, seed }) => {
+    const r = await api.plan(seed(), "afternoon");
+    assert.equal(r.status, 200);
+    assert.equal(r.json.outcome, "proposed");
+    assert.deepEqual(r.json.usage, { completionTokens: 0, reasoningTokens: 0, promptTokens: 0 });
+    const { trace } = (await api.get(`/api/traces/${r.json.traceId}`)).json;
+    const answers = trace.steps.filter((st) => st.type === "model_response");
+    assert.equal(answers.length, 3);
+    for (const st of answers) assert.deepEqual([st.completionTokens, st.reasoningTokens], [null, null]);
+    assert.ok(trace.steps.every((st) => typeof st.label === "string" && st.label.length > 0));
+  });
 });

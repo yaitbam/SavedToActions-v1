@@ -12,7 +12,7 @@
 // and result, the final answer, the validation checks, and the outcome. Traces are stored in agent_traces.
 import { performance } from "node:perf_hooks";
 import { parseModelJson } from "../extraction/extract.js";
-import { ModelError } from "../model/provider.js";
+import { ModelError, modelLabel } from "../model/provider.js";
 import { MIN, toIso } from "../scheduler/index.js";
 
 export const MAX_TURNS = 6;
@@ -103,10 +103,11 @@ const OUTCOME_LABELS = {
   failed: "Planning failed",
   extracted: "Screenshot read",
 };
-export function stepLabel(step) {
+// modelName is the model id stored with the trace, so the words follow the provider that really ran.
+export function stepLabel(step, modelName = null) {
   switch (step.type) {
     case "extraction":
-      return "Muse Spark Open read the screenshot";
+      return `${modelLabel(modelName) ?? "Muse"} read the screenshot`;
     case "timezone_correction":
       return step.modelOffset && step.computedOffset
         ? `Model wrote ${step.modelOffset}. Code corrected it to ${step.computedOffset}`
@@ -162,7 +163,7 @@ export function createAgent({ db, provider, planning, clock = Date.now, logger =
       model: row.model,
       turns: steps.filter((s) => s.type === "model_request").length,
     };
-    return full ? { ...base, result: row.result_json ? JSON.parse(row.result_json) : null, steps: steps.map((st) => ({ ...st, label: stepLabel(st) })) } : base;
+    return full ? { ...base, result: row.result_json ? JSON.parse(row.result_json) : null, steps: steps.map((st) => ({ ...st, label: stepLabel(st, row.model) })) } : base;
   };
 
   async function run({ actionId, instruction = "" }) {

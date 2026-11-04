@@ -40,6 +40,8 @@ export function modelConfigFromEnv(env) {
       model: env.META_MODEL || "muse-spark-1.3",
       // Same default as Baseten. Meta may reject it, the provider then retries once without it.
       reasoningEffort: reasoningEffortFromEnv(env.META_REASONING_EFFORT),
+      // How a forced tool call is asked for on Meta. "auto" is the verified way. "required" only after the smoke check accepts it.
+      forcedToolChoice: (env.META_FORCED_TOOL_CHOICE || "auto").trim().toLowerCase(),
     },
   };
 }

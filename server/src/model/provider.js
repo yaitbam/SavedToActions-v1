@@ -22,6 +22,8 @@ export function createProvider(modelConfig, { fetchImpl = fetch } = {}) {
         keyEnv: "BASETEN_API_KEY",
         effortEnv: "BASETEN_REASONING_EFFORT",
         retryWithoutReasoning: false,
+        // Baseten accepts a forced tool_choice object. Verified Nov 2.
+        emulateForcedTool: false,
         ...modelConfig.baseten,
       }, fetchImpl);
     case "meta":
@@ -31,6 +33,10 @@ export function createProvider(modelConfig, { fetchImpl = fetch } = {}) {
         effortEnv: "META_REASONING_EFFORT",
         // Unverified on Meta. If it rejects reasoning_effort with a 400, the call is retried once without it.
         retryWithoutReasoning: true,
+        // Meta answers HTTP 400 to a forced tool_choice object (smoke result). A forced call is asked for with
+        // tool_choice "auto" and a strict instruction instead. META_FORCED_TOOL_CHOICE=required switches the
+        // tool_choice to "required" once the smoke check shows Meta accepts it.
+        emulateForcedTool: true,
         ...modelConfig.meta,
       }, fetchImpl);
     default:
@@ -44,10 +50,15 @@ export const REASONING_EFFORTS = ["minimal", "low", "medium", "high"];
  * What the UI may say about the model. It comes from the active provider config, never from fixed text.
  * Only the Muse Spark Open model is open weights, so any other id is shown as its own id and not called open.
  */
+export function modelLabel(id) {
+  if (typeof id !== "string" || !id) return null;
+  return /muse-spark-open/i.test(id) ? "Muse Spark Open" : id;
+}
+
 export function modelInfo(provider) {
   const id = provider?.model ?? null;
   const openWeights = typeof id === "string" && /muse-spark-open/i.test(id);
-  return { provider: provider?.name ?? null, id, label: openWeights ? "Muse Spark Open" : id, openWeights };
+  return { provider: provider?.name ?? null, id, label: modelLabel(id), openWeights };
 }
 
 // A model id that ends in "contributor" is never used, whichever provider is active.
@@ -56,7 +67,18 @@ const assertModelId = (model, name) => {
   if (/contributor$/i.test(model.trim())) throw new Error(`Refusing model id "${model}" for provider "${name}". Ids ending in contributor are not used`);
 };
 
-function openAiCompatProvider({ name, keyEnv, effortEnv, retryWithoutReasoning, apiKey, baseUrl, model, reasoningEffort = null }, fetchImpl) {
+export const FORCED_TOOL_CHOICES = ["auto", "required"];
+
+// The tool a caller forces, from the OpenAI shape {type:"function", function:{name}}. Null when nothing is forced.
+const forcedToolName = (toolChoice) => (toolChoice && typeof toolChoice === "object" ? toolChoice.function?.name ?? null : null);
+
+const forcedToolInstruction = (name) =>
+  `You must call the tool "${name}" now. Reply with that tool call only, with no text. Do not answer in words and do not call any other tool.`;
+
+function openAiCompatProvider({ name, keyEnv, effortEnv, retryWithoutReasoning, emulateForcedTool = false, forcedToolChoice = "auto", apiKey, baseUrl, model, reasoningEffort = null }, fetchImpl) {
+  if (!FORCED_TOOL_CHOICES.includes(forcedToolChoice)) {
+    throw new Error(`Invalid forced tool choice "${forcedToolChoice}". Use one of: ${FORCED_TOOL_CHOICES.join(", ")}`);
+  }
   if (reasoningEffort && !REASONING_EFFORTS.includes(reasoningEffort)) {
     throw new Error(`Invalid ${effortEnv} "${reasoningEffort}". Use one of: ${REASONING_EFFORTS.join(", ")}`);
   }
@@ -69,8 +91,33 @@ function openAiCompatProvider({ name, keyEnv, effortEnv, retryWithoutReasoning, 
     reasoningEffort,
     configured: () => Boolean(apiKey),
 
-    /** Returns { content, reasoning, finishReason, usage, model, ms }. Throws ModelError. */
-    async chat({ messages, tools, toolChoice = "auto", maxTokens = 6000, temperature = 0, timeoutMs = 180_000 }) {
+    /**
+     * Returns { content, toolCalls, reasoning, finishReason, usage, model, ms }. Throws ModelError.
+     * A forced tool (toolChoice {type:"function", function:{name}}) is sent as is on Baseten. On Meta it is asked for
+     * with tool_choice "auto" (or "required"), only that tool, and a strict instruction. No tool call means one retry,
+     * then a clear error, so a forced call never silently turns into plain text.
+     */
+    async chat(args) {
+      const forced = emulateForcedTool ? forcedToolName(args.toolChoice) : null;
+      if (!forced) return request(args);
+      const only = (args.tools ?? []).filter((t) => t.function?.name === forced);
+      if (only.length === 0) throw new ModelError("model_bad_request", `Forced tool "${forced}" is not in the tool list`);
+      const emulated = {
+        ...args,
+        tools: only,
+        toolChoice: forcedToolChoice,
+        messages: [{ role: "system", content: forcedToolInstruction(forced) }, ...args.messages],
+      };
+      let last = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        last = await request(emulated);
+        if (last.toolCalls.some((call) => call.name === forced)) return { ...last, toolMode: `${forcedToolChoice}+instruction`, toolAttempts: attempt };
+      }
+      throw new ModelError("model_no_tool_call", `The model did not call the required tool "${forced}" after 2 tries`, { finishReason: last?.finishReason ?? null });
+    },
+  };
+
+  async function request({ messages, tools, toolChoice = "auto", maxTokens = 6000, temperature = 0, timeoutMs = 180_000 }) {
       if (!apiKey) throw new ModelError("model_not_configured", `${keyEnv} is not set`);
       const started = Date.now();
       const send = async (withReasoning) => {
@@ -127,6 +174,5 @@ function openAiCompatProvider({ name, keyEnv, effortEnv, retryWithoutReasoning, 
         model: json?.model ?? model,
         ms: Date.now() - started,
       };
-    },
-  };
+  }
 }

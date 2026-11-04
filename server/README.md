@@ -79,6 +79,7 @@ Sign-out revokes the current app session. Disconnect Calendar in Settings to rem
 | `BASETEN_REASONING_EFFORT` | `low` | One of minimal, low, medium, high. `off` or `default` sends nothing |
 | `META_BASE_URL` | `https://api.meta.ai/v1` | Meta endpoint, OpenAI compatible. A trailing slash is removed |
 | `META_MODEL` | `muse-spark-1.3` | Meta model id. An id ending in contributor is refused, for either provider |
+| `META_FORCED_TOOL_CHOICE` | `auto` | How a forced tool call is asked for on Meta: `auto` with a strict instruction, or `required` once the smoke check shows it is accepted |
 | `META_REASONING_EFFORT` | `low` | Same values as Baseten. `off` or `none` sends nothing, `none` is never sent as a value |
 | `WATCHER` | on | `WATCHER=off` disables the background recheck |
 | `WATCHER_INTERVAL_MS` | `300000` | Watcher period, 5 minutes |
@@ -339,7 +340,7 @@ Live run on Nov 2: 4 turns, 10 seconds, proposed a valid slot, wrote nothing.
   The one miss in each config was the same transcription check on the same screenshot, so it is not caused by the setting. Small sample, synthetic posts are cleaner than real ones.
 - Downscaling to 1280 px cut prompt tokens by 34% on the flyer (3752 to 2492) and the upload from 2251 KB to 256 KB.
 - Calls take several seconds. The UI needs loading states.
-- The Meta Model API provider is built but unverified. Same request shape. If Meta answers HTTP 400 and the body mentions reasoning, the call is retried once without `reasoning_effort` and one line is logged, later calls skip it. The reasoning field is read as `reasoning_content` or `reasoning`. `scripts/meta-smoke.mjs` runs plain text, JSON with a verbatim quote, forced and auto tool calls, image input and the Casablanca probe against it, and prints every field that differs from Baseten. Until its results are checked, Baseten stays the default.
+- The Meta Model API provider is built but unverified. Same request shape. If Meta answers HTTP 400 and the body mentions reasoning, the call is retried once without `reasoning_effort` and one line is logged, later calls skip it. The reasoning field is read as `reasoning_content` or `reasoning`. Meta answered HTTP 400 to a forced `tool_choice` object (smoke result), so on Meta a forced tool is asked for with `tool_choice` `auto`, only that tool and a strict system instruction. No tool call means one retry, then the error `model_no_tool_call`. Baseten still gets the object. `scripts/meta-smoke.mjs` runs plain text, JSON with a verbatim quote, forced and auto tool calls, image input and the Casablanca probe, probes `tool_choice` `required`, and prints every field that differs from what the code was built against. `--provider baseten` runs the same checks on Baseten. Until its results are checked, Baseten stays the default.
 - The UI takes the model name from `GET /auth/session` (`model`), so it follows the active provider.
 
 ## Tests
