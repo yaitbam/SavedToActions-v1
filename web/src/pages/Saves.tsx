@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { getGoals } from "../api/goals";
-import type { SaveListItem } from "../api/types";
 import { useAsync } from "../api/useAsync";
 import { filters, loadSaves, matchesSave, type SaveFilter } from "../features/saves/model";
 import { SavedNote } from "../features/saves/SavedNote";
 import { ErrorState } from "../ui/ErrorState";
-import { ImageViewer } from "../ui/ImageViewer";
 import { Skeleton } from "../ui/Skeleton";
 import { cx, fieldClass } from "../ui/cx";
 
@@ -16,7 +14,6 @@ export function Saves() {
   }, []);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SaveFilter>("All");
-  const [viewer, setViewer] = useState<SaveListItem | null>(null);
   const visible = saves.data?.items.filter((save) => matchesSave(save, filter, query)) ?? [];
 
   return (
@@ -50,14 +47,13 @@ export function Saves() {
           {visible.length ? (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
               {visible.map((save) => (
-                <SavedNote key={save.saveId} save={save} onOpen={() => setViewer(save)}
+                <SavedNote key={save.saveId} save={save}
                   goalName={saves.data?.goals.find((goal) => goal.id === save.action?.goalId)?.name} />
               ))}
             </div>
           ) : <p className="text-muted">{saves.data.items.length ? "No saves match these filters" : "Your saved posts are waiting. Drop one to start"}</p>}
         </>
       )}
-      {viewer && <ImageViewer src={viewer.screenshotUrl} alt="Your saved screenshot" open onClose={() => setViewer(null)} />}
     </div>
   );
 }

@@ -2,8 +2,10 @@ import { useId } from "react";
 import type { Insights } from "../../api/types";
 import { Card } from "../../ui/Card";
 
-export function WeeklyChart({ weekly, note }: { weekly: Insights["weekly"]; note: string | null }) {
+export function WeeklyChart({ weekly: history, note }: { weekly: Insights["weekly"]; note: string | null }) {
   const titleId = useId();
+  const firstRecord = history.findIndex((week) => week.importedSaves > 0 || week.doneSaves > 0);
+  const weekly = firstRecord < 0 ? [] : history.slice(Math.max(0, firstRecord - 1));
   const max = Math.max(1, ...weekly.map((week) => Math.max(week.importedSaves, week.doneSaves)));
   const x = (index: number) => 44 + (index * 640) / Math.max(1, weekly.length - 1);
   const y = (value: number) => 156 - (value / max) * 128;

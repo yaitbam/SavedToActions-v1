@@ -40,7 +40,10 @@ async function main() {
       }
       await page.waitForFunction(() => Array.from(document.querySelectorAll('main img'))
         .every(image => image.complete && image.naturalWidth > 0));
-      assert.equal(await page.locator('main img').count(), 6, 'Three hero fixtures and one image per step');
+      assert.equal(await page.locator('main img').count(), 7, 'Three hero fixtures, three product steps and the conflict section');
+      assert.deepEqual(await page.locator('.landing-step-list img').evaluateAll(images => images.map(image => image.getAttribute('src'))),
+        ['/product/review.png', '/product/receipt.png', '/product/conflict.png']);
+      await page.getByRole('heading', { name: 'When your week changes', exact: true }).waitFor();
       for (const open of await page.locator('.landing-note-row button').all()) {
         await open.click();
         const dialog = page.getByRole('dialog');
@@ -67,7 +70,7 @@ async function main() {
       })), 'All saved card images fit the viewport');
       await page.evaluate(() => { location.hash = ''; window.scrollTo(0, 0); });
       await page.screenshot({ path: path.join(out, `landing-${width}.png`), fullPage: true });
-      checks.push(`${width}: fixture images, viewers, focus restore, anchor, app link, honest copy, no overflow`);
+      checks.push(`${width}: product screenshots, conflict section, viewers, focus restore, anchor, app link, honest copy, no overflow`);
       await context.close();
     }
     assert.deepEqual(errors, [], 'No browser runtime errors');

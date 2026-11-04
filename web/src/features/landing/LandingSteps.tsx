@@ -1,10 +1,10 @@
-import { FixtureCard, illustrativePosts } from "./FixtureCard";
+import { ProductShot } from "./ProductShot";
 
 const steps = [
-  { title: "Drop a screenshot.", description: "Bring a post you meant to act on. Muse Spark Open reads the image and finds the action worth taking." },
-  { title: "Confirm how long it takes.", description: "Review what came from the post and give it your own time estimate. You decide what gets scheduled." },
-  { title: "Give it calendar time.", description: "Approve a slot that fits your week. If plans change, review a new time before anything moves." },
-];
+  { title: "Review your save.", description: "Drop a screenshot, review the action and confirm how long it takes you.", image: "review", alt: "Review with effort chips and an Add to calendar button" },
+  { title: "Book the time.", description: "Approve a slot that fits your week. The receipt confirms the calendar matched your booking.", image: "receipt", alt: "Booked receipt confirming the calendar matched start, end and timezone" },
+  { title: "Keep your plan moving.", description: "When a meeting overlaps your block, review another time and approve the move.", image: "conflict", alt: "Conflict card with a Move to Today 09:30 button" },
+] as const;
 
 export function LandingSteps() {
   return (
@@ -14,9 +14,9 @@ export function LandingSteps() {
         <h2 id="steps-title">Make later happen.</h2>
       </div>
       <ol className="landing-step-list">
-        {steps.map((step, index) => (
+        {steps.map((step) => (
           <li key={step.title}>
-            <div className="landing-step-image"><FixtureCard post={illustrativePosts[index]} /></div>
+            <div className="landing-step-image"><ProductShot name={step.image} alt={step.alt} /></div>
             <h3>{step.title}</h3>
             <p>{step.description}</p>
           </li>

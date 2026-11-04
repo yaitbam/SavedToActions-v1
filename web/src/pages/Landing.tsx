@@ -4,6 +4,7 @@ import { Logo } from "../ui/Logo";
 import { Chip } from "../ui/Chip";
 import { SavedDesk } from "../features/landing/SavedDesk";
 import { LandingSteps } from "../features/landing/LandingSteps";
+import { ProductShot } from "../features/landing/ProductShot";
 import "../features/landing/landing.css";
 
 export function Landing() {
@@ -42,6 +43,13 @@ export function Landing() {
           </div>
         </section>
         <LandingSteps />
+        <section className="landing-changes landing-width" aria-labelledby="changes-title">
+          <div>
+            <h2 id="changes-title">When your week changes</h2>
+            <p>A meeting lands on your booked time. Review the conflict, then approve a new slot before anything moves.</p>
+          </div>
+          <ProductShot name="conflict" alt="Demo conflict card showing the overlap and Move to Today 09:30" />
+        </section>
         <section className="landing-trust landing-width" aria-labelledby="trust-title">
           <p className="landing-eyebrow">Your calendar. Your call.</p>
           <h2 id="trust-title">The AI proposes.<br />Code checks every write.<br /><span>You approve.</span></h2>
