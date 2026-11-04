@@ -73,7 +73,7 @@ export function AppShell() {
         </NavLink>)}
       </nav>
       <div className="side-foot">
-        {connected !== null && connected !== undefined && (connected
+        {!demo && connected !== null && connected !== undefined && (connected
           ? <Link to="/app/settings" className="cal-pill on" title="Google Calendar is connected"><i aria-hidden="true" /><span>Calendar connected</span></Link>
           : <Link to="/app/settings" className="cal-pill off"><i aria-hidden="true" /><span>Connect calendar</span></Link>)}
         <ProfileMenu />

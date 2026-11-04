@@ -34,7 +34,8 @@ export function Home() {
     if (new URLSearchParams(window.location.search).has("google")) window.history.replaceState(null, "", window.location.pathname);
   }, []);
   // After the calendar is connected, a new user confirms their timezone, then chooses their goals.
-  const connected = !!data?.google_connected && session?.kind !== "demo";
+  const demo = session?.kind === "demo";
+  const connected = !!data?.google_connected && !demo;
   // Until both setup answers are in, show a loader. Otherwise the drop zone or dashboard flashes first
   // and is then swapped for the setup step.
   const checking = !data
@@ -83,7 +84,7 @@ export function Home() {
           <Skeleton className="cell-next h-56" />
           <Skeleton className="cell-goals h-56" />
         </div>
-      ) : !data.google_connected || isEmpty || checking || needsTimezone || needsGoals ? null : (
+      ) : (!data.google_connected && !demo) || isEmpty || checking || needsTimezone || needsGoals ? null : (
         <>
         <Pulse planned={plannedItems.length} attention={attention.length} toConfirm={inboxTotal} />
         <div className="home-bento">
@@ -102,11 +103,14 @@ export function Home() {
               )}
             </section>
           )}
-          <div className="cell-week">
-            {planned.data && plannedItems.length === 0
-              ? <NoPlan />
-              : <WeekStrip week={week.data} planned={plannedItems} error={week.error} onRetry={() => void week.reload()} />}
-          </div>
+          {/* The week needs a calendar, which the shared demo never has. */}
+          {!demo && (
+            <div className="cell-week">
+              {planned.data && plannedItems.length === 0
+                ? <NoPlan />
+                : <WeekStrip week={week.data} planned={plannedItems} error={week.error} onRetry={() => void week.reload()} />}
+            </div>
+          )}
           {inbox.length > 0 && <div className="cell-inbox"><Inbox saves={inbox} total={inboxTotal} goalName={goalName} /></div>}
         </div>
         </>
