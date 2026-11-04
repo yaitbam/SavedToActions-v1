@@ -5,7 +5,7 @@ export type Tone = "neutral" | "accent" | "fits" | "conflict" | "nofit" | "missi
 
 const tones: Record<Tone, string> = {
   neutral: "bg-surface text-ink border border-line",
-  accent: "bg-accent text-ink",
+  accent: "bg-accent text-brand",
   fits: "bg-fits-bg text-fits",
   conflict: "bg-conflict-bg text-conflict",
   nofit: "bg-nofit-bg text-nofit",
@@ -20,7 +20,7 @@ export function Chip({ tone = "neutral", className, ...rest }: ChipProps) {
   return (
     <span
       className={cx(
-        "inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-full px-3 text-small font-medium",
+        "semantic-pill inline-flex min-h-7 items-center gap-2 whitespace-nowrap rounded-full px-3 text-small font-medium",
         tones[tone],
         className,
       )}

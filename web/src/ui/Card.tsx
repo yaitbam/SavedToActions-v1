@@ -14,7 +14,7 @@ export function Card({ note = false, pad = "p-6", className, ...rest }: CardProp
       className={cx(
         "rounded-card bg-surface",
         pad,
-        note ? "border-[1.5px] border-ink shadow-hard" : "border border-line",
+        note ? "border border-line shadow-hard" : "border border-line",
         className,
       )}
       {...rest}
