@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { Action } from "../../api/types";
+import { StatusChip } from "../../ui/StatusChip";
 import type { Proposal, Stage } from "./useReview";
 
 interface Props {
@@ -27,13 +28,17 @@ export function StateNote({ stage, action, proposal, minutes }: Props) {
   }
 
   if (stage === "conflict" && check) {
-    const event = check.conflicts[0]?.title ?? "An event";
+    const first = check.conflicts[0];
+    const event = first?.title ?? first?.summary ?? "An event";
     const current = action.block?.startRelative ?? "";
     const alt = check.alternative?.startRelative;
     return (
-      <p className="rounded-card bg-conflict-bg p-4 text-conflict">
-        {event} now overlaps your {current} block.{alt ? ` Move to ${alt}?` : ""}
-      </p>
+      <div className="space-y-2 rounded-card bg-conflict-bg p-4 text-conflict">
+        <StatusChip status="conflict" />
+        <p>
+          {event} now overlaps your {current} block.{alt ? ` Move to ${alt}?` : ""}
+        </p>
+      </div>
     );
   }
 
@@ -42,6 +47,7 @@ export function StateNote({ stage, action, proposal, minutes }: Props) {
     const deadline = action.deadline?.relative ?? "your deadline";
     return (
       <div className="space-y-2 rounded-card bg-nofit-bg p-4 text-nofit">
+        <StatusChip status="nofit" />
         <p>
           No free {length} min before {deadline} in your working hours. Try fewer minutes or wider hours
         </p>
@@ -53,7 +59,12 @@ export function StateNote({ stage, action, proposal, minutes }: Props) {
   }
 
   if (stage === "fits" && check) {
-    return <p className="text-small text-muted">Checked {check.checkedAtRelative}</p>;
+    return (
+      <div className="flex items-center gap-2">
+        <StatusChip status="fits" />
+        <span className="text-small text-muted">Checked {check.checkedAtRelative}</span>
+      </div>
+    );
   }
 
   return null;

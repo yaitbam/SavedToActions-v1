@@ -7,7 +7,7 @@ const messages: Record<string, string> = {
   image_required: "Add a screenshot first",
   note_too_long: "That note is too long",
   not_found: "Not found",
-  slot_no_longer_available: "That time is no longer free. Find another time",
+  slot_no_longer_available: "Your calendar changed. Here is the next free time",
   slot_in_past: "That time has passed. Find another time",
   outside_working_hours: "That time is outside your working hours",
   after_deadline: "That time is after the deadline",

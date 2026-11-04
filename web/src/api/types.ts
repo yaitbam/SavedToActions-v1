@@ -88,7 +88,7 @@ export interface Check {
   reason: Nullable<string>;
   tz: string;
   explanation: string[];
-  conflicts: Array<{ title?: string; startDisplay: string; endDisplay: string; startRelative?: string }>;
+  conflicts: Array<{ title?: string; summary?: string; startDisplay: string; endDisplay: string; startRelative?: string }>;
   problems: string[];
   alternative: Nullable<Slot>;
   hints: unknown;

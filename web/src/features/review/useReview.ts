@@ -9,6 +9,7 @@ import {
   skipAction,
   updateAction,
 } from "../../api/actions";
+import { ApiError } from "../../api/client";
 import { errorText } from "../../api/errors";
 import { getGoals } from "../../api/goals";
 import { confirmEffort, getSave, retryExtraction } from "../../api/saves";
@@ -122,11 +123,20 @@ export function useReview(saveId: number) {
     run("book", async () => {
       if (!action || !proposal) return;
       const { slot, mode } = proposal;
-      const result =
-        mode === "move"
-          ? await moveBlock(action.id, slot.startUtc, slot.endUtc)
-          : await approveSlot(action.id, slot.startUtc, slot.endUtc);
-      settle(result.action);
+      try {
+        const result =
+          mode === "move"
+            ? await moveBlock(action.id, slot.startUtc, slot.endUtc)
+            : await approveSlot(action.id, slot.startUtc, slot.endUtc);
+        settle(result.action);
+      } catch (e) {
+        // The calendar changed since the proposal. The server sends the next free time with the 409.
+        const body = e instanceof ApiError ? (e.body as { alternative?: ProposeResult } | null) : null;
+        if (e instanceof ApiError && e.code === "slot_no_longer_available" && body?.alternative?.found) {
+          setProposal({ mode, slot: body.alternative.slot, latest: body.alternative.latestFeasibleStart });
+        }
+        throw e;
+      }
     });
 
   const moveToAlternative = () =>
