@@ -73,7 +73,7 @@ section[id] { scroll-margin-top:72px; }
 .flow-chips i { padding:4px 12px; border:1px solid var(--color-line); border-radius:999px; background:var(--color-bg); font-size:14px; font-style:normal; font-weight:600; }
 .flow-chips i.is-link { border-style:dashed; color:var(--color-muted); }
 .flow-arrow { align-self:center; color:var(--color-brand); font-size:26px; font-weight:800; line-height:1; }
-.flow-event { border-color:var(--color-brand); border-left:6px solid var(--color-brand); }
+.flow-event { border-color:var(--color-brand); }
 .flow-event b { font-size:22px; letter-spacing:-.02em; }
 .flow-event p { margin:0; color:var(--color-muted); font-size:16px; }
 .flow-link { color:var(--color-brand); font-size:15px; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
