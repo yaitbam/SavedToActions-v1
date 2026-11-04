@@ -26,5 +26,5 @@ server/data/
 CLAUDE.md
 AGENTS.md
 .claude/
-# Real screenshots used for personal demos stay local and are never committed.
+# A local copy of the real screenshots in fixtures/real is never committed. The demo copies live in fixtures/demo.
 fixtures/real/
