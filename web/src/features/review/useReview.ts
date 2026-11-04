@@ -13,32 +13,9 @@ import { ApiError } from "../../api/client";
 import { errorText } from "../../api/errors";
 import { getGoals } from "../../api/goals";
 import { confirmEffort, getSave, retryExtraction } from "../../api/saves";
-import type { Action, ActionPatch, AgentPlan, ProposeResult, Slot, SlotLabel } from "../../api/types";
+import type { Action, ActionPatch, AgentPlan, ProposeResult } from "../../api/types";
 import { useAsync } from "../../api/useAsync";
-
-export interface Proposal {
-  mode: "new" | "move";
-  slot: Slot;
-  latest: SlotLabel | null;
-}
-
-export type Stage = "effort" | "proposed" | "fits" | "conflict" | "nofit" | "done";
-
-export function stageOf(
-  action: Action | null,
-  proposal: Proposal | null,
-  flags: { noSlot: boolean; unlocked: boolean; kept: boolean },
-): Stage {
-  if (!action) return "effort";
-  if (action.status === "done" || action.status === "skipped") return "done";
-  if (action.status === "planned" && !flags.unlocked) {
-    const state = action.check?.state;
-    if (state === "amber") return flags.kept ? "fits" : "conflict";
-    return state === "red" ? "nofit" : "fits";
-  }
-  if (proposal) return "proposed";
-  return flags.noSlot ? "nofit" : "effort";
-}
+import { stageOf, type Proposal } from "./model";
 
 export function useReview(saveId: number) {
   const save = useAsync(() => getSave(saveId), [saveId]);
@@ -49,6 +26,7 @@ export function useReview(saveId: number) {
   const [noSlot, setNoSlot] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [kept, setKept] = useState(false);
+  const [moved, setMoved] = useState(false);
   const [preference, setPreference] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +43,7 @@ export function useReview(saveId: number) {
     setUnlocked(false);
     setKept(false);
     setError(null);
+    setMoved(false);
   }, [saveId]);
 
   const extracting = !!save.data && !save.data.action && ["queued", "running"].includes(save.data.extractionStatus);
@@ -129,6 +108,7 @@ export function useReview(saveId: number) {
             ? await moveBlock(action.id, slot.startUtc, slot.endUtc)
             : await approveSlot(action.id, slot.startUtc, slot.endUtc);
         settle(result.action);
+        setMoved(mode === "move");
       } catch (e) {
         // The calendar changed since the proposal. The server sends the next free time with the 409.
         const body = e instanceof ApiError ? (e.body as { alternative?: ProposeResult } | null) : null;
@@ -144,6 +124,7 @@ export function useReview(saveId: number) {
       const alt = action?.check?.alternative;
       if (!action || !alt) return;
       settle((await moveBlock(action.id, alt.startUtc, alt.endUtc)).action);
+      setMoved(true);
     });
 
   const recheck = () =>
@@ -209,5 +190,6 @@ export function useReview(saveId: number) {
     unlock,
     keep: () => setKept(true),
     showReceipt: !!action && action.status === "planned" && !!action.block && !unlocked,
+    moved,
   };
 }

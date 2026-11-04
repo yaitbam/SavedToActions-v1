@@ -7,6 +7,8 @@ export type StatusKey =
   | "nofit"
   | "done"
   | "planned"
+  | "review"
+  | "skipped"
   | "needs_input"
   | "error"
   | "drift"
@@ -19,6 +21,8 @@ const statuses: Record<StatusKey, { label: string; tone: Tone }> = {
   nofit: { label: "Doesn't fit", tone: "nofit" },
   done: { label: "Done", tone: "fits" },
   planned: { label: "Planned", tone: "accent" },
+  review: { label: "Needs review", tone: "missing" },
+  skipped: { label: "Skipped", tone: "missing" },
   needs_input: { label: "Needs input", tone: "missing" },
   error: { label: "Error", tone: "nofit" },
   drift: { label: "Calendar changed", tone: "conflict" },

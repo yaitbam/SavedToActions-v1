@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Action } from "../../api/types";
 import { Button, buttonClass } from "../../ui/Button";
-import type { Proposal, Stage } from "./useReview";
+import type { Proposal, Stage } from "./model";
 
 export interface StateHandlers {
   plan: () => void;

@@ -17,6 +17,10 @@ const messages: Record<string, string> = {
   already_planned: "This save is already on your calendar",
   action_closed: "This save is closed",
   effort_not_confirmed: "Confirm how long this takes first",
+  invalid_working_hours: "Use valid working hours with the end after the start",
+  invalid_timezone: "Use a valid IANA timezone, such as Africa/Casablanca",
+  invalid_ignore_all_day: "Could not save the all-day event preference. Try again",
+  invalid_goal_or_name: "Give each goal a valid name",
 };
 
 export function errorText(error: unknown, fallback = "Something went wrong. Try again"): string {

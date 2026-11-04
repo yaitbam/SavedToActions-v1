@@ -215,6 +215,7 @@ export interface SaveListItem {
   note: Nullable<string>;
   importedAt: string;
   importedAtDisplay: string;
+  importedAtRelative?: string;
   screenshotUrl: string;
   isDemo: boolean;
   extraction: unknown;

@@ -115,7 +115,9 @@ export function Review() {
               />
             </Card>
 
-            {r.showReceipt && block && readbackStatus && <Receipt range={block.rangeRelative} readback={block.readback} />}
+            {r.showReceipt && block && readbackStatus && (
+              <Receipt range={block.rangeRelative} readback={block.readback} moved={r.moved} />
+            )}
 
             <div ref={detailsRef}>
               <Details

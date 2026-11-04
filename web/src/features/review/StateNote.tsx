@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Action } from "../../api/types";
 import { StatusChip } from "../../ui/StatusChip";
-import type { Proposal, Stage } from "./useReview";
+import type { Proposal, Stage } from "./model";
 
 interface Props {
   stage: Stage;
@@ -13,6 +13,10 @@ interface Props {
 // One short card per state. All times are the server's relative strings, shown as is.
 export function StateNote({ stage, action, proposal, minutes }: Props) {
   const check = action.check;
+
+  if (action.status === "done") {
+    return <p role="status" className="font-semibold text-fits">Marked done · Self reported</p>;
+  }
 
   if (stage === "proposed" && proposal) {
     return (
