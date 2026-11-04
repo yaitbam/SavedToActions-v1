@@ -4,8 +4,6 @@
 
 Saved is not done. SavedToAction turns a screenshot of a post you saved into protected time on your calendar, and moves it when your week changes.
 
-TODO: add the demo video link and screenshots here.
-
 ## The problem
 
 You save a post because you mean to act on it: a hackathon deadline, a prompt to try, a course, a freelance tip. It sits in Saved. The deadline passes. Saving feels like progress, but nothing happens.
@@ -47,7 +45,6 @@ These were checked by running them. Details and numbers are in [docs/TEST_RESULT
 - The reasoning effort setting was compared on 5 screenshots, 4 of them synthetic. That is a small sample.
 - Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and the Meta Model API, which this project does not use.
 - Outside tester results are not in yet. See the empty section in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
-- TODO: confirm which web app screens are complete before submission and list any that are not.
 - Model suggested minutes have not been measured against what users confirm.
 
 ## Other tools
@@ -94,12 +91,6 @@ You need Node 22 or newer, a Baseten API key, and a Google Cloud OAuth client.
 
 Run the tests with `cd server && npm test`. More detail on the server is in [server/README.md](server/README.md) and the API in [server/docs/API.md](server/docs/API.md).
 
-## Prior work
-
-TODO: state any part of this project that existed before the hackathon window, or write "None".
-
 ## Built with
 
 Muse Spark Open on Baseten, Node.js, Express, SQLite, moment-timezone, the Google Calendar API, React, Vite, TypeScript and Tailwind CSS.
-
-TODO: add a license.
