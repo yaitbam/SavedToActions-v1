@@ -263,6 +263,13 @@ export const MIGRATIONS = [
   ALTER TABLE actions ADD COLUMN deadline_time_assumed INTEGER NOT NULL DEFAULT 0 CHECK (deadline_time_assumed IN (0, 1));
   `,
 
+  // v12. The link to the original post, kept as a reference (never fetched), and what the user's short note asked
+  // for: when to do it and for how long. The note is read as a small closed set of intents, not as a prompt.
+  `
+  ALTER TABLE saves ADD COLUMN source_url TEXT;
+  ALTER TABLE actions ADD COLUMN intent_json TEXT;
+  `,
+
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

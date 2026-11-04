@@ -11,8 +11,10 @@ import { extractFromScreenshot, ExtractionError } from "../extraction/extract.js
 import { isDecodable, prepareForModel } from "../extraction/image.js";
 import { normalizeExtraction } from "../extraction/normalize.js";
 import { localDate } from "../tz.js";
+import { cleanPostLink, linkView } from "../postLink.js";
 
-const MAX_NOTE_CHARS = 5000;
+// The note is a one line instruction (when, how long), not a prompt. A short limit keeps model cost small and fixed.
+export const MAX_NOTE_CHARS = 160;
 const FILE_RE = /^[0-9a-f-]{36}\.(png|jpg|webp)$/;
 const EXT_BY_MIME = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 const MIME_BY_EXT = { png: "image/png", jpg: "image/jpeg", webp: "image/webp" };
@@ -28,7 +30,7 @@ export function detectImageType(buf) {
 export function registerSaveRoutes(app, { db, config, provider, clock, locks }) {
   const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: config.maxUploadBytes, files: 1, fields: 5 },
+    limits: { fileSize: config.maxUploadBytes, files: 1, fields: 6 },
   });
 
   async function runExtraction(saveId, res) {
@@ -119,19 +121,27 @@ export function registerSaveRoutes(app, { db, config, provider, clock, locks }) 
   app.patch('/api/saves/:id',(req,res)=>{
     const save=getSave(db,Number(req.params.id));if(!save)return res.status(404).json({error:'not_found'});
     if(jobs.isRunning(save.id))return res.status(409).json({error:'extraction_in_progress'});
-    if(typeof req.body?.note!=='string'||req.body.note.length>MAX_NOTE_CHARS)return res.status(400).json({error:'invalid_note',detail:'Notes must be text of at most 5000 characters.'});
-    db.prepare('UPDATE saves SET note=? WHERE id=?').run(req.body.note.trim(),save.id);
-    const action=getActionForSave(db,save.id);
-    res.json({saveId:save.id,note:req.body.note.trim(),action:action?getActionView(db,action.id,{nowMs:clock()}):null});
+    const body=req.body??{},hasNote=Object.hasOwn(body,'note'),hasLink=Object.hasOwn(body,'link');
+    if(!hasNote&&!hasLink)return res.status(400).json({error:'invalid_note',detail:`Send a note of at most ${MAX_NOTE_CHARS} characters or a link.`});
+    if(hasNote&&(typeof body.note!=='string'||body.note.trim().length>MAX_NOTE_CHARS))return res.status(400).json({error:'invalid_note',detail:`Notes must be text of at most ${MAX_NOTE_CHARS} characters.`});
+    let link;
+    if(hasLink){const checked=cleanPostLink(body.link);if(!checked.ok)return res.status(400).json({error:'invalid_link',detail:'Use a web address that starts with http or https.'});link=checked.url}
+    if(hasNote)db.prepare('UPDATE saves SET note=? WHERE id=?').run(body.note.trim(),save.id);
+    if(hasLink)db.prepare('UPDATE saves SET source_url=? WHERE id=?').run(link,save.id);
+    const saved=getSave(db,save.id),action=getActionForSave(db,save.id);
+    res.json({saveId:save.id,note:saved.note??'',link:linkView(saved.source_url),action:action?getActionView(db,action.id,{nowMs:clock()}):null});
   });
   app.get('/api/saves/:id',(req,res)=>{
     const save=getSave(db,Number(req.params.id));if(!save)return res.status(404).json({error:'not_found'});
     const action=getActionForSave(db,save.id),job=jobs.latest(save.id),tz=getSettings(db).tz;
-    res.json({saveId:save.id,note:save.note??'',importedAt:save.imported_at,importedAtDisplay:tz?formatForDisplay(save.imported_at,tz):null,importedAtRelative:tz?formatRelative(save.imported_at,tz,clock()):null,isDemo:Boolean(save.is_demo),screenshotUrl:`/api/saves/${save.id}/screenshot`,extractionStatus:job?.state??(action?'done':'failed'),job,action:action?getActionView(db,action.id,{nowMs:clock()}):null});
+    res.json({saveId:save.id,note:save.note??'',link:linkView(save.source_url),importedAt:save.imported_at,importedAtDisplay:tz?formatForDisplay(save.imported_at,tz):null,importedAtRelative:tz?formatRelative(save.imported_at,tz,clock()):null,isDemo:Boolean(save.is_demo),screenshotUrl:`/api/saves/${save.id}/screenshot`,extractionStatus:job?.state??(action?'done':'failed'),job,action:action?getActionView(db,action.id,{nowMs:clock()}):null});
   });
   app.post("/api/saves", upload.single("image"), async (req, res) => {
     const note = typeof req.body?.note === "string" ? req.body.note.trim() : "";
     if (note.length > MAX_NOTE_CHARS) return res.status(400).json({ error: "note_too_long", detail: `Notes are limited to ${MAX_NOTE_CHARS} characters.` });
+    const checkedLink = cleanPostLink(req.body?.link);
+    if (!checkedLink.ok) return res.status(400).json({ error: "invalid_link", detail: "Use a web address that starts with http or https." });
+    const sourceUrl = checkedLink.url;
     if (!req.file) return res.status(400).json({ error: "image_required", detail: 'Send the screenshot as multipart field "image".' });
     const mime = detectImageType(req.file.buffer);
     if (!mime || !(await isDecodable(req.file.buffer))) {
@@ -140,7 +150,7 @@ export function registerSaveRoutes(app, { db, config, provider, clock, locks }) 
 
     const key=req.get('Idempotency-Key');
     if(key && !/^[\x21-\x7e]{1,128}$/.test(key))return res.status(400).json({error:'invalid_idempotency_key'});
-    const hash=crypto.createHash('sha256').update(req.file.buffer).update('\0').update(note).digest('hex');
+    const hash=crypto.createHash('sha256').update(req.file.buffer).update('\0').update(note).update('\0').update(sourceUrl??'').digest('hex');
     if(key){
       const previous=db.prepare('SELECT * FROM saves WHERE import_key=?').get(key);
       if(previous){
@@ -154,7 +164,7 @@ export function registerSaveRoutes(app, { db, config, provider, clock, locks }) 
     fs.mkdirSync(config.screenshotDir, { recursive: true });
     const filename = `${crypto.randomUUID()}.${EXT_BY_MIME[mime]}`;
     fs.writeFileSync(path.join(config.screenshotDir, filename), req.file.buffer);
-    const saveId = createSave(db, { screenshotFile: filename, note, nowIso: new Date(clock()).toISOString() });
+    const saveId = createSave(db, { screenshotFile: filename, note, nowIso: new Date(clock()).toISOString(), sourceUrl });
     if(key)db.prepare('UPDATE saves SET import_key=?,import_hash=? WHERE id=?').run(key,hash,saveId);
     return extractResponse(req,res,saveId);
   });

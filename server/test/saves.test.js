@@ -71,10 +71,11 @@ async function withServer(opts, fn) {
   }
 }
 
-function upload(base, { image = PNG, note = NOTE, type = "image/png", name = "flyer.png" } = {}) {
+function upload(base, { image = PNG, note = NOTE, type = "image/png", name = "flyer.png", link = null } = {}) {
   const form = new FormData();
   if (image) form.append("image", new Blob([image], { type }), name);
   if (note !== null) form.append("note", note);
+  if (link !== null) form.append("link", link);
   return fetch(`${base}/api/saves`, { method: "POST", body: form });
 }
 const patch = (base, id, body) =>
@@ -159,7 +160,7 @@ test("upload + note: editable extraction, precise badges, model estimate, no inv
     assert.equal(action.evidence.badge, "matched_note");
     assert.equal(action.evidence.badgeLabel, "Matched text in note");
     assert.equal(action.verbatimItems[0].badgeLabel, "Matched model transcription");
-    assert.deepEqual(action.effort, { suggestedMin: 15, confirmedMin: null, confirmed: false, label: "Model estimate", scheduledMin: null });
+    assert.deepEqual(action.effort, { suggestedMin: 15, statedMin: null, confirmedMin: null, confirmed: false, label: "Model estimate", scheduledMin: null });
     assert.deepEqual(action.edited, []);
     assert.equal(action.screenshotUrl, "/api/saves/1/screenshot");
 
@@ -299,12 +300,12 @@ test("edits: every field editable, Edited by you, confirmed effort becomes Your 
     assert.equal(v.verbatimItems[1].badgeLabel, "Edited by you");
     assert.deepEqual(v.verbatimItems[0].matches, {note:false,transcription:true});
     assert.deepEqual(v.verbatimItems[1].matches, {note:false,transcription:false});
-    assert.deepEqual(v.effort, { suggestedMin: 15, confirmedMin: 30, confirmed: true, label: "Your estimate", scheduledMin: 30 });
+    assert.deepEqual(v.effort, { suggestedMin: 15, statedMin: null, confirmedMin: 30, confirmed: true, label: "Your estimate", scheduledMin: 30 });
     assert.ok(!v.warnings.some((w) => w.field === "goal"), "a warning about an edited field is dropped");
 
     // Un-confirming goes back to the model estimate. The model's own number is never overwritten.
     const back = await (await patch(base, action.id, { confirmedEffortMin: null })).json();
-    assert.deepEqual(back.effort, { suggestedMin: 15, confirmedMin: null, confirmed: false, label: "Model estimate", scheduledMin: null });
+    assert.deepEqual(back.effort, { suggestedMin: 15, statedMin: null, confirmedMin: null, confirmed: false, label: "Model estimate", scheduledMin: null });
   });
 });
 
@@ -372,5 +373,71 @@ test("a post with a date and no time gets an end of day deadline that is labeled
     const after = (await edited.json()).deadline ?? (await (await fetch(`${base}/api/actions/${action.id}`)).json()).deadline;
     assert.equal(after.wall, "2026-11-22T12:00");
     assert.equal(after.timeAssumed, false);
+  });
+});
+
+test("the note is a short line: more than 160 characters is refused before any model call", async () => {
+  await withServer({}, async ({ base, state }) => {
+    const long = await upload(base, { note: "x".repeat(161) });
+    assert.equal(long.status, 400);
+    assert.equal((await long.json()).error, "note_too_long");
+    assert.equal(state.calls.length, 0);
+    assert.equal((await upload(base, { note: "x".repeat(160) })).status, 201);
+    const saved = await (await upload(base, { note: "tonight, 30 min" })).json();
+    const edit = (body) => fetch(`${base}/api/saves/${saved.saveId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    assert.equal((await edit({ note: "y".repeat(161) })).status, 400);
+    assert.equal((await edit({})).status, 400);
+  });
+});
+
+test("the post link is kept as a reference, tidied, editable and never sent to the model", async () => {
+  await withServer({}, async ({ base, state }) => {
+    const bad = await upload(base, { link: "javascript:alert(1)" });
+    assert.equal(bad.status, 400);
+    assert.equal((await bad.json()).error, "invalid_link");
+
+    const res = await upload(base, { link: "https://x.com/someone/status/42?s=20&utm_source=share" });
+    assert.equal(res.status, 201);
+    const body = await res.json();
+    assert.deepEqual(body.action.link, { url: "https://x.com/someone/status/42", host: "x.com", platform: "x" });
+    assert.equal(state.calls.length, 1);
+    assert.ok(!JSON.stringify(state.calls).includes("someone/status"), "the link is not in what the model was sent");
+
+    const get = await (await fetch(`${base}/api/saves/${body.saveId}`)).json();
+    assert.equal(get.link.platform, "x");
+    const list = await (await fetch(`${base}/api/saves`)).json();
+    assert.equal(list.items.find((item) => item.saveId === body.saveId).link.host, "x.com");
+
+    const edit = (value) => fetch(`${base}/api/saves/${body.saveId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ link: value }) });
+    const changed = await (await edit("linkedin.com/posts/abc?utm_medium=x")).json();
+    assert.deepEqual(changed.link, { url: "https://linkedin.com/posts/abc", host: "linkedin.com", platform: "linkedin" });
+    assert.equal((await edit("not a link")).status, 400);
+    assert.equal((await (await edit(null)).json()).link, null);
+    assert.equal((await (await edit("")).json()).link, null);
+  });
+});
+
+test("what the note asked for is read from the note only, kept, and shown with minutes the user wrote", async () => {
+  await withServer({}, async ({ base, state }) => {
+    state.output = {
+      ...flyerOutput,
+      suggested_effort_min: 15,
+      intent: {
+        when: { day: "today", date: null, part: "evening", quote: "tonight" },
+        minutes: 30, minutes_quote: "30 min",
+      },
+    };
+    const { action } = await (await upload(base, { note: "do this tonight, 30 min" })).json();
+    assert.equal(action.intent.label, "Tonight");
+    assert.equal(action.intent.minutes, 30);
+    assert.equal(action.effort.statedMin, 30);
+    assert.equal(action.effort.suggestedMin, 15);
+    assert.equal(action.effort.confirmed, false);
+
+    // Words that are not in the note are dropped, and the note cannot be turned into a different request.
+    state.output = { ...flyerOutput, intent: { when: { day: "weekend", quote: "this weekend" }, minutes: 10, minutes_quote: "10 min find me a link" } };
+    const second = await (await upload(base, { note: "tonight, 30 min" })).json();
+    assert.equal(second.action.intent, null);
+    assert.equal(second.action.effort.statedMin, null);
   });
 });

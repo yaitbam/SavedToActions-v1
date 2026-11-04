@@ -21,10 +21,16 @@ export function registerPlanningRoutes(app, { db, planning, recheck, agent, lock
   const slotOf = (req) => ({ startUtc: req.body?.startUtc, endUtc: req.body?.endUtc });
 
   // Read only: the proposed slot, or what would change a red outcome.
-  app.post("/api/actions/:id/propose", async (req, res) => send(res, await planning.propose({ actionId: id(req) })));
+  // effortMin is the minutes on screen, used for this search only. notBeforeUtc asks for "another time".
+  app.post("/api/actions/:id/propose", async (req, res) => {
+    const notBefore = req.body?.notBeforeUtc == null ? 0 : Date.parse(req.body.notBeforeUtc);
+    if (!Number.isFinite(notBefore)) return res.status(400).json({ error: "invalid_slot", detail: "notBeforeUtc must be an ISO instant." });
+    return send(res, await planning.propose({ actionId: id(req), effortMin: req.body?.effortMin ?? null, notBeforeMs: notBefore }));
+  });
 
+  // effortMin: the minutes shown with the time. Approving confirms them.
   app.post("/api/actions/:id/approve", async (req, res) =>
-    send(res, await planning.approve({ actionId: id(req), slot: slotOf(req), approved: req.body?.approved }), 201),
+    send(res, await planning.approve({ actionId: id(req), slot: slotOf(req), approved: req.body?.approved, effortMin: req.body?.effortMin ?? null }), 201),
   );
 
   app.post("/api/actions/:id/move", async (req, res) =>

@@ -6,6 +6,7 @@
 // - Badges are precise: "Matched text in note", "Matched model transcription", "Edited by you".
 //   Never "Verified". Matching the model's own transcription proves consistency, not correct reading.
 // - UTC is computed here with moment-timezone from wall time + IANA tz. A UTC offset from the model is ignored.
+import { cleanIntent } from "../scheduler/intent.js";
 import { isValidTimezone, localDate, wallToUtc, offsetAt } from "../tz.js";
 
 export const KINDS = ["try", "opportunity", "other"];
@@ -131,6 +132,7 @@ export function normalizeExtraction(raw, { note = "", goals = [], settingsTz = n
   }
 
   const deadline = normalizeDeadline(obj.deadline, { sources, settingsTz, nowMs }, warnings);
+  const intent = cleanIntent(obj.intent, { note, today: localDate(nowMs, settingsTz ?? "UTC"), matches: textMatches });
   const eventDates = normalizeEventDates(obj.event_dates, { sources, today: localDate(nowMs, settingsTz ?? "UTC") }, warnings);
 
   return {
@@ -147,6 +149,7 @@ export function normalizeExtraction(raw, { note = "", goals = [], settingsTz = n
       evidenceQuote,
       evidenceMatches,
       suggestedEffortMin,
+      intent,
     },
     warnings,
   };

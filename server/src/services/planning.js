@@ -23,6 +23,7 @@ import {
   supersedeBlock,
 } from "../blockStore.js";
 import { getSettings } from "../db.js";
+import { linkView } from "../postLink.js";
 import { CalendarError, buildEventBody, calendarErrorStatus } from "../google/calendar.js";
 import {
   latestFeasibleStart,
@@ -43,6 +44,7 @@ import {
   toIso,
 } from "../scheduler/index.js";
 
+import { resolveWhen } from "../scheduler/intent.js";
 import { formatForDisplay } from "../tz.js";
 import { updateCompletionTitle } from "./completionCalendar.js";
 
@@ -66,15 +68,18 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
   }
 
   /** Everything scheduling needs. Missing timezone, unconfirmed effort or a broken deadline stops here. */
-  function planContext(row) {
+  // `effortMin` is minutes the user is looking at right now. A proposal may use it, nothing is saved, and only an
+  // approval that carries the same minutes confirms them.
+  function planContext(row, effortMin = null) {
     const settings = getSettings(db);
     if (!settings.tz) return fail(409, "missing_timezone", { detail: "Set your timezone in settings first." });
-    if (row.confirmed_effort_min == null) {
+    const minutes = effortMin ?? row.confirmed_effort_min;
+    if (minutes == null) {
       return fail(409, "effort_not_confirmed", { detail: "Confirm your effort first. Only confirmed effort is scheduled." });
     }
     const deadline = resolveDeadline({ wall: row.deadline_wall, tz: row.deadline_tz });
     if (!deadline.ok) return fail(409, deadline.reason, { detail: "Fix the deadline before scheduling." });
-    return { ok: true, settings, durationMin: row.confirmed_effort_min, deadline };
+    return { ok: true, settings, durationMin: minutes, deadline };
   }
 
   /** The slot must be exact instants with an explicit offset. A bare local time would be read in the server's zone. */
@@ -116,16 +121,17 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
    * are re-searching after a conflict, it reads events instead, so our own block is never subtracted from an
    * aggregated interval. A move prefers the nearest slot at or after the old one.
    */
-  async function search({ row, ctx, nowMs, activeBlock = null, useEvents = false, notBeforeMs = 0 }) {
+  async function search({ row, ctx, nowMs, activeBlock = null, useEvents = false, notBeforeMs = 0, untilCapMs = null, hours = null }) {
     const { settings, durationMin, deadline } = ctx;
-    const untilMs = deadline.present ? deadline.ms : nowMs + DEFAULT_HORIZON_DAYS * DAY_MS;
+    const limit = deadline.present ? deadline.ms : nowMs + DEFAULT_HORIZON_DAYS * DAY_MS;
+    const untilMs = untilCapMs ? Math.min(limit, untilCapMs) : limit;
     if (deadline.present && deadline.ms <= nowMs) {
       return { found: false, reason: "deadline_passed", hints: null, explanation: ["The deadline has passed."], source: "none" };
     }
     // The agent may ask for a later start. Never earlier than now.
     const fromMs = Math.max(nowMs, notBeforeMs);
     if (fromMs >= untilMs) {
-      return { found: false, reason: "not_before_after_deadline", hints: null, explanation: ["That start time is after the deadline."], source: "none" };
+      return { found: false, reason: untilCapMs && untilCapMs < limit ? "outside_window" : "not_before_after_deadline", hints: null, explanation: ["That start time is after the deadline."], source: "none" };
     }
     let busy;
     let source;
@@ -142,15 +148,21 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
       durationMin,
       busy,
       tz: settings.tz,
-      workStart: settings.workStart,
-      workEnd: settings.workEnd,
+      // A part of the day, such as the evening, narrows the hours searched. It never widens them.
+      workStart: hours?.workStart ?? settings.workStart,
+      workEnd: hours?.workEnd ?? settings.workEnd,
       deadlineWall: row.deadline_wall,
       deadlineTz: row.deadline_tz,
     };
     let result = activeBlock ? proposeSlot({ ...common, now: Math.max(fromMs, Date.parse(activeBlock.start_utc)) }) : null;
     if (!result?.ok) result = proposeSlot({ ...common, now: fromMs });
+    // The slot finder knows the deadline and the horizon, not a window the note asked for, so the window is held here.
+    // Past it the calendar was not even read, so such a slot cannot be trusted.
+    if (result.ok && untilCapMs && result.slot.endMs > untilCapMs) {
+      return { found: false, reason: "outside_window", hints: null, explanation: ["Nothing fits in the time you asked for."], source };
+    }
     if (result.ok) {
-      const latest = latestFeasibleStart({ now: fromMs, durationMin, busy, tz:settings.tz, workStart:settings.workStart, workEnd:settings.workEnd, deadlineMs:deadline.present ? deadline.ms : null });
+      const latest = latestFeasibleStart({ now: fromMs, durationMin, busy, tz:settings.tz, workStart:common.workStart, workEnd:common.workEnd, deadlineMs:deadline.present ? deadline.ms : null });
       return { found:true, slot:decorate(result.slot,settings.tz,durationMin), source, latestFeasibleStart:latest.ok ? {...decorate(latest.slot,settings.tz,durationMin),label:latest.label} : null };
     }
     const extended = result.hints?.fitsIfWorkingHoursExtended;
@@ -198,7 +210,13 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
 
   const describe = (row) => {
     const deliverables = JSON.parse(row.deliverables_json ?? "[]");
-    return ["Planned with SavedToAction.", ...(deliverables.length ? ["", ...deliverables.map((d) => `- ${d}`)] : [])].join("\n");
+    // The original post, so the link is one tap away when the block starts.
+    const link = linkView(db.prepare("SELECT source_url FROM saves WHERE id = ?").get(row.save_id)?.source_url);
+    return [
+      "Planned with SavedToAction.",
+      ...(link ? ["", `Original post: ${link.url}`] : []),
+      ...(deliverables.length ? ["", ...deliverables.map((d) => `- ${d}`)] : []),
+    ].join("\n");
   };
 
   const summary = (row) => ({ action: getActionView(db, row.id, {nowMs:clock()}) });
@@ -341,22 +359,39 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
       });
     },
 
-    /** Read only. Proposes the earliest valid slot, or says what would change a red outcome. */
-    propose({ actionId }) {
+    /**
+     * Read only. Proposes the earliest valid slot, or says what would change a red outcome.
+     * effortMin: the minutes on screen, used for this search only. notBeforeMs: "another time", start no earlier.
+     * When the note asked for a time ("tonight"), that is tried first, and the answer says whether it was met.
+     */
+    propose({ actionId, effortMin = null, notBeforeMs = 0 }) {
       return guard(async () => {
         const row = getRow(actionId);
         if (!row) return fail(404, "not_found");
         if (isClosed(row)) return fail(409, "action_closed");
-        const ctx = planContext(row);
+        const minutes = Number.isInteger(effortMin) && effortMin >= 1 && effortMin <= 1440 ? effortMin : null;
+        const ctx = planContext(row, minutes);
         if (!ctx.ok) return ctx;
         const active = row.status === "planned" ? getActiveBlock(db, actionId) : null;
-        const found = await search({ row, ctx, nowMs: clock(), activeBlock: active });
-        return { ok: true, mode: active ? "move" : "new", ...found };
+        const nowMs = clock();
+
+        const when = !notBeforeMs && !active ? JSON.parse(row.intent_json ?? "null")?.when : null;
+        let intent = null;
+        if (when) {
+          const window = resolveWhen(when, { nowMs, tz: ctx.settings.tz, workStart: ctx.settings.workStart, workEnd: ctx.settings.workEnd });
+          if (window.ok) {
+            const inWindow = await search({ row, ctx, nowMs, notBeforeMs: window.notBeforeMs, untilCapMs: window.untilMs, hours: window.hours });
+            if (inWindow.found) return { ok: true, mode: "new", ...inWindow, intent: { applied: true, label: window.label } };
+          }
+          intent = { applied: false, label: window.label, reason: window.ok ? "nothing_fits" : window.reason };
+        }
+        const found = await search({ row, ctx, nowMs, activeBlock: active, notBeforeMs });
+        return { ok: true, mode: active ? "move" : "new", ...found, ...(intent ? { intent } : {}) };
       });
     },
 
     /** Write the first block. Needs approved: true. Replaying the same approved slot returns the existing block. */
-    approve({ actionId, slot, approved }) {
+    approve({ actionId, slot, approved, effortMin = null }) {
       return guard(async () => {
         if (approved !== true) return fail(400, "approval_required", { detail: "Nothing is written to your calendar without approval." });
         const row = getRow(actionId);
@@ -373,7 +408,11 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
           return fail(409, "already_planned", { detail: "This action already has a block. Move it instead." });
         }
 
-        const ctx = planContext(row);
+        // Approving a time that is shown with its minutes also confirms those minutes. Without them, the minutes
+        // must already have been confirmed. Either way the block must be exactly that long.
+        const stated = Number.isInteger(effortMin) && effortMin >= 1 && effortMin <= 1440 ? effortMin : null;
+        if (effortMin !== null && stated === null) return fail(400, "invalid_effort", { detail: "Minutes must be a whole number from 1 to 1440." });
+        const ctx = planContext(row, stated);
         if (!ctx.ok) return ctx;
         const nowMs = clock();
         const checked = checkSlot(parsed, ctx, nowMs);
@@ -394,7 +433,7 @@ export function createPlanningService({ db, calendar, clock = Date.now }) {
             readback: written.readback,
             nowIso,
           });
-          db.prepare("UPDATE actions SET status = 'planned', updated_at = ? WHERE id = ?").run(nowIso, actionId);
+          db.prepare("UPDATE actions SET status = 'planned', confirmed_effort_min = ?, updated_at = ? WHERE id = ?").run(ctx.durationMin, nowIso, actionId);
           return id;
         })();
         return { ok: true, replayed: false, ...summary(row), block: blockView(getBlock(db, blockId), { nowMs: clock() }) };

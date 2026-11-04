@@ -4,6 +4,8 @@
 import { blockView, checkView, getActiveBlock, getLatestCheck } from "./blockStore.js";
 import { formatForDisplay, formatRelative, formatShortDate, isValidTimezone, wallToUtc, localDate } from "./tz.js";
 import { getSettings } from "./db.js";
+import { linkView } from "./postLink.js";
+import { intentLabel } from "./scheduler/intent.js";
 import { KINDS, LABELS, VERBATIM_TYPES, badgeFor, badgeLabel, matchSources, eventDateWarning } from "./extraction/normalize.js";
 
 const TZ_SOURCE_LABELS = Object.freeze({
@@ -20,10 +22,10 @@ const parse = (json, fallback) => {
   }
 };
 
-export function createSave(db, { screenshotFile, note, nowIso, isDemo = false }) {
+export function createSave(db, { screenshotFile, note, nowIso, isDemo = false, sourceUrl = null }) {
   const info = db
-    .prepare("INSERT INTO saves (screenshot_path, note, imported_at, is_demo) VALUES (?, ?, ?, ?)")
-    .run(screenshotFile, note, nowIso, isDemo ? 1 : 0);
+    .prepare("INSERT INTO saves (screenshot_path, note, imported_at, is_demo, source_url) VALUES (?, ?, ?, ?, ?)")
+    .run(screenshotFile, note, nowIso, isDemo ? 1 : 0, sourceUrl);
   return Number(info.lastInsertRowid);
 }
 
@@ -38,8 +40,8 @@ export function insertActionFromExtraction(db, { saveId, fields, warnings, raw, 
          save_id, goal_id, kind, label, title,
          deadline_wall, deadline_tz, deadline_tz_source, deadline_utc, deadline_label, deadline_quote, deadline_year_assumed, deadline_time_assumed,
          deliverables_json, verbatim_items_json, evidence_quote, transcription, warnings_json, model_output_json, model_name,
-         edited_fields_json, suggested_effort_min, event_dates_json, status, created_at, updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`,
+         edited_fields_json, suggested_effort_min, event_dates_json, intent_json, status, created_at, updated_at
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`,
     )
     .run(
       saveId,
@@ -65,6 +67,7 @@ export function insertActionFromExtraction(db, { saveId, fields, warnings, raw, 
       "[]",
       fields.suggestedEffortMin,
       JSON.stringify(fields.eventDates.map(({ text, start, end }) => ({ text, start, end }))),
+      fields.intent ? JSON.stringify(fields.intent) : null,
       nowIso,
       nowIso,
     );
@@ -83,6 +86,12 @@ function extractionMsOf(db, actionId) {
   const row = db.prepare("SELECT steps_json FROM agent_traces WHERE action_id = ? AND outcome = 'extracted' ORDER BY id LIMIT 1").get(actionId);
   const ms = parse(row?.steps_json, [])[0]?.ms;
   return Number.isFinite(ms) ? ms : null;
+}
+
+function intentView(row, tz, nowMs) {
+  const intent = parse(row.intent_json, null);
+  if (!intent || (!intent.when && !intent.minutes)) return null;
+  return { when: intent.when ?? null, minutes: intent.minutes ?? null, minutesQuote: intent.minutesQuote ?? null, label: intent.when ? intentLabel(intent.when, tz, nowMs) : null };
 }
 
 export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs=Date.now(),tz=null,extractionMs=null}={}) {
@@ -114,6 +123,10 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
     label: row.label,
     title: row.title,
     note: save.note ?? "",
+    // The post the user saved this from, kept as a reference. Never fetched.
+    link: linkView(save.source_url),
+    // What the note asked for, read as a small closed set. Null when it asked for nothing.
+    intent: intentView(row, tz, nowMs),
     transcription: row.transcription ?? "",
     screenshotUrl: `/api/saves/${row.save_id}/screenshot`,
     isDemo: Boolean(save.is_demo),
@@ -159,6 +172,8 @@ export function viewOf(row, save, activeBlock = null, latestCheck = null, {nowMs
     },
     effort: {
       suggestedMin: row.suggested_effort_min,
+      // Minutes the user wrote in their own note. They still approve the time that uses them.
+      statedMin: parse(row.intent_json, null)?.minutes ?? null,
       confirmedMin: row.confirmed_effort_min,
       confirmed,
       label: effortLabel,
