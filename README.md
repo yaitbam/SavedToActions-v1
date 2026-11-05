@@ -6,8 +6,6 @@ Saved is not done. SavedToAction turns a screenshot of a post you saved into pro
 
 Demo video: VIDEO_URL
 
-Commit dates are original.
-
 ## What it does
 
 You save a post because you mean to act on it: a hackathon deadline, a prompt to try, a course, a freelance tip. It sits in Saved and the deadline passes. SavedToAction closes that gap in three steps.
