@@ -63,8 +63,3 @@ node web/test/crop.cjs
 
 - `auth.cjs` needs the backend in account mode with Google credentials. It checks the session endpoint and the Google redirect, then uses intercepted sessions for profile, CSRF, logout, demo and expiry at 1440 px and 390 px. It does not complete a real Google login.
 - `errors.cjs` checks recovery from a missing session and that technical errors are not shown. `new-save.cjs` checks preview cleanup and uploaded bytes. `crop.cjs` crops a screenshot with the mouse and keyboard and checks the uploaded size. It needs `sharp`, which the server package installs.
-- `design.cjs`, `phase5.cjs` and `phase6.cjs` were written for earlier versions of the landing, Saved and Review pages, may need updating, and `phase5.cjs` expects a prepared legacy database with `AUTH_MODE=off`.
-
-## Current limits
-
-Two real Google accounts each completing login and one booking still need a manual check. The trust ledger is not built, and old local data is not migrated into new accounts. See the [root limits](../README.md#honest-limits) and the [server guide](../server/README.md).

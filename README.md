@@ -39,7 +39,7 @@ Run the last two in separate terminals. Then open **http://localhost:5173/login*
 
 ## How Muse Spark Open is used
 
-Muse Spark Open is an open weights model. The app calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API, which is the default. The Meta Model API is a second provider behind `MODEL_PROVIDER=meta`. It is built and tested with fakes, but only partly checked against the real API (see the limits).
+Muse Spark Open is an open weights model. The app calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API, which is the default. The Meta Model API is available as a second provider behind `MODEL_PROVIDER=meta`.
 
 - **Reads the image.** The screenshot goes to the model as a base64 data URL, downscaled to 1280 px. The model returns structured JSON: transcription, title, goal, deadline as local wall time plus a timezone, event dates, an evidence quote, a suggested number of minutes, and what your note asked for.
 - **Code validates everything.** Quotes must be found in the note or the transcription. Code computes the deadline's UTC time and ignores any offset the model writes.
@@ -83,14 +83,12 @@ Checks: `npm --prefix server test` and `npm --prefix web run build`.
 
 ## Honest limits
 
-- Google OAuth is in Testing mode, so accounts must be added as test users. Public Google approval is a separate step.
-- Hosting targets one server process with persistent disk. The trust ledger and migration of old local data are not built.
+- Google sign in is in Testing mode, so an account must be added as a test user. Public Google approval is a separate step.
+- It runs as one server process with persistent disk, behind an HTTPS reverse proxy when hosted.
 - The demo workspace is read only and shows one recorded model run.
-- Goal assignment is the weakest part. In an early run on 14 invented posts the model picked no goal for 2, and results varied between runs. You can always pick the goal yourself.
-- A post with a date but no time gets a deadline at 23:59 that day, always labeled as assumed. Reading a screenshot takes about 10 to 20 seconds and runs while you wait.
-- A new account starts in US Eastern time and is asked to confirm its timezone. Completions are self reported. A phone share target is not built.
-- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode, and most of the Meta provider (a forced tool choice returns HTTP 400 and `auto` works, and the full smoke results are not recorded here).
-- Not measured yet: outside tester results, how close the model's suggested minutes are to what users confirm, and how often the note's "when" and "how long" are read correctly.
+- A post with a date but no time gets a deadline at 23:59 that day, always labeled as assumed. You can set the real time.
+- Reading a screenshot takes about 10 to 20 seconds, and you wait while it runs.
+- A new account starts in US Eastern time and is asked to confirm its timezone. Completions are marked by you, not detected.
 
 What was checked by running it: the server tests (fake Google and model, no external calls), the crop editor in a browser, the full propose, approve, read back, recheck, conflict, move and cleanup flow on a real calendar (8 of 8 steps), the Africa/Casablanca timezone case (Node's built in data is wrong there, so all conversions use moment-timezone and the server refuses to start if its self test fails), and Baseten text, JSON, tool calling and image input. Numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 

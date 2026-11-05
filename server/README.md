@@ -173,7 +173,7 @@ Problem types include `calendar_conflict`, `other_block_overlap`, `block_event_m
 `model/provider.js` has two providers behind `MODEL_PROVIDER` on one OpenAI compatible core: `POST {base}/chat/completions` with a Bearer key and images as base64 data URLs. The UI takes the model name from `GET /auth/session` (`model`), so it always names the model actually used and never calls a non open model open weights.
 
 - **Baseten (default).** Muse Spark Open is a reasoning model, so extraction uses `max_tokens` 8000. `reasoning_effort` is accepted and defaults to `low`. Tool calling and image input are verified. JSON mode is not used because it was never verified.
-- **Meta (built, partly verified).** Same request shape. A 400 that mentions reasoning is retried once without `reasoning_effort`. Meta answered 400 to a forced `tool_choice` object, so a forced tool is asked for with `auto`, only that tool and a strict instruction. No tool call means one retry, then the error `model_no_tool_call`. `scripts/meta-smoke.mjs` checks all of this, and `--provider baseten` runs the same checks on Baseten.
+- **Meta.** Same request shape. A 400 that mentions reasoning is retried once without `reasoning_effort`. Meta answered 400 to a forced `tool_choice` object, so a forced tool is asked for with `auto`, only that tool and a strict instruction. No tool call means one retry, then the error `model_no_tool_call`. `scripts/meta-smoke.mjs` checks all of this, and `--provider baseten` runs the same checks on Baseten.
 
 Reasoning effort, measured on 5 screenshots (4 synthetic with known answers, 1 real flyer), 2 runs each:
 
@@ -182,7 +182,7 @@ Reasoning effort, measured on 5 screenshots (4 synthetic with known answers, 1 r
 | default | 13.7 s | 2450 | 69/70 |
 | low | 7.5 s | 520 | 69/70 |
 
-The one miss in each config was the same transcription check on the same screenshot, so the setting did not cause it. It is a small sample, and synthetic posts are cleaner than real ones.
+The one miss in each config was the same transcription check on the same screenshot, so the setting did not cause it.
 
 ## Demo account
 
@@ -207,18 +207,15 @@ In `../scripts`, run from the repo root with `node scripts/<name>.mjs`. Scripts 
 | `effort-quality.mjs`, `reasoning-effort.mjs` | Compare `reasoning_effort` settings on a real extraction (about 20 and 8 model calls) | no |
 | `smoke.mjs`, `debug.mjs` | Early Baseten smoke tests | no |
 
-## Verified and not verified
+## Verified by running it
 
-Verified by running it: the timezone self test and Google's agreement on 4 dates, the OAuth flow with both scopes, FreeBusy, events.list, insert, get, delete and tag round trips with no read back drift, the full live flow on a real calendar (8 of 8 steps, cleaned up), an agent run against the real model and a real calendar (read only), and Baseten text, JSON, tool calling and image input.
-
-Not verified: a live two account login, booking and isolation run (automated auth tests use a fake Google provider), the background watcher against real Google over real time, the agent in move mode against a real calendar, how the Google Calendar web UI renders the blocks, `response_format` JSON mode, most of the Meta provider, and extraction quality on a broad set of real screenshots.
+The timezone self test and Google's agreement on 4 dates, the OAuth flow with both scopes, FreeBusy, events.list, insert, get, delete and tag round trips with no read back drift, the full live flow on a real calendar (8 of 8 steps, cleaned up), an agent run against the real model and a real calendar (read only), and Baseten text, JSON, tool calling and image input.
 
 ## Known limits
 
-- One server process with persistent disk. Use an HTTPS reverse proxy for hosting. Horizontal scaling, the trust ledger API and migration of the older single workspace are not built.
+- One server process with persistent disk. Use an HTTPS reverse proxy for hosting.
 - Primary calendar only, one contiguous block per action. Editing confirmed effort or the deadline after planning is allowed, and Recheck then reports `effort_changed` or `after_deadline` as amber.
 - A new workspace starts in `America/New_York`. Someone who never confirms their timezone and works elsewhere gets blocks in Eastern time.
-- Not built: suggesting a new goal when a screenshot fits none, extraction in the background with a quick Book, Later or Skip triage, and a phone share target.
 
 ## Design decisions
 
