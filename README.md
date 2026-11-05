@@ -69,7 +69,7 @@ You need Node 22 or newer, a model key (Baseten by default, or Meta), and a Goog
 
 For HTTPS production, set `COOKIE_SECURE=true`, a secret `TOKEN_ENC_KEY` of 64 hex characters, and the public origin and callback URLs. Back up the key and the data folder outside Git. `.env.example` lists every variable.
 
-Checks: `npm --prefix server test` and `npm --prefix web run build`.
+Checks: `npm --prefix server test`, `npm --prefix web test` and `npm --prefix web run build`.
 
 ## Safety and privacy
 

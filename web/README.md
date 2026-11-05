@@ -13,7 +13,7 @@ npm run dev
 
 Open **http://localhost:5173** consistently, rather than switching between `localhost` and `127.0.0.1` during login. No Google secrets or model keys belong in frontend environment variables.
 
-`npm run typecheck` checks types, `npm run build` checks them and writes production assets to `dist/`, and `npm run preview` serves those assets for inspection only. Hosting needs an HTTPS reverse proxy that routes `/api` and `/auth` to Node and serves the frontend on the same public origin, with a fallback to `index.html` for page routes.
+`npm test` runs the unit tests (Vitest, no browser or backend needed), `npm run typecheck` checks types, `npm run build` checks them and writes production assets to `dist/`, and `npm run preview` serves those assets for inspection only. Hosting needs an HTTPS reverse proxy that routes `/api` and `/auth` to Node and serves the frontend on the same public origin, with a fallback to `index.html` for page routes.
 
 ## Routes
 
