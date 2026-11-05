@@ -14,6 +14,7 @@ import { StateButton } from "../features/review/StateButton";
 import { StateNote } from "../features/review/StateNote";
 import { Step } from "../features/review/Step";
 import { DemoCard } from "../features/review/DemoCard";
+import { useSession } from "../features/auth/SessionContext";
 import { useReview } from "../features/review/useReview";
 import "../features/review/review.css";
 
@@ -29,6 +30,8 @@ const stepThree = {
 export function Review() {
   const saveId = Number(useParams().id);
   const r = useReview(saveId);
+  // Read only means the shared demo session. Saves imported into a real account use the normal flow.
+  const demo = useSession().session?.kind === "demo";
   const [zoom, setZoom] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsRef = useRef<HTMLDivElement>(null);
@@ -56,7 +59,6 @@ export function Review() {
   const block = action?.block;
   const readbackStatus = block?.readback?.status;
   const three = stepThree[r.stage];
-  const demo = !!action?.isDemo;
 
   return (
     <div className="rv">
