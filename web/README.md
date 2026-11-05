@@ -37,7 +37,7 @@ Open **http://localhost:5173** consistently, rather than switching between `loca
 - Only the first session check replaces the page with a loader. Later refreshes, such as saving a name, happen in the background so the page keeps its state.
 - A signed out visitor's requested `/app/...` page is remembered in session storage for 10 minutes, so signing in returns them there. Account details, screenshots and Google tokens are never kept in browser storage.
 - Calendar connection is separate from login and must use the same Google account. Disconnecting Calendar leaves the login active.
-- A demo session is read only. The client blocks its writes and shows a banner, and the backend enforces it regardless.
+- A demo session is read only. The client blocks its writes and shows a banner, and the backend enforces it regardless. A demo save opens a read only review with the note, what Muse read, the suggested title and minutes, and a Sign in button. It never looks for a time.
 
 ## UI behavior
 

@@ -16,6 +16,7 @@ import { getGoals } from "../../api/goals";
 import { confirmEffort, getSave, retryExtraction, saveLink } from "../../api/saves";
 import type { Action, ActionPatch, AgentPlan, ProposeIntent, ProposeResult } from "../../api/types";
 import { useAsync } from "../../api/useAsync";
+import { useSession } from "../auth/SessionContext";
 import { useAlert } from "../../ui/AlertProvider";
 import { stageOf, type Proposal } from "./model";
 
@@ -55,6 +56,8 @@ export function useReview(saveId: number) {
   const [preference, setPreference] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const alert = useAlert();
+  // The shared demo is read only, so it never looks for a time. That would need a calendar and a sign in.
+  const demo = useSession().session?.kind === "demo";
 
   const loaded = save.data?.action ?? null;
   useEffect(() => {
@@ -87,14 +90,14 @@ export function useReview(saveId: number) {
   // The first thing the user sees is a time, not a form. As soon as there are minutes (from the note, the model or
   // a tap) a time is looked up, once per change. Reading the calendar writes nothing.
   useEffect(() => {
-    if (!action || stage !== "effort" || !minutes || busy || needsCalendar || extracting) return;
+    if (demo || !action || stage !== "effort" || !minutes || busy || needsCalendar || extracting) return;
     if (lookedUp?.id === action.id && lookedUp.minutes === minutes) return;
     const timer = setTimeout(() => {
       setLookedUp({ id: action.id, minutes });
       void findTime(minutes);
     }, 250);
     return () => clearTimeout(timer);
-  }, [action?.id, stage, minutes, busy, needsCalendar, lookedUp, extracting]);
+  }, [demo, action?.id, stage, minutes, busy, needsCalendar, lookedUp, extracting]);
 
   async function run(label: string, job: () => Promise<void>) {
     setBusy(label);

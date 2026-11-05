@@ -185,3 +185,32 @@ test("Explore the demo: unavailable until the demo is loaded, then a read only s
     assert.equal((await (await request("/auth/session")).json()).authenticated, false);
   });
 });
+
+test("each screenshot is saved with its note, the recording keeps the note, and a replay flags answers made for another note", async () => {
+  const t = await setup();
+  try {
+    const notes = { "a-1.png": "Try it tonight. 20 min", "x-2.png": "Read it this weekend" };
+    const recorder = createRecordingProvider(fakeModel());
+    const first = await loadDemoSaves({ config: t.config, provider: recorder, files: t.files, notes });
+    assert.deepEqual(Object.fromEntries(Object.entries(recorder.answers).map(([k, v]) => [k, v.note])), notes);
+
+    const central = openAccounts(t.config.dataDir);
+    const demo = central.prepare("SELECT * FROM accounts WHERE kind = 'demo'").get();
+    central.close();
+    const db = openDb(path.join(t.config.dataDir, "workspaces", demo.workspace_key, "db.sqlite"));
+    assert.deepEqual(db.prepare("SELECT note FROM saves ORDER BY id").all().map((r) => r.note), ["Try it tonight. 20 min", "Read it this weekend"]);
+    db.close();
+    assert.equal(first.results.every((r) => r.status === "loaded"), true);
+
+    removeDemo(t.config);
+    const recording = { model: "fake-model", files: recorder.answers };
+    const same = createReplayProvider(recording);
+    await loadDemoSaves({ config: t.config, provider: same, files: t.files, notes });
+    assert.deepEqual(same.stale, []);
+
+    removeDemo(t.config);
+    const other = createReplayProvider(recording);
+    await loadDemoSaves({ config: t.config, provider: other, files: t.files, notes: { ...notes, "x-2.png": "Another note" } });
+    assert.deepEqual(other.stale, ["x-2.png"]);
+  } finally { t.done(); }
+});

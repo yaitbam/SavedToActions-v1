@@ -21,6 +21,7 @@ import { createProvider } from "../server/src/model/provider.js";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIR = path.join(ROOT, "fixtures", "demo");
 const RECORDING = path.join(DIR, "extracted.json");
+const NOTES = path.join(DIR, "notes.json");
 const mode = process.argv[2] ?? "";
 
 const fail = (message) => {
@@ -53,7 +54,11 @@ if (replay) {
   console.log(`Reading ${files.length} screenshots with ${live.name} ${live.model}. This takes a few seconds each.`);
 }
 
-const { results } = await loadDemoSaves({ config, provider, files });
+const notes = fs.existsSync(NOTES) ? JSON.parse(fs.readFileSync(NOTES, "utf8")) : {};
+const { results } = await loadDemoSaves({ config, provider, files, notes });
+if (replay && provider.stale.length) {
+  console.log(`\nThe recording was made with different notes for: ${provider.stale.join(", ")}.\nRun "node scripts/load-demo.mjs reset" and then "node scripts/load-demo.mjs live" to record answers that use fixtures/demo/notes.json.`);
+}
 
 const pad = (value, n) => String(value ?? "").padEnd(n).slice(0, n);
 for (const r of results) console.log(`${pad(r.file, 12)} ${pad(r.status, 15)} ${r.status === "failed" ? r.error : r.title ?? "(no title)"}`);
@@ -70,5 +75,6 @@ if (!replay) {
     console.log("Some screenshots were already loaded and were not read again, so nothing was recorded. Run reset, then live, to record.");
   }
 }
+if (failed.some((r) => r.error === "idempotency_conflict")) fail("Some screenshots were loaded earlier with a different note. Run \"node scripts/load-demo.mjs reset\" and load again.");
 if (failed.length) fail(`${failed.length} screenshot(s) failed. Run the command again to retry them.`);
 console.log("Start the app and choose Explore the demo on the login page.");

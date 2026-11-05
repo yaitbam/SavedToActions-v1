@@ -7,8 +7,8 @@ Real numbers only. Times are GMT+0.
 | Result | Value |
 |---|---|
 | Command | `cd server && npm test` |
-| Tests | 339 |
-| Passed | 339 |
+| Tests | 340 |
+| Passed | 340 |
 | Failed | 0 |
 
 The suite uses an in-memory database, a fake calendar and a scripted fake model. It makes no network calls, no Google calls and no model calls.

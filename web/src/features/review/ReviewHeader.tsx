@@ -20,6 +20,8 @@ interface Props {
   part?: "title" | "read" | "all";
   // While planning, the check step is step 1 and carries the way to edit before anything is added.
   step?: { n: number; title: string; hint: string; onEdit: () => void };
+  // The shared demo: nothing can be picked or accepted.
+  readOnly?: boolean;
 }
 
 const kindLabel: Record<string, string> = { try: "Try it", opportunity: "Opportunity" };
@@ -46,7 +48,7 @@ function missingDeadlineReason(action: Action): { text: string; wall: string | n
 }
 
 // The title, then step 1: what the model read, with where each field came from. Missing stays Missing.
-export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "all", step }: Props) {
+export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "all", step, readOnly = false }: Props) {
   const goal = goals.find((item) => item.id === action.goalId);
   const reason = missingDeadlineReason(action);
   const tzText = timezoneChipText(action);
@@ -71,16 +73,19 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "
             {action.link && <PostLinkChip link={action.link} />}
           </div>
         )}
+        {action.note && <p className="rv-note"><b>Your note</b>{action.note}</p>}
       </div>
       )}
 
       {part !== "title" && (
-      <Step n={step?.n} title={step?.title ?? "What Muse read"} hint={step?.hint ?? "Check these against your screenshot"} current={action.goalId === null}>
+      <Step n={step?.n} title={step?.title ?? "What Muse read"} hint={step?.hint ?? "Check these against your screenshot"} current={action.goalId === null && !readOnly}>
         <dl className="rv-fields">
           <div>
             <dt>Goal</dt>
             <dd>
-              {action.goalId === null ? (
+              {action.goalId === null && readOnly ? (
+                <Chip tone="missing">Missing</Chip>
+              ) : action.goalId === null ? (
                 <span className="rv-ask w-full">
                   <b>Which goal is this for?</b>
                   <span className="rv-chips">
@@ -121,7 +126,7 @@ export function ReviewHeader({ action, goals, busy, onGoal, onDeadline, part = "
                   {reason && (
                     <span className="rv-deadline-note">
                       {reason.text}
-                      {reason.wall && (
+                      {reason.wall && !readOnly && (
                         <>
                           {" "}
                           <button type="button" className="rv-deadline-use" disabled={busy} onClick={() => onDeadline(reason.wall as string)}>Use it anyway</button>

@@ -15,6 +15,8 @@ interface Props {
   onPatch: (changes: ActionPatch) => void;
   onLink: (link: string | null) => void;
   label?: string;
+  // The shared demo: show what Muse read and nothing to edit.
+  readOnly?: boolean;
 }
 
 const verbatimLabel = { prompt: "Prompt", link: "Link", keyword: "Keyword" } as const;
@@ -47,7 +49,7 @@ function CheckHistory({ action }: { action: Action }) {
   );
 }
 
-export function Details({ action, goals, open, busy, onToggle, onPatch, onLink, label = "Details" }: Props) {
+export function Details({ action, goals, open, busy, onToggle, onPatch, onLink, label = "Details", readOnly = false }: Props) {
   return (
     <details
       open={open}
@@ -57,7 +59,15 @@ export function Details({ action, goals, open, busy, onToggle, onPatch, onLink, 
       <summary className="cursor-pointer font-display font-semibold tracking-tight">{label}</summary>
       {open && (
         <div className="mt-4 space-y-6">
-          <EditFields action={action} goals={goals} busy={busy} onPatch={onPatch} onLink={onLink} />
+          {readOnly ? (
+            action.transcription && (
+              <Section title="Text Muse read from the image">
+                <p className="whitespace-pre-wrap break-words rounded-xl bg-bg p-3 text-small">{action.transcription}</p>
+              </Section>
+            )
+          ) : (
+            <EditFields action={action} goals={goals} busy={busy} onPatch={onPatch} onLink={onLink} />
+          )}
           {action.deliverables.length > 0 && (
             <Section title="Deliverables">
               <ul className="list-disc space-y-1 pl-5">
@@ -79,7 +89,7 @@ export function Details({ action, goals, open, busy, onToggle, onPatch, onLink, 
               </ul>
             </Section>
           )}
-          <CheckHistory action={action} />
+          {!readOnly && <CheckHistory action={action} />}
           <Trace actionId={action.id} />
         </div>
       )}

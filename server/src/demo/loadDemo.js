@@ -40,7 +40,12 @@ export function createReplayProvider(recording) {
     name: "replay",
     model: recording.model ?? "recorded",
     configured: () => true,
-    use(file) { current = file; },
+    // File names whose recorded note differs from the note being loaded. Their answers were not written for that note.
+    stale: [],
+    use(file, note) {
+      current = file;
+      if ((recording.files?.[file]?.note ?? "") !== (note ?? "")) this.stale.push(file);
+    },
     async chat() {
       const answer = recording.files?.[current];
       if (!answer?.content) throw new ModelError("model_failed", `No recorded answer for ${current}`);
@@ -61,16 +66,17 @@ export function createReplayProvider(recording) {
 /** Wraps a live provider and keeps each file's answer, so a good run can be saved as a recording. */
 export function createRecordingProvider(live) {
   let current = null;
+  let currentNote = "";
   const answers = {};
   return {
     name: live.name,
     model: live.model,
     configured: () => live.configured(),
     answers,
-    use(file) { current = file; live.use?.(file); },
+    use(file, note) { current = file; currentNote = note ?? ""; live.use?.(file, note); },
     async chat(args) {
       const out = await live.chat(args);
-      answers[current] = { content: out.content, finishReason: out.finishReason, usage: out.usage, model: out.model, ms: out.ms };
+      answers[current] = { note: currentNote, content: out.content, finishReason: out.finishReason, usage: out.usage, model: out.model, ms: out.ms };
       return out;
     },
   };
@@ -83,9 +89,9 @@ export const listDemoImages = (dir) =>
 /**
  * Imports the given screenshots into the demo account's workspace. Safe to run again: a file that is already
  * loaded is skipped by its import key and the model is not called for it. Never touches a calendar.
- * provider may have use(fileName), which is told which file is being read.
+ * notes maps a file name to the note the user would have typed. provider may have use(fileName, note), which is told which file is being read.
  */
-export async function loadDemoSaves({ config, provider, files, now = Date.now() }) {
+export async function loadDemoSaves({ config, provider, files, notes = {}, now = Date.now() }) {
   const central = openAccounts(config.dataDir);
   let workspaceDb = null;
   let server = null;
@@ -105,9 +111,11 @@ export async function loadDemoSaves({ config, provider, files, now = Date.now() 
     const results = [];
     for (const file of files) {
       const name = path.basename(file);
-      provider.use?.(name);
+      const note = typeof notes[name] === "string" ? notes[name].trim() : "";
+      provider.use?.(name, note);
       const form = new FormData();
       form.append("image", new Blob([fs.readFileSync(file)], { type: "image/png" }), name);
+      if (note) form.append("note", note);
       const headers = { "Idempotency-Key": `demo-${name}` };
       let res = await fetch(`${base}/api/saves`, { method: "POST", body: form, headers });
       let body = await res.json();

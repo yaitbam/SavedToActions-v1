@@ -13,6 +13,7 @@ import { ReviewHeader } from "../features/review/ReviewHeader";
 import { StateButton } from "../features/review/StateButton";
 import { StateNote } from "../features/review/StateNote";
 import { Step } from "../features/review/Step";
+import { DemoCard } from "../features/review/DemoCard";
 import { useReview } from "../features/review/useReview";
 import "../features/review/review.css";
 
@@ -55,6 +56,7 @@ export function Review() {
   const block = action?.block;
   const readbackStatus = block?.readback?.status;
   const three = stepThree[r.stage];
+  const demo = !!action?.isDemo;
 
   return (
     <div className="rv">
@@ -82,7 +84,13 @@ export function Review() {
             <>
               <ReviewHeader part="title" action={action} goals={r.goals} busy={r.busy !== null} onGoal={(goalId) => r.patch({ goalId })} onDeadline={(wall) => r.patch({ deadline: { wall } })} />
 
-              {planning ? (
+              {demo ? (
+                <>
+                  <ReviewHeader part="read" action={action} goals={r.goals} busy readOnly onGoal={() => {}} onDeadline={() => {}} />
+                  <DemoCard action={action} />
+                  <Details action={action} goals={r.goals} open={detailsOpen} busy onToggle={setDetailsOpen} onPatch={r.patch} onLink={r.setLink} label="What Muse read from the image" readOnly />
+                </>
+              ) : planning ? (
                 <>
                   <ReviewHeader
                     part="read"
@@ -154,7 +162,7 @@ export function Review() {
             </>
           )}
 
-          <DeleteSave saveId={saveId} booked={block?.rangeRelative ?? null} disabled={r.busy !== null || r.extracting} />
+          {!demo && <DeleteSave saveId={saveId} booked={block?.rangeRelative ?? null} disabled={r.busy !== null || r.extracting} />}
         </div>
       </div>
     </div>
