@@ -4,160 +4,107 @@
 
 Saved is not done. SavedToAction turns a screenshot of a post you saved into protected time on your calendar, and moves it when your week changes.
 
-Commit dates are original.
-
 Demo video: VIDEO_URL
 
-## The problem
-
-You save a post because you mean to act on it: a hackathon deadline, a prompt to try, a course, a freelance tip. It sits in Saved. The deadline passes. Saving feels like progress, but nothing happens.
+Commit dates are original.
 
 ## What it does
 
-1. Drop a screenshot of a saved post, with a one line note of when and for how long ("tonight, 30 min") and, if you like, the link to the post. You can crop the screenshot first, to cut out the phone status bar, the bottom bar and other posts. Cropping happens in your browser, so the parts you cut are never uploaded.
-2. Muse reads the screenshot and your note and suggests a free time, so the first thing you see is a time and not a form. The minutes are on screen and you can change them. If nothing fits the time your note asked for, it says so and shows the next free time.
-3. Approve it with one tap. The minutes shown with the time are confirmed by that tap, and only confirmed minutes are ever scheduled. The block is written to your Google Calendar with a link back to the original post and a link to the save in the app, where the screenshot and what to do are shown (the image itself is never sent to Google), read back to check it matches, and rechecked when your calendar changes. Marking a booked task done adds `Done ·` to the event title after approval and verification.
+You save a post because you mean to act on it: a hackathon deadline, a prompt to try, a course, a freelance tip. It sits in Saved and the deadline passes. SavedToAction closes that gap in three steps.
 
-## Goals
+1. **Drop a screenshot** with a one line note ("tonight, 30 min") and, if you like, the link to the post. You can crop it first. Cropping happens in your browser, so the parts you cut are never uploaded.
+2. **Muse suggests a time.** It reads the screenshot and your note, and code finds a free slot in your calendar. The first thing you see is a time, not a form. The minutes are on screen and you can change them.
+3. **You approve it with one tap.** The block is written to your Google Calendar with a link back to the post, read back to check it matches, and rechecked when your calendar changes. Marking it done adds `Done ·` to the event title.
 
-Goals are what makes a save more than a calendar task. Each save is sorted into one of your goals, and Progress shows how many saves in each goal became action.
+Each save is sorted into one of your goals (six general starters, up to six active, editable in Settings), and Progress shows how many saves in each goal became action. Every field shows where it came from. A deadline only exists if its supporting quote is found in your note or in the text read from the image. Anything the post does not state stays **Missing**. Nothing is invented.
 
-- A new account starts with six general goals: Earn more, Learn a skill, Events and opportunities, Career growth, Health and wellbeing, and Create and build. Travel and experiences and Home and family are offered too.
-- Right after you connect Calendar, Overview asks which goals your saves are for. You tick general starters, write your own, or skip to keep the defaults.
-- You can add, edit, reorder and archive up to six active goals in Settings. A goal with saves cannot be archived until they move, so archived goals never hide live work.
-- Each goal has a short description, such as "Jobs, networking, portfolio". It is sent to the model with the name and helps it choose. The model may also pick no goal, and then you choose.
+## Try the demo (no Google needed)
 
-Every field shows where it came from. A deadline only exists if its supporting quote is found in your note or in the text the model read from the image. Anything the post does not state stays **Missing**. Nothing is invented: not deadlines, not dates, not links, not urgency.
+The login page has an **Explore the demo** button. It opens a shared, read only workspace with the demo screenshots already saved. It cannot book anything and uses no credits.
+
+```sh
+npm --prefix server install
+npm --prefix web install
+cp -n .env.example .env
+node scripts/load-demo.mjs
+npm --prefix server start
+npm --prefix web run dev
+```
+
+Run the last two in separate terminals. Then open **http://localhost:5173/login** and choose **Explore the demo**. Node 22 or newer is needed.
+
+- `node scripts/load-demo.mjs` fills the demo workspace. If `fixtures/demo/extracted.json` exists, it replays the model answers recorded in it, with no key, no credits and no network. If not, it reads the screenshots with the model from your `.env` (see the variables below) and saves the answers there for next time.
+- Running it again adds nothing. `node scripts/load-demo.mjs reset` removes the demo, and `node scripts/load-demo.mjs live` reads the screenshots with the model again (run reset first).
+- It never touches Google Calendar. Use the same `.env`, so the loader and the server share one `DATA_DIR`.
 
 ## How Muse Spark Open is used
 
-Muse Spark Open is an open weights model. This project calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API. Baseten is the default.
+Muse Spark Open is an open weights model. The app calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI compatible API, which is the default. The Meta Model API is a second provider behind `MODEL_PROVIDER=meta`. It is built and tested with fakes, but only partly checked against the real API (see the limits).
 
-A second provider, the Meta Model API, is built behind `MODEL_PROVIDER=meta` (key in `META_API_KEY` or `MODEL_API_KEY`, model `muse-spark-1.3` by default). It is not the default. `node scripts/meta-smoke.mjs` checks it (add `--provider baseten` for the same checks on Baseten). On Meta, a forced tool choice returns HTTP 400 and `auto` works, so the app asks for a tool call with `auto` and an instruction there. The full smoke results are not recorded in this repository. With Meta active, the app names the model it really uses and does not call it open weights.
-
-- **Image input.** The screenshot is sent as a base64 data URL, downscaled to 1280 px on the longest edge. The original is kept for you.
-- **Extraction.** The model returns structured JSON: transcription, title, goal, kind, deadline as local wall time plus an IANA timezone, event dates, deliverables, exact prompts and links, an evidence quote, a suggested number of minutes, and what your note asked for (when, and how long). Code then validates it. Quotes must be found in the note or the transcription, the deadline's UTC time is computed by code from the wall time and the timezone, and an offset the model adds is ignored.
-- **A first time with no extra model call.** The first suggested time is found by code from your calendar, working hours, the deadline and what your note asked for. Muse is only asked again when you choose "Ask Muse for a different time".
-- **Tool calling with read only tools.** When you ask Muse for a different time in your own words, the model plans with two tools, `get_availability` and `find_slot`, for up to 6 turns. Neither tool writes. The slot it proposes must be one that `find_slot` returned, and it is revalidated with the same checks as an approval. If the model fails or proposes something invalid, the app falls back to the earliest valid slot found by code. Every run is stored as a trace you can open.
-- **Code gated writes.** The model never writes to the calendar. A write happens only after you approve a specific slot, with an idempotency key per block, a fresh availability check, and a read back afterwards that flags any drift in start, end or timezone. Moving a block marks the old one superseded, so the two are never both counted.
-
-## Verified facts
-
-These were checked by running them. Details and numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
-
-- Server tests: 335 pass with isolated databases and fake Google/model services. No external Google or model calls are made by the suite.
-- Browser checks: the crop editor was exercised with the mouse and keyboard and the uploaded image size was checked (`web/test/crop.cjs`).
-- Demo seed, run on 14 invented posts before the seed script was removed from this repository: 14 of 14 posts extracted, 14 of 14 deadlines as expected, 12 of 14 goals as expected, 7.2 s average per file, zero Google Calendar calls.
-- Timezone: Africa/Casablanca is +00:00. Node's built in timezone data says +01:00, which is wrong, so all conversions use moment-timezone and the server refuses to start if its startup self test fails. When the model writes an offset, code ignores it and computes the time itself.
-- Google Calendar: the full flow of propose, approve, read back, recheck, conflict, move and cleanup passed 8 of 8 steps on a real calendar (recorded in `server/README.md`).
-- Baseten: text, JSON extraction, tool calling and image input work with this model.
-
-## Honest limits
-
-- Google login and private workspaces are implemented. Google OAuth remains in Testing mode, so accounts must be added as test users. Public Google approval is a separate release step.
-- Hosting targets one server process with persistent disk. The trust ledger and migration of legacy local data are not implemented.
-- The demo workspace is read only and shows one recorded model run. Opening it never calls the model or a calendar.
-- Goal assignment is the weakest part of extraction. In the demo seed, with the three original goals and no descriptions, the model returned no goal for 2 of 14 posts, and results varied between runs. Goal descriptions and the six general goals are meant to help, but that has not been measured yet. You can always pick the goal yourself.
-- Posts that give a date but no time get a deadline at the end of that day (23:59). It is always labeled as assumed on the save, and you can set the real time. A date is never turned into a different day.
-- The model takes about 7 s per screenshot, so the app shows a loading state while it reads. Extraction is not yet in the background.
-- A new account starts in US Eastern time and is asked to confirm its timezone. Someone who skips that and works elsewhere would get blocks in Eastern time.
-- Minutes written in the note are used as the starting point, and the user still approves the time that shows them. The sharing target for phones (share a screenshot straight to the app) is not built.
-- Completions are self reported. Progress numbers are computed from database records only.
-- The reasoning effort setting was compared on 5 screenshots, 4 of them synthetic. That is a small sample.
-- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode on Baseten, and most of the Meta Model API provider (the smoke script found that a forced tool choice returns HTTP 400 and `auto` works, and its full results are not recorded here).
-- Outside tester results are not in yet.
-- Model suggested minutes have not been measured against what users confirm.
-- How often the note's "when" and "how long" are read correctly has not been measured yet.
-
-## Other tools
-
-Task managers, read later apps and calendar assistants overlap with parts of this. We did not compare against them and make no claim about what they can or cannot do. What this project combines is: a screenshot in, minutes you confirm, a write you approve, a read back after the write, and a recheck when the calendar changes.
-
-## No scraping
-
-SavedToAction never scrapes a platform, reads DMs, or posts or comments for you. The input is only screenshots, notes and pasted text that you provide. A post link you add is kept as a reference and opened only by you. The app never fetches it and never sends it to the model. No financial, medical or political advice is given.
-
-## The note is not a prompt
-
-The note is limited to 160 characters and read for two things only: when to do it and how long it takes. Each must quote words that are really in the note. Anything else in it is ignored, so it cannot be used to ask the model for something else, and the cost of a save stays the same.
-
-## Accounts and privacy
-
-Sign in with Google, confirm your name and verified email, then connect Google Calendar using the same Google account. You can upload and review saves before connecting Calendar. Right after you connect, Overview asks you to confirm your timezone and then to choose your goals. New accounts start in US Eastern time (`America/New_York`), so scheduling works straight away, and the timezone, working hours and goals can all be changed in Settings. Accounts that already had saves are not asked again.
-
-Each account has its own workspace database, screenshots, settings and Calendar credentials. Sessions use HttpOnly cookies and expire after seven days. Calendar tokens are encrypted on the server. Sign-out ends the app session. Disconnecting Calendar leaves your app login active. You can delete your account and data in Settings after typing a confirmation. That asks Google to revoke Calendar access, removes your workspace and sessions, and keeps events already on your Calendar.
-
-Free accounts receive 20 credits per GMT day, and owner accounts receive 100. One extraction or agent-planning operation consumes one credit when a model response succeeds. Failed model requests refund their reservation. A process crash during a pending request may leave the reserved credit charged. There are no payments or paid plans.
+- **Reads the image.** The screenshot goes to the model as a base64 data URL, downscaled to 1280 px. The model returns structured JSON: transcription, title, goal, deadline as local wall time plus a timezone, event dates, an evidence quote, a suggested number of minutes, and what your note asked for.
+- **Code validates everything.** Quotes must be found in the note or the transcription. Code computes the deadline's UTC time and ignores any offset the model writes.
+- **Finds the first time with no model call.** Code searches your calendar, working hours, deadline and note. Muse is asked again only when you choose "Ask Muse for a different time".
+- **Plans with read only tools.** For that request the model uses `get_availability` and `find_slot` for up to 6 turns. Its proposal must be a slot `find_slot` returned, and it is revalidated like an approval. If it fails, code falls back to the earliest valid slot. Every run is stored as a trace.
+- **Never writes.** A calendar write happens only after you approve a slot, with an idempotency key, a fresh availability check and a read back that flags any drift.
 
 ## Setup
 
-You need Node 22 or newer, a Baseten API key (or a Meta key, see below), and a Google Cloud OAuth **Web application** client. Setup takes 5 commands.
+You need Node 22 or newer, a model key (Baseten by default, or Meta), and a Google Cloud OAuth **Web application** client. Setup is the same 5 commands as the demo, minus `load-demo.mjs`.
 
-1. From the repository root, install both applications:
-   ```sh
-   npm --prefix server install
-   npm --prefix web install
-   ```
-2. Copy the example settings without overwriting an existing `.env`, then fill in the keys (table below):
-   ```sh
-   cp -n .env.example .env
-   ```
-   Keep `AUTH_MODE=on` and `GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback` for local development.
-3. Enable Google Calendar API. In the OAuth client's **Authorized redirect URIs**, register `http://localhost:3000/auth/google/callback` exactly. Login and Calendar share this callback by default. If you set a different `GOOGLE_LOGIN_REDIRECT_URI`, register that exact URL too. Keep consent in Testing mode and add your Google account as a test user. Login requests `openid email profile`. Calendar connection separately requests `calendar.events` and `calendar.freebusy`.
-4. Start the backend in one terminal:
-   ```sh
-   npm --prefix server start
-   ```
-5. Start the frontend in another terminal:
-   ```sh
-   npm --prefix web run dev
-   ```
-6. Open **http://localhost:5173**, choose **Try it**, sign in, and confirm your details. Connect Calendar from Overview, which then asks you to confirm your timezone and choose your goals. Set your working hours in Settings. Use `localhost` consistently throughout the flow.
-
-Environment variables. Everything else is optional, and `.env.example` lists every variable with its default.
+1. Install and copy the settings (first 3 commands above), then fill in the keys in `.env` (table below). Keep `AUTH_MODE=on`.
+2. Enable the Google Calendar API. In the OAuth client's **Authorized redirect URIs**, register `http://localhost:3000/auth/google/callback` exactly. Login and Calendar share it. Keep consent in Testing mode and add your Google account as a test user.
+3. Start the backend and the web app (the last 2 commands above).
+4. Open **http://localhost:5173**, choose **Open workspace**, sign in, and confirm your details. Connect Calendar from Overview, confirm your timezone and choose your goals. Use `localhost` throughout.
 
 | Variable | Meaning | Default |
 |---|---|---|
 | `MODEL_PROVIDER` | Which model API to call: `baseten` or `meta` | `baseten` |
-| `BASETEN_API_KEY` | Key for Baseten, needed when the provider is `baseten` | none |
-| `META_API_KEY` (or `MODEL_API_KEY`) | Key for the Meta Model API, needed when the provider is `meta` | none |
+| `BASETEN_API_KEY` | Baseten key, needed when the provider is `baseten` | none |
+| `META_API_KEY` (or `MODEL_API_KEY`) | Meta key, needed when the provider is `meta` | none |
 | `META_BASE_URL`, `META_MODEL` | Meta endpoint and model id | `https://api.meta.ai/v1`, `muse-spark-1.3` |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth web client, required | none |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth web client | none |
 | `GOOGLE_REDIRECT_URI` | Must match the Google console exactly | `http://localhost:3000/auth/google/callback` |
 | `AUTH_MODE` | `on`, or `off` for an isolated local legacy workspace only | `on` |
-| `PORT`, `FRONTEND_ORIGIN` | Server port and the web app origin | `3000`, `http://localhost:5173` |
-| `DATA_DIR` | Where accounts, workspaces and the dev token key are stored | `data` |
+| `PORT`, `FRONTEND_ORIGIN` | Server port and web app origin | `3000`, `http://localhost:5173` |
+| `DATA_DIR` | Where accounts, workspaces and the dev token key live | `data` |
 | `OWNER_EMAIL`, `COOKIE_SECURE`, `TOKEN_ENC_KEY`, `FREE_DAILY_CREDITS` | Production and quota settings | see `.env.example` |
 
-Account data defaults to `data/central.sqlite` and `data/workspaces/<workspace_key>/`, separate from the legacy `server/data/` workspace. Existing saves do not automatically become a new account's data.
+For HTTPS production, set `COOKIE_SECURE=true`, a secret `TOKEN_ENC_KEY` of 64 hex characters, and the public origin and callback URLs. Back up the key and the data folder outside Git. `.env.example` lists every variable.
 
-For HTTPS production, configure the public origin and callback URLs, set `COOKIE_SECURE=true`, and supply a secret `TOKEN_ENC_KEY` containing 64 hexadecimal characters. Keep the key and persistent data backed up outside Git. Local development creates a private token key when this variable is absent. See the [server guide](server/README.md) for configuration and current limits.
+Checks: `npm --prefix server test` and `npm --prefix web run build`.
 
-## Try the demo without Google
+## Safety and privacy
 
-The login page has an **Explore the demo** button. It opens a shared, read only workspace with the demo screenshots from `fixtures/demo/` already saved. It needs no Google account, cannot book anything and uses no credits.
+- **No scraping.** The input is only the screenshots, notes and links you provide. A post link is kept as a reference. The app never fetches it and never sends it to the model.
+- **The note is not a prompt.** It is limited to 160 characters and read for two things only: when and how long. Each must quote words really in the note, so it cannot be used to ask the model for something else.
+- **Private workspaces.** Each account has its own database, screenshots, settings and Calendar credentials. Sessions use HttpOnly cookies and last seven days. Calendar tokens are encrypted on the server. You can delete your account and data in Settings, which asks Google to revoke access and keeps events already on your calendar.
+- **Credits.** A free account gets 20 model reads per GMT day (owners 100). A failed model call refunds its credit. There are no payments.
+- **No advice.** The app extracts and schedules. It gives no financial, medical or political advice.
 
-The workspace is empty until you load it once. Run this from the repository root, with the same `.env` as the backend, so both use the same `DATA_DIR`:
+## Honest limits
 
-```sh
-node scripts/load-demo.mjs
-```
+- Google OAuth is in Testing mode, so accounts must be added as test users. Public Google approval is a separate step.
+- Hosting targets one server process with persistent disk. The trust ledger and migration of old local data are not built.
+- The demo workspace is read only and shows one recorded model run.
+- Goal assignment is the weakest part. In an early run on 14 invented posts the model picked no goal for 2, and results varied between runs. You can always pick the goal yourself.
+- A post with a date but no time gets a deadline at 23:59 that day, always labeled as assumed. Reading a screenshot takes about 10 to 20 seconds and runs while you wait.
+- A new account starts in US Eastern time and is asked to confirm its timezone. Completions are self reported. A phone share target is not built.
+- Not verified yet: the background watcher against real Google over real time, how the Google Calendar web UI renders the blocks, `response_format` JSON mode, and most of the Meta provider (a forced tool choice returns HTTP 400 and `auto` works, and the full smoke results are not recorded here).
+- Not measured yet: outside tester results, how close the model's suggested minutes are to what users confirm, and how often the note's "when" and "how long" are read correctly.
 
-- If `fixtures/demo/extracted.json` exists, the script replays the model answers recorded in it. It needs no key, no credits and no network.
-- If it does not, the script reads the screenshots with the model you configured (`BASETEN_API_KEY`, or `MODEL_PROVIDER=meta` with `META_API_KEY`), which takes a few seconds per screenshot, and saves the answers to that file for next time.
-- Running it again adds nothing. `node scripts/load-demo.mjs reset` removes the demo account and its saves, and `node scripts/load-demo.mjs live` reads the screenshots with the model again and records fresh answers (run reset first).
-- The script never touches Google Calendar. It works with the server running or stopped. Then open the login page and choose **Explore the demo**.
+What was checked by running it: the server tests (fake Google and model, no external calls), the crop editor in a browser, the full propose, approve, read back, recheck, conflict, move and cleanup flow on a real calendar (8 of 8 steps), the Africa/Casablanca timezone case (Node's built in data is wrong there, so all conversions use moment-timezone and the server refuses to start if its self test fails), and Baseten text, JSON, tool calling and image input. Numbers are in [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
-## Checks and component guides
+## Documentation
 
-```sh
-npm --prefix server test
-npm --prefix web run build
-```
-
-Browser checks need the app running and Playwright installed. `web/test/crop.cjs` is the one to start with.
-
-[Server guide](server/README.md) covers storage, API behavior and scheduling. [Web guide](web/README.md) covers routes, session handling, development and browser checks. The [core API reference](server/docs/API.md) provides further detail.
+| File | What it covers |
+|---|---|
+| [server/README.md](server/README.md) | Backend guide: architecture, scheduling rules, data model, model providers, scripts |
+| [server/docs/API.md](server/docs/API.md) | The HTTP API contract |
+| [server/docs/READINESS.md](server/docs/READINESS.md) | A readiness snapshot from before accounts existed (historical) |
+| [web/README.md](web/README.md) | Frontend guide: routes, session handling, UI rules, browser checks |
+| [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) | Measured results: tests, timezone catch, live calendar flow, reasoning effort |
+| [fixtures/demo/README.md](fixtures/demo/README.md) | The demo screenshots and who owns them |
+| [LICENSE](LICENSE) | MIT |
 
 ## Built with
 
