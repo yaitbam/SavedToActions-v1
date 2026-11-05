@@ -1,6 +1,6 @@
-# Implemented API contract
+# API
 
-Version 1. This describes the implemented backend, replacing the earlier frontend design proposal. Base URL: http://localhost:3000. The server binds to loopback for a single-user local workspace. This is not an authenticated multi-tenant internet service.
+Version 1. This describes the HTTP API of the backend. Base URL: http://localhost:3000. With `AUTH_MODE=on` (the default) every `/api` route needs a signed in session. Browser writes send the session's CSRF token, and each account works in its own private workspace. See the [server guide](../README.md) for the architecture.
 
 ## Conventions
 
@@ -13,18 +13,30 @@ Version 1. This describes the implemented backend, replacing the earlier fronten
 - Browser mutations from an Origin different from FRONTEND_ORIGIN are rejected. Server secrets never belong in browser configuration.
 - Calendar writes need explicit approval. HTTP success after a write does not imply read-back success. Always inspect block.readback.
 
-## Workspace and identity
+## Session and sign in
 
 | Method | Path | Response / behavior |
 |---|---|---|
-| GET | /health | Liveness, timezoneSelfTest, schemaVersion, Google status |
-| GET | /ready | Local DB/timezone readiness and external-dependency configuration flags |
-| GET | /api/capabilities | Supported operations, background extraction flags, API version |
-| GET | /api/me | name:null, cached Google email or null, local:true |
-| GET | /auth/status | configured, connected, hasRefreshToken, missingScopes |
-| GET | /auth/google | Browser redirect to Google OAuth |
-| GET | /auth/google/callback | OAuth callback, then redirect to frontend |
-| POST | /auth/disconnect | Clears local Google credentials, keeps Google events |
+| GET | /auth/session | Always answers. {authenticated, kind, profile_complete, name, email, csrf_token, credits, calendar_email, model}. `kind` is `user`, `owner` or `demo`. An anonymous visitor also gets `demo_available`, true once the demo is loaded. `model` names the provider and model for the interface |
+| GET | /auth/login/google | Starts Google sign in (identity only) |
+| GET | /auth/login/google/callback | Sign in callback, then redirect to the frontend. `/auth/google/callback` accepts both flows and routes by the stored attempt |
+| POST | /auth/demo | Opens the shared read only demo session with no Google account. 503 demo_unavailable until `scripts/load-demo.mjs` has run |
+| POST | /auth/logout | Revokes the session |
+| GET | /api/me | {name, email} |
+| PATCH | /api/me | Body {name}, 1 to 80 characters. 400 invalid_name. Confirms the profile on first use |
+| GET | /auth/status | Calendar connection: configured, connected, hasRefreshToken, missingScopes |
+| GET | /auth/google | Starts connecting Google Calendar for the signed in account. The Google account must match the one used to sign in |
+| POST | /auth/disconnect | Clears the stored Google credentials and keeps events already on the calendar |
+
+An incomplete profile gets 403 profile_incomplete on every other private route. A demo session is read only: every write answers 403 demo_readonly.
+
+## Workspace
+
+| Method | Path | Response / behavior |
+|---|---|---|
+| GET | /health | Liveness and timezone self test |
+| GET | /ready | {ready, database, externalCallsPerformed:false}. It performs no model call and no calendar write |
+| GET | /api/capabilities | Supported operations and API version |
 | GET | /api/settings | workStart, workEnd, tz, ignoreAllDay |
 | PUT | /api/settings | Partial settings edit, returns settings. Explicit tz:null clears timezone |
 | GET | /api/timezones | `{ zones: [{ id, offset }] }`, canonical IANA names plus UTC, offset at the current time from moment-timezone, sorted by offset. Aliases stay valid in PUT /api/settings but are not listed |
@@ -44,13 +56,13 @@ Version 1. This describes the implemented backend, replacing the earlier fronten
 | GET | /api/insights | totals, weekly, goals, kinds, definitions, seriesNote |
 | GET | /api/about | Model/provider names, timezone self-test, storage and calendar/input policies |
 
-Working hours use HH:mm, with start before end. End may be 24:00. Timezone is an IANA name or null. Only confirmed effort is scheduled. Goals: names are 1 to 40 characters and unique ignoring case, descriptions are at most 120, and at most six goals are active. Goals are archived, never deleted, and only a goal with no saves can be archived. Calendar selection is not an advertised capability of this build.
+Working hours use HH:mm, with start before end. End may be 24:00. Timezone is an IANA name or null. Only confirmed effort is scheduled. Goals: names are 1 to 40 characters and unique ignoring case, descriptions are at most 120, and at most six goals are active. Goals are archived, never deleted, and only a goal with no saves can be archived.
 
 ## Upload, extraction and Inbox
 
 | Method | Path | Response / behavior |
 |---|---|---|
-| POST | /api/saves | Multipart image, optional note (at most 160 characters, 400 note_too_long) and optional link to the post (400 invalid_link). Waits by default, returns 201 {saveId,action,extraction} |
+| POST | /api/saves | Multipart image, optional note (at most 160 characters, 400 note_too_long) and optional link to the post (400 invalid_link). Waits by default, returns 201 {saveId,action,extraction}. 422 not_a_post when the image is not a saved post: nothing is kept and the credit is refunded |
 | POST | /api/saves?async=true | Same input, returns 202 {saveId,jobId,extractionStatus,statusUrl} |
 | GET | /api/extractions/:id | id, saveId, state, timestamps, result or error |
 | GET | /api/saves/:id | Save metadata, current extractionStatus, persisted job and action or null |
@@ -96,9 +108,10 @@ Do not set a multipart Content-Type manually. The browser supplies its boundary.
 | PATCH | /api/actions/:id | Edited fields, returns action directly |
 | POST | /api/actions/:id/propose | Optional {effortMin, notBeforeUtc}. effortMin is the minutes on screen, used for this search only and never saved. notBeforeUtc asks for another time. Earliest slot, or no-fit reason/hints; latestFeasibleStart when computable. When the note asked for a time it is tried first and `intent` says {applied,label,reason?} |
 | POST | /api/actions/:id/agent-plan | Optional {instruction}; proposal/fallback, rationale, traceId, approveWith |
-| POST | /api/actions/:id/approve | {startUtc,endUtc,approved:true,effortMin?} → {replayed,action,block}. effortMin is the minutes shown with the time. Approving confirms them, and the block must be exactly that long. Without it the minutes must already be confirmed |
+| POST | /api/actions/:id/approve | {startUtc,endUtc,approved:true,effortMin?} → {replayed,action,block}. effortMin is the minutes shown with the time. Approving confirms them, and the block must be exactly that long (422 slot_length_mismatch otherwise). Without it the minutes must already be confirmed |
 | POST | /api/actions/:id/move | Same body → {action,block,previous} including old-event cleanup result |
 | POST | /api/actions/:id/restore | {approved:true}; replace the current approved slot after recorded drift/failure, then read back |
+| POST | /api/actions/:id/unplan | Body {approved:true}. Takes a booked save off the calendar and returns it to open so it can be planned again. The event is deleted and read back as gone first. 400 approval_required, 409 not_planned, 502 calendar_remove_failed (nothing changes). Returns {action, calendar:{hadBlock,removed}} |
 | POST | /api/actions/:id/readback | Repeat calendar read → {block}, no calendar write |
 | POST | /api/actions/:id/recheck | Approved blocks only → {check,action} |
 | POST | /api/actions/recheck | {ids:integer[]} up to 100 → per-item results, calendarUnchanged:true |
@@ -141,15 +154,13 @@ Actions include doneAtDisplay. Block read-back includes atDisplay and a separate
 | DELETE | /api/me/data | Requires {approved:true,confirmation:'DELETE MY DATA'} |
 | DELETE | /api/me | Account mode only. Requires {approved:true,confirmation:'DELETE MY ACCOUNT'} and the CSRF token. Revokes the Google grant best effort, removes the workspace folder, the account row and all sessions. Returns {deleted,google_revoked,calendarUnchanged}, google_revoked is null when no grant existed. 409 operations_in_progress while work is running. Existing Calendar events are kept |
 
-Export excludes Google credentials, API keys and image binaries. Local deletion is blocked during extraction/action operations. It removes local screenshot files and user records, clears local Google credentials, and recreates empty defaults. Existing Google events are kept. This operation is tested only against isolated test data, never the live workspace.
+Export excludes Google credentials, API keys and image binaries. Local deletion is blocked during extraction/action operations. It removes local screenshot files and user records, clears local Google credentials, and recreates empty defaults. Existing Google events are kept.
 
-## Readiness and verification
+## Verification
 
-The supported local API is covered by the server tests and typed client methods under web/src/api. /ready reports configuration and connectivity state without performing a model call or a calendar write. Model configuration is not proof of a successful live provider call. Google connected state is not proof that a new write/read-back has been exercised.
+The API is covered by the server tests and by the typed client in `web/src/api`. Run `npm run smoke` from `server/` while the backend is running to check the live GET routes. It prints no user content.
 
-Run npm run smoke from server/ while the backend is running. It checks live GET routes and prints no user content. /ready distinguishes local process readiness from readyForScheduling, which additionally requires a configured user timezone, connected Google credentials and no missing scopes.
-
-Not implemented: multi-tenant authentication/billing, internet deployment, arbitrary calendar selection, individual trace-step replay, automatic undo of calendar writes, or claiming the user's completion was externally verified.
+Not implemented: payments, arbitrary calendar selection, individual trace step replay, automatic undo of calendar writes, or external verification of a user's completion.
 
 ## The note and the post link
 
