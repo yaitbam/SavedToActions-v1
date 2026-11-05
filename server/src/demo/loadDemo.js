@@ -28,6 +28,10 @@ export function ensureDemoAccount(db, now = Date.now()) {
   return db.prepare("SELECT * FROM accounts WHERE id = ?").get(info.lastInsertRowid);
 }
 
+/** A real signed in account, found by its email. The demo account is never returned. */
+export const findAccountByEmail = (db, email) =>
+  db.prepare("SELECT * FROM accounts WHERE lower(email) = lower(?) AND kind != 'demo'").get(String(email ?? "").trim()) ?? null;
+
 export const demoWorkspaceDir = (config, account) => path.join(config.dataDir, "workspaces", account.workspace_key);
 
 /**
@@ -87,21 +91,20 @@ export const listDemoImages = (dir) =>
   fs.existsSync(dir) ? fs.readdirSync(dir).filter((name) => IMAGE_FILE.test(name)).sort().map((name) => path.join(dir, name)) : [];
 
 /**
- * Imports the given screenshots into the demo account's workspace. Safe to run again: a file that is already
- * loaded is skipped by its import key and the model is not called for it. Never touches a calendar.
+ * Imports the given screenshots into an account's workspace through the app's own POST /api/saves. Safe to run again:
+ * a file that is already loaded is skipped by its import key and the model is not called for it. Never touches a calendar
+ * and never charges a credit. markDemo flags the saves as demo data (the shared demo account does, a real account does not).
  * notes maps a file name to the note the user would have typed. provider may have use(fileName, note), which is told which file is being read.
  */
-export async function loadDemoSaves({ config, provider, files, notes = {}, now = Date.now() }) {
-  const central = openAccounts(config.dataDir);
+export async function loadSavesInto({ config, account, provider, files, notes = {}, markDemo = false }) {
   let workspaceDb = null;
   let server = null;
   try {
-    const account = ensureDemoAccount(central, now);
     const folder = demoWorkspaceDir(config, account);
     fs.mkdirSync(folder, { recursive: true });
     workspaceDb = openDb(path.join(folder, "db.sqlite"));
     // Any calendar call is a bug in the loader. It throws and is never swallowed.
-    const calendar = new Proxy({}, { get: (_t, name) => () => { throw new Error(`calendar.${String(name)} called by the demo loader`); } });
+    const calendar = new Proxy({}, { get: (_t, name) => () => { throw new Error(`calendar.${String(name)} called by the loader`); } });
     const googleAuth = { configured: () => false, status: () => ({ connected: false, missingScopes: [] }) };
     const workspaceConfig = { ...config, screenshotDir: path.join(folder, "screenshots") };
     const app = createApp({ db: workspaceDb, config: workspaceConfig, googleAuth, selfTest: runSelfTest(), provider, calendar });
@@ -126,7 +129,7 @@ export async function loadDemoSaves({ config, provider, files, notes = {}, now =
       }
       const saveId = body.saveId ?? null;
       if (res.ok && saveId) {
-        workspaceDb.prepare("UPDATE saves SET is_demo = 1 WHERE id = ?").run(saveId);
+        if (markDemo) workspaceDb.prepare("UPDATE saves SET is_demo = 1 WHERE id = ?").run(saveId);
         const view = await (await fetch(`${base}/api/saves/${saveId}`)).json();
         results.push({ file: name, saveId, status: body.replayed ? "already loaded" : "loaded", title: view.action?.title ?? null });
       } else {
@@ -137,6 +140,23 @@ export async function loadDemoSaves({ config, provider, files, notes = {}, now =
   } finally {
     if (server) await new Promise((resolve) => server.close(resolve));
     workspaceDb?.close();
+  }
+}
+
+/**
+ * Fills the shared demo account (created on first use), or, with an email, the signed in account that has that email.
+ * Saves are flagged as imported demo data either way.
+ */
+export async function loadDemoSaves({ config, provider, files, notes = {}, email = null, now = Date.now() }) {
+  const central = openAccounts(config.dataDir);
+  try {
+    let account;
+    if (email) {
+      account = findAccountByEmail(central, email);
+      if (!account) throw new Error(`No account with the email ${email} in ${config.dataDir}. Start the app and sign in with Google once, then run this again. Check that .env uses the same DATA_DIR as the server.`);
+    } else account = ensureDemoAccount(central, now);
+    return await loadSavesInto({ config, account, provider, files, notes, markDemo: true });
+  } finally {
     central.close();
   }
 }

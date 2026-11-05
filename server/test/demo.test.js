@@ -214,3 +214,28 @@ test("each screenshot is saved with its note, the recording keeps the note, and 
     assert.deepEqual(other.stale, ["x-2.png"]);
   } finally { t.done(); }
 });
+
+test("saves can be loaded into a signed in account by email, and the demo account is never matched", async () => {
+  const t = await setup();
+  try {
+    const central = openAccounts(t.config.dataDir);
+    central.prepare("INSERT INTO accounts(google_sub,email,name,kind,workspace_key,profile_completed_at,created_at) VALUES ('sub-1','Me@Example.com','Me','user','11111111-1111-4111-8111-111111111111',1,1)").run();
+    central.close();
+    const model = fakeModel();
+    const first = await loadDemoSaves({ config: t.config, provider: model, files: t.files, notes: { "a-1.png": "Try it tonight" }, email: "me@example.com" });
+    assert.deepEqual(first.results.map((r) => r.status), ["loaded", "loaded"]);
+    assert.equal(first.account.email, "Me@Example.com");
+    const db = openDb(path.join(t.config.dataDir, "workspaces", first.account.workspace_key, "db.sqlite"));
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM saves").get().n, 2);
+    assert.deepEqual(db.prepare("SELECT note FROM saves ORDER BY id").all().map((r) => r.note), ["Try it tonight", ""]);
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM blocks").get().n, 0);
+    db.close();
+    const again = await loadDemoSaves({ config: t.config, provider: model, files: t.files, notes: { "a-1.png": "Try it tonight" }, email: "me@example.com" });
+    assert.deepEqual(again.results.map((r) => r.status), ["already loaded", "already loaded"]);
+    assert.equal(model.calls, 2);
+
+    await assert.rejects(loadDemoSaves({ config: t.config, provider: model, files: t.files, email: "nobody@example.com" }), /No account with the email/);
+    await loadDemoSaves({ config: t.config, provider: fakeModel(), files: t.files });
+    await assert.rejects(loadDemoSaves({ config: t.config, provider: model, files: t.files, email: "demo@savedtoaction.invalid" }), /No account with the email/);
+  } finally { t.done(); }
+});

@@ -3,6 +3,8 @@
 // Run:  node scripts/load-demo.mjs          load the demo (replays the recorded answers when fixtures/demo/extracted.json exists)
 //       node scripts/load-demo.mjs live     read the screenshots with the configured model and record the answers
 //       node scripts/load-demo.mjs reset    remove the demo account and its saves, to load it again from nothing
+//       node scripts/load-demo.mjs account you@gmail.com [live]
+//                                           put the same saves into your own signed in account instead of the shared demo
 //
 // How it works:
 // - Each screenshot goes through the app's own POST /api/saves, so extraction and validation are the real ones.
@@ -22,7 +24,10 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIR = path.join(ROOT, "fixtures", "demo");
 const RECORDING = path.join(DIR, "extracted.json");
 const NOTES = path.join(DIR, "notes.json");
-const mode = process.argv[2] ?? "";
+const args = process.argv.slice(2);
+const target = args[0] === "account" ? "account" : "demo";
+const email = target === "account" ? args[1] : null;
+const mode = target === "account" ? (args[2] ?? "") : (args[0] ?? "");
 
 const fail = (message) => {
   console.error(message);
@@ -33,7 +38,8 @@ if (mode === "reset") {
   console.log(removeDemo(config) ? `Removed the demo account and its saves from ${config.dataDir}.` : "There is no demo account to remove.");
   process.exit(0);
 }
-if (mode && mode !== "live") fail(`Unknown option "${mode}". Use no option, live or reset.`);
+if (target === "account" && !email) fail("Give the email of the account: node scripts/load-demo.mjs account you@gmail.com");
+if (mode && mode !== "live") fail(`Unknown option "${mode}". Use no option, live or reset. For your own account use: account you@gmail.com [live].`);
 
 const files = listDemoImages(DIR);
 if (!files.length) fail(`No screenshots found in ${path.relative(ROOT, DIR)}.`);
@@ -55,16 +61,16 @@ if (replay) {
 }
 
 const notes = fs.existsSync(NOTES) ? JSON.parse(fs.readFileSync(NOTES, "utf8")) : {};
-const { results } = await loadDemoSaves({ config, provider, files, notes });
+const { results } = await loadDemoSaves({ config, provider, files, notes, email }).catch((error) => fail(error.message));
 if (replay && provider.stale.length) {
-  console.log(`\nThe recording was made with different notes for: ${provider.stale.join(", ")}.\nRun "node scripts/load-demo.mjs reset" and then "node scripts/load-demo.mjs live" to record answers that use fixtures/demo/notes.json.`);
+  console.log(`\nThe recording was made with different notes for: ${provider.stale.join(", ")}.\nTo record answers that use fixtures/demo/notes.json, ${target === "account" ? "load into an account that does not have these saves yet, adding" : 'run "node scripts/load-demo.mjs reset" and then'} "live".`);
 }
 
 const pad = (value, n) => String(value ?? "").padEnd(n).slice(0, n);
 for (const r of results) console.log(`${pad(r.file, 12)} ${pad(r.status, 15)} ${r.status === "failed" ? r.error : r.title ?? "(no title)"}`);
 const failed = results.filter((r) => r.status === "failed");
 const loaded = results.filter((r) => r.status === "loaded");
-console.log(`\n${results.length - failed.length} of ${results.length} saves are in the demo account (${loaded.length} added now).`);
+console.log(`\n${results.length - failed.length} of ${results.length} saves are in ${target === "account" ? "your" : "the demo"} account (${loaded.length} added now).`);
 
 if (!replay) {
   const answers = provider.answers;
@@ -77,4 +83,4 @@ if (!replay) {
 }
 if (failed.some((r) => r.error === "idempotency_conflict")) fail("Some screenshots were loaded earlier with a different note. Run \"node scripts/load-demo.mjs reset\" and load again.");
 if (failed.length) fail(`${failed.length} screenshot(s) failed. Run the command again to retry them.`);
-console.log("Start the app and choose Explore the demo on the login page.");
+console.log(target === "account" ? `Start the app and sign in as ${email}. The saves are in Saved, labeled as imported demo data.` : "Start the app and choose Explore the demo on the login page.");

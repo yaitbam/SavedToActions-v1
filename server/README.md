@@ -186,7 +186,7 @@ The one miss in each config was the same transcription check on the same screens
 
 ## Demo account
 
-The shared demo account (`kind` demo) is what "Explore the demo" opens. `scripts/load-demo.mjs` creates it and imports the screenshots in `fixtures/demo/` through the normal `POST /api/saves`, with a live model call or by replaying answers recorded in `fixtures/demo/extracted.json`. `POST /auth/demo` opens a session for it. Every write by the demo answers 403 `demo_readonly` (including renaming it), its credit limit is 0, and it has no calendar. The loader is in `src/demo/loadDemo.js`.
+The shared demo account (`kind` demo) is what "Explore the demo" opens. `scripts/load-demo.mjs` creates it and imports the screenshots in `fixtures/demo/` through the normal `POST /api/saves`, with a live model call or by replaying answers recorded in `fixtures/demo/extracted.json`. `POST /auth/demo` opens a session for it. Every write by the demo answers 403 `demo_readonly` (including renaming it), its credit limit is 0, and it has no calendar. The loader is in `src/demo/loadDemo.js`. `node scripts/load-demo.mjs account you@gmail.com` imports the same screenshots into a signed in account instead.
 
 ## Tests
 
@@ -198,7 +198,7 @@ In `../scripts`, run from the repo root with `node scripts/<name>.mjs`. Scripts 
 
 | Script | What it does | Writes to Google? |
 |---|---|---|
-| `load-demo.mjs` | Loads the demo screenshots into the demo account | no |
+| `load-demo.mjs` | Loads the demo screenshots into the demo account, or into your own with `account you@gmail.com` | no |
 | `meta-smoke.mjs` | Checks a model provider: text, JSON, tool calls, image input, timezone probe | no |
 | `prepublish-check.mjs` | Scans the tree and history for secrets and unapproved images before publishing | no |
 | `live-flow.mjs` | Full flow on a real calendar: propose, approve, recheck, conflict, move, read back, cleanup | WRITES |

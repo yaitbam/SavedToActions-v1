@@ -32,6 +32,7 @@ npm --prefix web run dev
 Run the last two in separate terminals. Then open **http://localhost:5173/login** and choose **Explore the demo**. Node 22 or newer is needed.
 
 - `node scripts/load-demo.mjs` fills the demo workspace. Each screenshot is saved with the note in `fixtures/demo/notes.json`, the way a user would type one. If `fixtures/demo/extracted.json` exists, it replays the model answers recorded in it, with no key, no credits and no network. If not, it reads the screenshots and notes with the model from your `.env` (see the variables below) and saves the answers there for next time.
+- To try the same saves in your own account, sign in once and run `node scripts/load-demo.mjs account you@gmail.com`. They show up in Saved, labeled as imported demo data.
 - Running it again adds nothing. `node scripts/load-demo.mjs reset` removes the demo, and `node scripts/load-demo.mjs live` reads the screenshots with the model again (run reset first).
 - It never touches Google Calendar. Use the same `.env`, so the loader and the server share one `DATA_DIR`.
 
