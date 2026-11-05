@@ -100,7 +100,6 @@ What was checked by running it: the server tests (fake Google and model, no exte
 |---|---|
 | [server/README.md](server/README.md) | Backend guide: architecture, scheduling rules, data model, model providers, scripts |
 | [server/docs/API.md](server/docs/API.md) | The HTTP API contract |
-| [server/docs/READINESS.md](server/docs/READINESS.md) | A readiness snapshot from before accounts existed (historical) |
 | [web/README.md](web/README.md) | Frontend guide: routes, session handling, UI rules, browser checks |
 | [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) | Measured results: tests, timezone catch, live calendar flow, reasoning effort |
 | [fixtures/demo/README.md](fixtures/demo/README.md) | The demo screenshots and who owns them |
