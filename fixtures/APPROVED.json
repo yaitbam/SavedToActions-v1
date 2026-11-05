@@ -1,0 +1,56 @@
+{
+  "demo/insta-1.png": {
+    "sha256": "83ec0185a810ea15f05eb439a5377e3d871336bed2a8677b26f3a182e0a80c08",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/insta-2.png": {
+    "sha256": "e01ced8c846d6e6d4167f3e900a9f63e30575d0ca86574629c8772a4212724f8",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/insta-3.png": {
+    "sha256": "82a4ffb985d748a25652aa9042a83ed00cbe8943a7c287a36ea2d7704753205d",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/insta-4.png": {
+    "sha256": "d53bfd6e31fa488ce6b9f489865b7e3db377ee4f4895f01b9077a7d7944ea5b9",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/insta-5.png": {
+    "sha256": "a6fec1e6dd3534f28de9c70dc03fb8464983a9b1d1c0b413d2001878600e18b7",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/x-1.png": {
+    "sha256": "fcb801238f2b4b770c5d5f215a0ec9037bd24539670104dd53855174ba13a7db",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/x-2.png": {
+    "sha256": "d05541c5149ed66737d6f8c496b33989306ec318bc7cc3d1410adec4619ccf6e",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/x-3.png": {
+    "sha256": "8325d211312432a919c73d08ae82dc5830c5e5e42a87bc7a57e1f9f3189656c8",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  },
+  "demo/x-4.png": {
+    "sha256": "d68299fac652323d18ce0d981146c5cd926f35b7a39d5713683ec67d8d4270b5",
+    "blurred": false,
+    "approvedBy": "yaitbam",
+    "approvedOn": "2026-11-05"
+  }
+}
