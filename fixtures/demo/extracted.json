@@ -1,196 +1,205 @@
 {
-  "recordedAt": "2026-11-04T23:57:28.814Z",
+  "recordedAt": "2026-11-05T00:19:42.693Z",
   "provider": "baseten",
   "model": "meta-models/muse-spark-open-1026",
   "files": {
     "insta-1.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"samsungnewsroom_global • Follow\\nSamsung\\nNewsroom\\nTaxi Driver\\nMalay English\\nHello, This call is being translated and live captioned.\\nHello, Panggilan ini sedang diterjemahkan dan diberikan sari kata secara langsung.\\nHello, I booked a taxi at the airport.\\nHello, saya telah menempah teksi di lapangan terbang.\\nYa, sila tunggu di Pintu 1.\\nYes, please wait at Gate 1.\\nOK, I'll be waiting.\\nBaiklah, Saya akan menunggu.\\nSamsung Expands\\nLanguage Support\\nAcross AI Experiences\\non Galaxy\\nArticle\\n32.8K 17 2\\nsamsungnewsroom_global\\nSamsung is expanding language support for Galaxy AI and Bixby, bringing these experiences to more users in their own language.\\nGalaxy AI is expanding language support across more of its features, starting with those that translate, transcribe, and summarize. Call Assist, Note Assist, Interpreter, and Transcript\",\"title\":\"Read about Samsung expanding Galaxy AI language support\",\"goal_id\":null,\"kind\":\"other\",\"label\":\"read\",\"deadline\":{\"wall\":null,\"date\":null,\"tz\":null,\"label\":null,\"quote\":null,\"year_assumed\":false},\"event_dates\":[],\"deliverables\":[\"read article about Galaxy AI language support\"],\"verbatim_items\":[],\"evidence_quote\":\"Samsung Expands Language Support Across AI Experiences on Galaxy\",\"suggested_effort_min\":5,\"intent\":null}",
+      "note": "Check if my phone gets the new Galaxy AI languages. 10 min tonight",
+      "content": "{\"saved_post\":true,\"transcription\":\"SAMSUNG\\nsamsungnewsroom_global • Follow\\nSamsung\\nNewsroom\\n12:45\\n00:25\\nTaxi Driver\\nOther person\\nMalay\\nMe\\nEnglish\\nHello. This call is being translated\\nand live captioned.\\nHello, Panggilan ini sedang\\nditerjemahkan dan diberikan\\nsari kata secara langsung.\\nHello, I booked a taxi at\\nthe airport.\\nHello, saya telah menempah\\nteksi di lapangan terbang.\\nYa, sila tunggu di Pintu 1.\\nYes, please wait at Gate 1.\\nOK, I'll be waiting.\\nBaiklah, Saya\\nakan menunggu.\\nSamsung Expands\\nLanguage Support\\nAcross AI Experiences\\non Galaxy\\nArticle\\n32.8K 17 2\\nsamsungnewsroom_global\\nSamsung is expanding language support for Galaxy AI and Bixby, bringing these experiences to more users in their own language.\\nGalaxy AI is expanding language support across more of its features, starting with those that translate, transcribe, and summarize. Call Assist, Note Assist, Interpreter, and Transcript\",\"title\":\"Check if my phone gets the new Galaxy AI languages\",\"goal_id\":null,\"kind\":\"try\",\"label\":\"read\",\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Check if phone gets new Galaxy AI languages\"],\"verbatim_items\":[],\"evidence_quote\":\"Check if my phone gets the new Galaxy AI languages.\",\"suggested_effort_min\":10,\"intent\":{\"when\":{\"day\":\"today\",\"date\":null,\"part\":\"evening\",\"quote\":\"tonight\"},\"minutes\":10,\"minutes_quote\":\"10 min\"}}",
       "finishReason": "stop",
       "usage": {
-        "prompt_tokens": 2757,
-        "completion_tokens": 1063,
-        "total_tokens": 3820,
+        "prompt_tokens": 2770,
+        "completion_tokens": 853,
+        "total_tokens": 3623,
         "prompt_tokens_details": {
           "audio_tokens": 0,
           "cached_tokens": 0
         },
         "completion_tokens_details": {
-          "accepted_prediction_tokens": 764,
+          "accepted_prediction_tokens": 606,
           "audio_tokens": 0,
-          "reasoning_tokens": 740,
-          "rejected_prediction_tokens": 1336
+          "reasoning_tokens": 498,
+          "rejected_prediction_tokens": 1130
         }
       },
       "model": "meta-models/muse-spark-open-1026",
-      "ms": 9455
+      "ms": 8774
     },
     "insta-2.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"samsungnewsroom_global • Follow\\nSamsung\\nNewsroom\\nSamsung Week\\nDiscover new ways to live smarter\\nSamsung Electronics\\nLaunches\\nSamsung Week 2026\\nin 63 Countries\\nArticle\\n35.5K 23 1\\nsamsungnewsroom_global\\nTo mark its founding, Samsung Electronics is holding its global\\nSamsung Week 2026 promotion from October 12 to November\\n1 in 63 countries.\",\"title\":\"Read about Samsung Week 2026 promotion\",\"goal_id\":null,\"kind\":\"other\",\"label\":null,\"deadline\":{\"wall\":null,\"date\":\"2026-11-01\",\"tz\":null,\"label\":null,\"quote\":\"from October 12 to November 1\",\"year_assumed\":true},\"event_dates\":[{\"text\":\"from October 12 to November 1\",\"start\":\"2026-10-12\",\"end\":\"2026-11-01\"}],\"deliverables\":[],\"verbatim_items\":[],\"evidence_quote\":\"Samsung Electronics Launches Samsung Week 2026 in 63 Countries\",\"suggested_effort_min\":5,\"intent\":null}",
-      "finishReason": "stop",
-      "usage": {
-        "prompt_tokens": 2849,
-        "completion_tokens": 796,
-        "total_tokens": 3645,
-        "prompt_tokens_details": {
-          "audio_tokens": 0,
-          "cached_tokens": 640
-        },
-        "completion_tokens_details": {
-          "accepted_prediction_tokens": 558,
-          "audio_tokens": 0,
-          "reasoning_tokens": 557,
-          "rejected_prediction_tokens": 1115
-        }
-      },
-      "model": "meta-models/muse-spark-open-1026",
-      "ms": 5922
-    },
-    "insta-3.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"nick_saraev\\nOriginal audio\\nof Canva\\n118.1K 51.1K 5.5K\\nLiked by ayoubfathprod and 118K others\\nnick_saraev Comment \\\"GOOGLE\\\" to get all these Free AI Tools by Google.\\nGoogle has silently released 15 AI tools that are completely free.\",\"title\":\"Get 15 free Google AI tools by commenting GOOGLE\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Comment \\\"GOOGLE\\\" to get free AI tools list\"],\"verbatim_items\":[{\"type\":\"keyword\",\"text\":\"GOOGLE\"}],\"evidence_quote\":\"Comment \\\"GOOGLE\\\" to get all these Free AI Tools by Google.\",\"suggested_effort_min\":5,\"intent\":null}",
-      "finishReason": "stop",
-      "usage": {
-        "prompt_tokens": 2757,
-        "completion_tokens": 709,
-        "total_tokens": 3466,
-        "prompt_tokens_details": {
-          "audio_tokens": 0,
-          "cached_tokens": 1536
-        },
-        "completion_tokens_details": {
-          "accepted_prediction_tokens": 503,
-          "audio_tokens": 0,
-          "reasoning_tokens": 524,
-          "rejected_prediction_tokens": 946
-        }
-      },
-      "model": "meta-models/muse-spark-open-1026",
-      "ms": 5521
-    },
-    "insta-4.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"auraguy.ai • Follow\\nOriginal audio\\ngithub.com/.../instagram-agent-skill\\njakeschincariol and claude Restore sentence capitals ... d53c56b • last month 2 Commits\\n.claude-plugin The Instagram agent skill: 13 Claude sk... last month\\nskills Restore sentence capitals after a delet... last month\\ntemplates The Instagram agent skill: 13 Claude sk... last month\\n.gitignore The Instagram agent skill: 13 Claude sk... last month\\nLICENSE The Instagram agent skill: 13 Claude sk... last month\\nREADME.md The Instagram agent skill: 13 Claude sk... last month\\nREADME MIT license\\nThe Instagram agent skill\\nThirteen Claude skills that run an Instagram account. Free, MIT, no signup, no API key, nothing to connect.\\nOne of them writes your Reels off 26 hook formulas and scores the hook before you waste a take on it. One goes and finds the reels that are actually working in your niche and ranks them by how far each beat its own account. One writes the caption and shows you exactly what the feed shows before the \\\"... more\\\". One scores your profile out of 100 and rewrites what lost points. One plans the week.\\nGITHUB · OCT 25 2026\\nHERE'S HOW IT WORKS.\\n24.4K 17K 809\\nLiked by oussamaaityyassin and 24.3K others\\nauraguy.ai Claude Just Destroyed Instagram With 13 Free Skills\\nSpending hours writing Reels and hunting for content ideas? The Instagram Agent Skill is a free pack of 13 Claude skills that does it for you.\",\"title\":\"Try The Instagram Agent Skill - 13 free Claude skills\",\"goal_id\":6,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"try the 13 Claude skills for Instagram from GitHub\"],\"verbatim_items\":[{\"type\":\"link\",\"text\":\"github.com/.../instagram-agent-skill\"}],\"evidence_quote\":\"Claude Just Destroyed Instagram With 13 Free Skills\",\"suggested_effort_min\":30,\"intent\":null}",
-      "finishReason": "stop",
-      "usage": {
-        "prompt_tokens": 2757,
-        "completion_tokens": 1042,
-        "total_tokens": 3799,
-        "prompt_tokens_details": {
-          "audio_tokens": 0,
-          "cached_tokens": 1536
-        },
-        "completion_tokens_details": {
-          "accepted_prediction_tokens": 790,
-          "audio_tokens": 0,
-          "reasoning_tokens": 580,
-          "rejected_prediction_tokens": 981
-        }
-      },
-      "model": "meta-models/muse-spark-open-1026",
-      "ms": 6170
-    },
-    "insta-5.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"Post\\nprincegupta.ai • Follow\\nOriginal audio\\ncan\\nRikiya Takehi\\n@rikiyatakehi\\nWe asked GPT-6 Astra to edit Qwen3.5-0.8B weights to improve math. It directly changed only 0.016% of weights, fixing 0.8B's reasoning loops & improving math up to 6x and even instruction following 3x, without gradients or training.\\nWe call this Weight-Space Programming: frontier LLMs can now natively read/write neural network weights! Blog: rikiyat.github.io/blog/weight-sp-...\\nSparks of Weight-Space Programming:\\nLLMs can natively read & write neural network weights\\nRikiya Takehi*, Jayden Teoh*, Alex Zhang, Omar Khattab - MIT CSAIL\\nTL;DR\\nWe find that frontier LLMs are surprisingly good at natively reading and writing neural network weights, well past what we'd expect from humans or conventional algorithms. This might be a big deal for both optimization and interpretability.\\nJust by looking at the raw weights, GPT-6 Astra can tell what a network was trained to do. And without any environment feedback, it has no trouble writing, from scratch, small game-playing networks that outplay networks trained with PPO for 100 million steps.\\nLikewise, asked to make Qwen3.5-0.8B better at math without gradients, Astra identifies an issue in its weights causing reasoning loops that Qwen's own model card warns about, and fixes this by natively editing 0.016% of the weights. With the same sampling settings, this weight correction raises MATH-500 from 7.9% to 48.1% and generalizes out of the box to instruction following, raising IFEval by 3x.\\nalex zhang and Omar Khattab\\n11:21 PM · Nov 2, 2026 · 7.5M Views\\n@princegupta.ai\\n5.4K 1.1K 153\\nprincegupta.ai Comment \\\"MIT\\\" and I'll DM you the research paper\",\"title\":null,\"goal_id\":2,\"kind\":\"other\",\"label\":\"read\",\"deadline\":null,\"event_dates\":[],\"deliverables\":[],\"verbatim_items\":[{\"type\":\"link\",\"text\":\"rikiyat.github.io/blog/weight-sp-\"},{\"type\":\"keyword\",\"text\":\"MIT\"}],\"evidence_quote\":\"We call this Weight-Space Programming: frontier LLMs can now natively read/write neural network weights!\",\"suggested_effort_min\":15,\"intent\":null}",
-      "finishReason": "stop",
-      "usage": {
-        "prompt_tokens": 2849,
-        "completion_tokens": 1323,
-        "total_tokens": 4172,
-        "prompt_tokens_details": {
-          "audio_tokens": 0,
-          "cached_tokens": 640
-        },
-        "completion_tokens_details": {
-          "accepted_prediction_tokens": 1016,
-          "audio_tokens": 0,
-          "reasoning_tokens": 769,
-          "rejected_prediction_tokens": 1140
-        }
-      },
-      "model": "meta-models/muse-spark-open-1026",
-      "ms": 7062
-    },
-    "x-1.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"AI at Meta @AIatMeta\\nFollow\\nWe’re excited to introduce the Muse Wonder series with Muse Wonder and Muse Wonder Full, our most capable modelss yet. Both are frontier models, built to deliver state-of-the-art performance for personal and professional agentic tasks.\\nMuse Wonder is available today via the Meta Model API and Muse Code. Muse Wonder Full is available today for Muse Code subscribers. Muse Wonder will also soon power experiences in our personal agent product, Muse, rolling out first to subscribers.\\n6:02 PM · Oct 12, 2026 · 341.3K Views\\n225 489 2.2K 366\",\"title\":\"Try Muse Wonder via Meta Model API and Muse Code\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Try Muse Wonder via Meta Model API and Muse Code\"],\"verbatim_items\":[],\"evidence_quote\":\"Muse Wonder is available today via the Meta Model API and Muse Code.\",\"suggested_effort_min\":30,\"intent\":null}",
+      "note": "Skim the Samsung Week 2026 offers and see if any are worth it. 10 min",
+      "content": "{\"saved_post\":true,\"transcription\":\"samsungnewsroom_global • Follow\\nSamsung\\nNewsroom\\nSamsung Week\\nDiscover new ways to live smarter\\nSamsung Electronics\\nLaunches\\nSamsung Week 2026\\nin 63 Countries\\nArticle\\n35.5K 23 1\\nsamsungnewsroom_global\\nTo mark its founding, Samsung Electronics is holding its global\\nSamsung Week 2026 promotion from October 12 to November\\n1 in 63 countries.\",\"title\":\"Skim Samsung Week 2026 offers\",\"goal_id\":null,\"kind\":\"other\",\"label\":\"read\",\"deadline\":{\"wall\":null,\"date\":\"2026-11-01\",\"tz\":null,\"label\":null,\"quote\":\"from October 12 to November 1\",\"year_assumed\":false},\"event_dates\":[{\"text\":\"from October 12 to November 1\",\"start\":\"2026-10-12\",\"end\":\"2026-11-01\"}],\"deliverables\":[\"skim Samsung Week 2026 offers\"],\"verbatim_items\":[],\"evidence_quote\":\"Skim the Samsung Week 2026 offers and see if any are worth it. 10 min\",\"suggested_effort_min\":10,\"intent\":{\"when\":null,\"minutes\":10,\"minutes_quote\":\"10 min\"}}",
       "finishReason": "stop",
       "usage": {
         "prompt_tokens": 2867,
-        "completion_tokens": 530,
-        "total_tokens": 3397,
+        "completion_tokens": 901,
+        "total_tokens": 3768,
         "prompt_tokens_details": {
           "audio_tokens": 0,
           "cached_tokens": 1536
         },
         "completion_tokens_details": {
-          "accepted_prediction_tokens": 362,
+          "accepted_prediction_tokens": 650,
           "audio_tokens": 0,
-          "reasoning_tokens": 294,
-          "rejected_prediction_tokens": 821
+          "reasoning_tokens": 634,
+          "rejected_prediction_tokens": 1100
         }
       },
       "model": "meta-models/muse-spark-open-1026",
-      "ms": 5772
+      "ms": 7723
+    },
+    "insta-3.png": {
+      "note": "Comment GOOGLE to get the list of free Google AI tools and try two. 20 min tomorrow",
+      "content": "{\"saved_post\":true,\"transcription\":\"nick_saraev\\nOriginal audio\\nof Canva\\n118.1K 51.1K 5.5K\\nLiked by ayoubfathprod and 118K others\\nnick_saraev Comment \\\"GOOGLE\\\" to get all these Free AI Tools by Google.\\nGoogle has silently released 15 AI tools that are completely free.\",\"title\":\"Comment GOOGLE to get free Google AI tools and try two\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Comment \\\"GOOGLE\\\" to get the list of free Google AI tools\",\"Try two Google AI tools\"],\"verbatim_items\":[{\"type\":\"keyword\",\"text\":\"GOOGLE\"}],\"evidence_quote\":\"Comment GOOGLE to get the list of free Google AI tools and try two.\",\"suggested_effort_min\":20,\"intent\":{\"when\":{\"day\":\"tomorrow\",\"date\":null,\"part\":null,\"quote\":\"tomorrow\"},\"minutes\":20,\"minutes_quote\":\"20 min\"}}",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 2774,
+        "completion_tokens": 538,
+        "total_tokens": 3312,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 400,
+          "audio_tokens": 0,
+          "reasoning_tokens": 315,
+          "rejected_prediction_tokens": 573
+        }
+      },
+      "model": "meta-models/muse-spark-open-1026",
+      "ms": 5020
+    },
+    "insta-4.png": {
+      "note": "Install the Instagram agent skill from GitHub and test it on my account. 30 min this weekend",
+      "content": "{\"saved_post\":true,\"transcription\":\"auraguy.ai • Follow\\nOriginal audio\\ngithub.com/.../instagram-agent-skill\\njakescincariol and claude Restore sentence capitals ... d53c56b · last month 2 Commits\\n.claude-plugin The Instagram agent skill: 13 Claude sk... last month\\nskills Restore sentence capitals after a delet... last month\\ntemplates The Instagram agent skill: 13 Claude sk... last month\\n.gitignore The Instagram agent skill: 13 Claude sk... last month\\nLICENSE The Instagram agent skill: 13 Claude sk... last month\\nREADME.md The Instagram agent skill: 13 Claude sk... last month\\nREADME MIT license\\nThe Instagram agent skill\\nThirteen Claude skills that run an Instagram account. Free, MIT, no signup, no API key, nothing to connect.\\nOne of them writes your Reels off 26 hook formulas and scores the hook before you waste a take on it. One goes and finds the reels that are actually working in your niche and ranks them by how far each beat its own account. One writes the caption and shows you exactly what the feed shows before the \\\"... more\\\". One scores your profile out of 100 and rewrites what lost points. One plans the week.\\nGITHUB · OCT 25 2026\\nHERE'S HOW IT WORKS.\\n24.4K 17K 809\\nLiked by oussamaaiyyassin and 24.3K others\\nauraguy.ai Claude Just Destroyed Instagram With 13 Free Skills\\nSpending hours writing Reels and hunting for content ideas? The Instagram Agent Skill is a free pack of 13 Claude skills that does it for you.\",\"title\":\"Install the Instagram agent skill from GitHub and test it on my account\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Install the Instagram agent skill from GitHub\",\"Test it on my account\"],\"verbatim_items\":[{\"type\":\"link\",\"text\":\"github.com/.../instagram-agent-skill\"}],\"evidence_quote\":\"Install the Instagram agent skill from GitHub and test it on my account.\",\"suggested_effort_min\":30,\"intent\":{\"when\":{\"day\":\"weekend\",\"date\":null,\"part\":null,\"quote\":\"this weekend\"},\"minutes\":30,\"minutes_quote\":\"30 min\"}}",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 2775,
+        "completion_tokens": 1353,
+        "total_tokens": 4128,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 1054,
+          "audio_tokens": 0,
+          "reasoning_tokens": 852,
+          "rejected_prediction_tokens": 1046
+        }
+      },
+      "model": "meta-models/muse-spark-open-1026",
+      "ms": 8870
+    },
+    "insta-5.png": {
+      "note": "Read the weight space programming paper and its blog post. 20 min tomorrow evening",
+      "content": "{\"saved_post\":true,\"transcription\":\"Post\\nprincegupta.ai • Follow\\nOriginal audio\\ncan\\nRikiya Takehi\\n@rikiyatakehi\\nWe asked GPT-6 Astra to edit Qwen3.5-0.8B weights to improve math. It directly changed only 0.016% of weights, fixing 0.8B's reasoning loops & improving math up to 6x and even instruction following 3x, without gradients or training.\\nWe call this Weight-Space Programming: frontier LLMs can now natively read/write neural network weights! 🎉\\nBlog: rikiyat.github.io/blog/weight-sp...\\nSparks of Weight-Space Programming:\\nLLMs can natively read & write neural network weights\\nRikiya Takehi*, Jayden Teoh*, Alex Zhang, Omar Khattab - MIT CSAIL\\nTL;DR\\nWe find that frontier LLMs are surprisingly good at natively reading and writing neural network weights, well past what we'd expect from humans or conventional algorithms. This might be a big deal for both optimization and interpretability.\\nJust by looking at the raw weights, GPT-6 Astra can tell what a network was trained to do. And without any environment feedback, it has no trouble writing, from scratch, small game-playing networks that outplay networks trained with PPO for 100 million steps.\\nLikewise, asked to make Qwen3.5-0.8B better at math without gradients, Astra identifies an issue in its weights causing reasoning loops that Qwen's own model card warns about, and fixes this by natively editing 0.016% of the weights. With the same sampling settings, this weight correction raises MATH-500 from 7.9% to 48.1% and generalizes out of the box to instruction following, raising IFEval by 3x.\\nalex zhang and Omar Khattab\\n11:21 PM · Nov 2, 2026 · 7.5M Views\\n@princegupta.ai\\n5.4K 1.1K 153\\nprincegupta.ai Comment \\\"MIT\\\" and I'll DM you the research paper\",\"title\":\"Read weight space programming paper and blog post\",\"goal_id\":2,\"kind\":\"other\",\"label\":\"read\",\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Read weight space programming paper\",\"Read blog post\"],\"verbatim_items\":[{\"type\":\"link\",\"text\":\"rikiyat.github.io/blog/weight-sp...\"}],\"evidence_quote\":\"Read the weight space programming paper and its blog post.\",\"suggested_effort_min\":20,\"intent\":{\"when\":{\"day\":\"tomorrow\",\"date\":null,\"part\":\"evening\",\"quote\":\"tomorrow evening\"},\"minutes\":20,\"minutes_quote\":\"20 min\"}}",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 2863,
+        "completion_tokens": 1272,
+        "total_tokens": 4135,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 990,
+          "audio_tokens": 0,
+          "reasoning_tokens": 687,
+          "rejected_prediction_tokens": 991
+        }
+      },
+      "model": "meta-models/muse-spark-open-1026",
+      "ms": 76994
+    },
+    "x-1.png": {
+      "note": "Try Muse Wonder through the Meta Model API. 30 min tomorrow",
+      "content": "{\"saved_post\":true,\"transcription\":\"AI at Meta @AIatMeta\\nWe’re excited to introduce the Muse Wonder series with Muse Wonder and Muse Wonder Full, our most capable modelss yet. Both are frontier models, built to deliver state-of-the-art performance for personal and professional agentic tasks.\\nMuse Wonder is available today via the Meta Model API and Muse Code. Muse Wonder Full is available today for Muse Code subscribers. Muse Wonder will also soon power experiences in our personal agent product, Muse, rolling out first to subscribers.\\n6:02 PM · Oct 12, 2026 · 341.3K Views\\n225 489 2.2K 366\",\"title\":\"Try Muse Wonder through the Meta Model API\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Try Muse Wonder via the Meta Model API\"],\"verbatim_items\":[],\"evidence_quote\":\"Try Muse Wonder through the Meta Model API.\",\"suggested_effort_min\":30,\"intent\":{\"when\":{\"day\":\"tomorrow\",\"date\":\"2026-11-05\",\"part\":null,\"quote\":\"tomorrow\"},\"minutes\":30,\"minutes_quote\":\"30 min\"}}",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 2878,
+        "completion_tokens": 526,
+        "total_tokens": 3404,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 385,
+          "audio_tokens": 0,
+          "reasoning_tokens": 269,
+          "rejected_prediction_tokens": 609
+        }
+      },
+      "model": "meta-models/muse-spark-open-1026",
+      "ms": 4745
     },
     "x-2.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"OpenAI @OpenAI\\nFollow\\nGPT-6.1 Terra: delivering fast and capable computer use at a lower price.\\nGPT-6.1 Terra understands what’s on screen, takes action across apps, writes naturally, and is a more capable model for your whole workday with the efficiency to take on more of it.\\nFast, capable, and really good at computer use.\\n0:24\\nMade with AI\\n7:06 PM · Oct 26, 2026 · 7.5M Views\\n1.9K 4.8K 28K 4.3K\",\"title\":\"Try GPT-6.1 Terra for computer use\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[],\"verbatim_items\":[],\"evidence_quote\":\"GPT-6.1 Terra: delivering fast and capable computer use at a lower price.\",\"suggested_effort_min\":15,\"intent\":null}",
+      "note": "Test GPT-6.1 Terra on a real computer task. 15 min tonight",
+      "content": "{\"saved_post\":true,\"transcription\":\"OpenAI @OpenAI\\nGPT-6.1 Terra: delivering fast and capable computer use at a lower price.\\nGPT-6.1 Terra understands what’s on screen, takes action across apps, writes naturally, and is a more capable model for your whole workday with the efficiency to take on more of it.\\nFast, capable, and really good at computer use.\\n0:24\\nMade with AI\\n7:06 PM · Oct 26, 2026 · 7.5M Views\\n1.9K 4.8K 28K 4.3K\",\"title\":\"Test GPT-6.1 Terra on a real computer task\",\"goal_id\":2,\"kind\":\"try\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Test GPT-6.1 Terra on a real computer task\"],\"verbatim_items\":[],\"evidence_quote\":\"Test GPT-6.1 Terra on a real computer task. 15 min tonight\",\"suggested_effort_min\":15,\"intent\":{\"when\":{\"day\":\"today\",\"date\":null,\"part\":\"evening\",\"quote\":\"tonight\"},\"minutes\":15,\"minutes_quote\":\"15 min\"}}",
       "finishReason": "stop",
       "usage": {
-        "prompt_tokens": 2940,
-        "completion_tokens": 655,
-        "total_tokens": 3595,
+        "prompt_tokens": 2955,
+        "completion_tokens": 433,
+        "total_tokens": 3388,
         "prompt_tokens_details": {
           "audio_tokens": 0,
           "cached_tokens": 1536
         },
         "completion_tokens_details": {
-          "accepted_prediction_tokens": 478,
+          "accepted_prediction_tokens": 318,
           "audio_tokens": 0,
-          "reasoning_tokens": 435,
-          "rejected_prediction_tokens": 768
+          "reasoning_tokens": 172,
+          "rejected_prediction_tokens": 494
         }
       },
       "model": "meta-models/muse-spark-open-1026",
-      "ms": 7044
+      "ms": 8294
     },
     "x-3.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"OpenAI @OpenAI\\nFollow\\nTwo OpenAI team members worked with GPT-6 Astra to design a prototype device for talking to Codex in under a week, as a side project.\\nAstra designed the enclosure, circuit board, interface, and software. Getting it manufactured still required several rounds of review and iteration.\\n0:08\\n7:56 PM · Nov 3, 2026 · 111.7K Views\\n109 119 967 180\",\"title\":null,\"goal_id\":null,\"kind\":\"other\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[],\"verbatim_items\":[],\"evidence_quote\":null,\"suggested_effort_min\":null,\"intent\":null}",
+      "note": "Read how they built the Codex device, idea for a side project. 10 min",
+      "content": "{\"saved_post\":true,\"transcription\":\"OpenAI @OpenAI\\nTwo OpenAI team members worked with GPT-6 Astra to design a prototype device for talking to Codex in under a week, as a side project.\\nAstra designed the enclosure, circuit board, interface, and software. Getting it manufactured still required several rounds of review and iteration.\\n7:56 PM · Nov 3, 2026 · 111.7K Views\\n109 119 967 180\",\"title\":\"Read how they built the Codex device for side project idea\",\"goal_id\":6,\"kind\":\"other\",\"label\":\"read\",\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Read post about Codex device prototype build\"],\"verbatim_items\":[],\"evidence_quote\":\"Read how they built the Codex device, idea for a side project.\",\"suggested_effort_min\":10,\"intent\":{\"when\":null,\"minutes\":10,\"minutes_quote\":\"10 min\"}}",
       "finishReason": "stop",
       "usage": {
-        "prompt_tokens": 2777,
-        "completion_tokens": 437,
-        "total_tokens": 3214,
-        "prompt_tokens_details": {
-          "audio_tokens": 0,
-          "cached_tokens": 0
-        },
-        "completion_tokens_details": {
-          "accepted_prediction_tokens": 301,
-          "audio_tokens": 0,
-          "reasoning_tokens": 270,
-          "rejected_prediction_tokens": 658
-        }
-      },
-      "model": "meta-models/muse-spark-open-1026",
-      "ms": 4364
-    },
-    "x-4.png": {
-      "content": "{\"saved_post\":true,\"transcription\":\"AI at Meta @AIatMeta\\nFollow\\nToday we're announcing support for university research at @Caltech, @OhioStateMed, @LSU, @IndianaUniv, and @UTHealthHouston to help advance breakthroughs across science and medicine.\\nAs part of the support for university researchers, we'll provide access to our latest Muse models, including Muse Wonder and Muse Spark; open weight models like Muse Glimmer and Muse Spark Open; computer vision models such as SAM, V-JEPA, and DINO; as well as SeamlessM4T, our multilingual communication model.\\nWe're excited to support these five universities as they use our models to accelerate the important work they're doing.\\nRead more on our research blog:\\ngo.meta.me/47G6wV3\\nAccelerating Medical and Scientific Breakthroughs with American Universities\",\"title\":null,\"goal_id\":null,\"kind\":\"other\",\"label\":null,\"deadline\":null,\"event_dates\":[],\"deliverables\":[],\"verbatim_items\":[{\"type\":\"link\",\"text\":\"go.meta.me/47G6wV3\"}],\"evidence_quote\":null,\"suggested_effort_min\":5,\"intent\":null}",
-      "finishReason": "stop",
-      "usage": {
-        "prompt_tokens": 2757,
-        "completion_tokens": 694,
-        "total_tokens": 3451,
+        "prompt_tokens": 2793,
+        "completion_tokens": 406,
+        "total_tokens": 3199,
         "prompt_tokens_details": {
           "audio_tokens": 0,
           "cached_tokens": 1536
         },
         "completion_tokens_details": {
-          "accepted_prediction_tokens": 514,
+          "accepted_prediction_tokens": 299,
           "audio_tokens": 0,
-          "reasoning_tokens": 438,
-          "rejected_prediction_tokens": 753
+          "reasoning_tokens": 200,
+          "rejected_prediction_tokens": 457
         }
       },
       "model": "meta-models/muse-spark-open-1026",
-      "ms": 5682
+      "ms": 4408
+    },
+    "x-4.png": {
+      "note": "Read the Meta blog on the university research program. 10 min this weekend",
+      "content": "{\"saved_post\":true,\"transcription\":\"AI at Meta @AIatMeta\\nToday we're announcing support for university research at @Caltech, @OhioStateMed, @LSU, @IndianaUniv, and @UTHealthHouston to help advance breakthroughs across science and medicine.\\nAs part of the support for university researchers, we'll provide access to our latest Muse models, including Muse Wonder and Muse Spark; open weight models like Muse Glimmer and Muse Spark Open; computer vision models such as SAM, V-JEPA, and DINO; as well as SeamlessM4T, our multilingual communication model.\\nWe're excited to support these five universities as they use our models to accelerate the important work they're doing.\\nRead more on our research blog:\\ngo.meta.me/47G6wV3\\nAccelerating Medical and Scientific Breakthroughs with American Universities\",\"title\":\"Read Meta blog on university research program\",\"goal_id\":null,\"kind\":\"other\",\"label\":\"read\",\"deadline\":null,\"event_dates\":[],\"deliverables\":[\"Read the Meta research blog post on university research program\"],\"verbatim_items\":[{\"type\":\"link\",\"text\":\"go.meta.me/47G6wV3\"}],\"evidence_quote\":\"Read the Meta blog on the university research program.\",\"suggested_effort_min\":10,\"intent\":{\"when\":{\"day\":\"weekend\",\"date\":null,\"part\":null,\"quote\":\"this weekend\"},\"minutes\":10,\"minutes_quote\":\"10 min\"}}",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 2770,
+        "completion_tokens": 690,
+        "total_tokens": 3460,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 1536
+        },
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 494,
+          "audio_tokens": 0,
+          "reasoning_tokens": 383,
+          "rejected_prediction_tokens": 885
+        }
+      },
+      "model": "meta-models/muse-spark-open-1026",
+      "ms": 7046
     }
   }
 }
